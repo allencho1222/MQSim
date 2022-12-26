@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <spdlog/spdlog.h>
 
 using namespace std;
 
@@ -323,6 +324,7 @@ int main(int argc, char *argv[]) {
     print_help();
     return 1;
   }
+  spdlog::set_level(spdlog::level::trace);
 
   command_line_args(argv, ssd_config_file_path, workload_defs_file_path);
 

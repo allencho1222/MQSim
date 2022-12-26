@@ -1,6 +1,7 @@
 #include "Flash_Chip.h"
 #include "../../sim/Engine.h"
 #include "../../sim/Sim_Defs.h"
+#include <spdlog/spdlog.h>
 
 namespace NVM {
 namespace FlashMemory {
@@ -167,8 +168,8 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
   case CMD_READ_PAGE_MULTIPLANE:
   case CMD_READ_PAGE_COPYBACK:
   case CMD_READ_PAGE_COPYBACK_MULTIPLANE:
-    DEBUG("Channel " << this->ChannelID << " Chip " << this->ChipID
-                     << "- Finished executing read command")
+    SPDLOG_TRACE("Channel {} Chip {} Finished executing read command",
+                 this->ChannelID, this->ChipID);
     for (unsigned int planeCntr = 0; planeCntr < command->Address.size();
          planeCntr++) {
       STAT_readCount++;
@@ -183,8 +184,8 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
   case CMD_PROGRAM_PAGE_MULTIPLANE:
   case CMD_PROGRAM_PAGE_COPYBACK:
   case CMD_PROGRAM_PAGE_COPYBACK_MULTIPLANE:
-    DEBUG("Channel " << this->ChannelID << " Chip " << this->ChipID
-                     << "- Finished executing program command")
+    SPDLOG_TRACE("Channel {} Chip {} Finished executing program command",
+                 this->ChannelID, this->ChipID);
     for (unsigned int planeCntr = 0; planeCntr < command->Address.size();
          planeCntr++) {
       STAT_progamCount++;
@@ -196,7 +197,9 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
     }
     break;
   case CMD_ERASE_BLOCK:
-  case CMD_ERASE_BLOCK_MULTIPLANE: {
+  case CMD_ERASE_BLOCK_MULTIPLANE:
+    SPDLOG_TRACE("Channel {} Chip {} Finished executing erase command",
+                 this->ChannelID, this->ChipID);
     for (unsigned int planeCntr = 0; planeCntr < command->Address.size();
          planeCntr++) {
       STAT_eraseCount++;
@@ -211,7 +214,6 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
       }
     }
     break;
-  }
   default:
     PRINT_ERROR("Flash chip " << ID() << ": unhandled flash command type!")
   }

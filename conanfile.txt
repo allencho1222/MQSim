@@ -1,5 +1,6 @@
 [requires]
 fmt/9.0.0
+spdlog/1.10.0
 
 [generators]
 cmake
