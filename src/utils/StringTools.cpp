@@ -1,7 +1,5 @@
+#include "StringTools.h"
 #include <iostream>
 #include <sstream>
-#include "StringTools.h"
 
-namespace Utils
-{
-}
+namespace Utils {}

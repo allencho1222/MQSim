@@ -2,6 +2,9 @@
 #include "../sim/Sim_Defs.h"
 #include "../utils/DistributionTypes.h"
 #include "../utils/Helper_Functions.h"
+
+#include "Address_Mapping_Unit_Base.h"
+#include "GC_and_WL_Unit_Base.h"
 #include "Stats.h"
 #include <cmath>
 #include <functional>

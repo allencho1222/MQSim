@@ -4,12 +4,10 @@
 #include "../sim/Sim_Defs.h"
 #include "../sim/Sim_Object.h"
 #include "../sim/Sim_Reporter.h"
-#include "../ssd/Host_Interface_Defs.h"
 #include "../ssd/SSD_Defs.h"
+#include "../ssd/Host_Interface_Defs.h"
 #include "../utils/Workload_Statistics.h"
-#include "Host_IO_Request.h"
-#include "PCIe_Root_Complex.h"
-#include "SATA_HBA.h"
+//#include "../utils/Logical_Address_Partitioning_Unit.h"
 #include <iostream>
 #include <list>
 #include <set>
@@ -41,6 +39,8 @@ struct NVMe_Queue_Pair {
     nvme_queue_pair.Submission_queue_tail = 0;
 
 class PCIe_Root_Complex;
+class Host_IO_Request;
+class SATA_HBA;
 class IO_Flow_Base : public MQSimEngine::Sim_Object,
                      public MQSimEngine::Sim_Reporter {
 public:

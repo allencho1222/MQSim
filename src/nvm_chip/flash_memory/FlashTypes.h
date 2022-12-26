@@ -1,17 +1,15 @@
 #ifndef FLASH_TYPES_H
 #define FLASH_TYPES_H
 
-#include<cstdint>
 #include "../../sim/Sim_Defs.h"
 #include "../NVM_Types.h"
+#include <cstdint>
 
-namespace NVM
-{
-	namespace FlashMemory
-	{
-		enum class Command_Suspension_Mode { NONE, PROGRAM, PROGRAM_ERASE, ERASE };
-	}
+namespace NVM {
+namespace FlashMemory {
+enum class Command_Suspension_Mode { NONE, PROGRAM, PROGRAM_ERASE, ERASE };
 }
+} // namespace NVM
 
 typedef uint64_t page_status_type;
 #define FULL_PROGRAMMED_PAGE 0xffffffffffffffffULL

@@ -2,6 +2,8 @@
 #include "../utils/DistributionTypes.h"
 #include "../utils/StringTools.h"
 #include "ASCII_Trace_Definition.h"
+#include "Engine.h"
+#include "Host_IO_Request.h"
 
 namespace Host_Components {
 IO_Flow_Trace_Based::IO_Flow_Trace_Based(
@@ -138,7 +140,6 @@ void IO_Flow_Trace_Based::Start_simulation() {
 void IO_Flow_Trace_Based::Validate_simulation_config() {}
 
 void IO_Flow_Trace_Based::Execute_simulator_event(MQSimEngine::Sim_Event *) {
-  std::cout << "hello" << std::endl;
   Host_IO_Request *request = Generate_next_request();
   if (request != NULL) {
     Submit_io_request(request);
