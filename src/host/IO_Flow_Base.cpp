@@ -702,19 +702,19 @@ void IO_Flow_Base::reportResults(fmt::ostream &output) {
       items, ID(), STAT_generated_request_count,
       STAT_generated_read_request_count, STAT_generated_write_request_count,
       (double)STAT_generated_request_count /
-          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+          ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       (double)STAT_generated_read_request_count /
-          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+          ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       (double)STAT_generated_write_request_count /
-          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+          ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       (double)STAT_transferred_bytes_total, (double)STAT_transferred_bytes_read,
       (double)STAT_transferred_bytes_write,
       (double)STAT_transferred_bytes_total /
-          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+          ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       (double)STAT_transferred_bytes_read /
-          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+          ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       (double)STAT_transferred_bytes_write /
-          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+          ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       Get_device_response_time(), Get_min_device_response_time(),
       Get_max_device_response_time(), Get_end_to_end_request_delay(),
       Get_min_end_to_end_request_delay(), Get_max_end_to_end_request_delay());

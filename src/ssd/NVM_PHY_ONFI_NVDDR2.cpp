@@ -464,7 +464,8 @@ void copy_read_data_to_transaction(NVM_Transaction_Flash_RD *read_transaction,
                                    NVM::FlashMemory::Flash_Command *command) {
   int i = 0;
   for (auto &address : command->Address) {
-    if (address.PlaneID == read_transaction->Address.PlaneID) {
+    if (address.PlaneID == read_transaction->Address.PlaneID &&
+        command->Meta_data[i].LPA != NO_LPA) {
       read_transaction->LPA = command->Meta_data[i].LPA;
     }
     i++;

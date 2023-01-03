@@ -94,7 +94,7 @@ Data_Cache_Manager_Flash_Advanced::~Data_Cache_Manager_Flash_Advanced() {
     break;
   }
 
-  delete per_stream_cache;
+  delete[] per_stream_cache;
   delete[] dram_execution_queue;
   delete[] waiting_user_requests_queue_for_dram_free_slot;
   delete[] bloom_filter;
