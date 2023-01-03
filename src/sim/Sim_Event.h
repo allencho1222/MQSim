@@ -2,7 +2,6 @@
 #define SIMULATOR_EVENT_H
 
 #include "Sim_Defs.h"
-#include "Sim_Object.h"
 
 namespace MQSimEngine {
 class Sim_Object;

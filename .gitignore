@@ -3,3 +3,7 @@ build/
 compile_commands.json
 .cache/
 html/
+latex/
+*.result
+Doxyfile
+*.xml

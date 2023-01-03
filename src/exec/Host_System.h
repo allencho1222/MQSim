@@ -14,6 +14,7 @@
 #include "Host_Parameter_Set.h"
 #include "SSD_Device.h"
 #include <vector>
+#include <fmt/os.h>
 
 class Host_System : public MQSimEngine::Sim_Object,
                     public MQSimEngine::Sim_Reporter {

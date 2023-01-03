@@ -4,8 +4,10 @@
 #include "../nvm_chip/flash_memory/FlashTypes.h"
 #include "../sim/Sim_Defs.h"
 #include "Parameter_Set_Base.h"
+#include <unordered_map>
+#include <yaml-cpp/yaml.h>
 
-class Flash_Parameter_Set : Parameter_Set_Base {
+class Flash_Parameter_Set {
 public:
   static Flash_Technology_Type Flash_Technology;
   static NVM::FlashMemory::Command_Suspension_Mode CMD_Suspension_Support;
@@ -27,8 +29,15 @@ public:
   static unsigned int Page_Capacity;     // Flash page capacity in bytes
   static unsigned int
       Page_Metadat_Capacity; // Flash page metadata capacity in bytes
-  void XML_serialize(Utils::XmlWriter &xmlwriter);
-  void XML_deserialize(rapidxml::xml_node<> *node);
+  // void XML_serialize(Utils::XmlWriter &xmlwriter);
+  // void XML_deserialize(rapidxml::xml_node<> *node);
+  void parseYAML(const YAML::Node &flashParams) const;
+
+  static std::unordered_map<std::string, Flash_Technology_Type>
+      flashTechnologyTypeMap;
+  static std::unordered_map<std::string,
+                            NVM::FlashMemory::Command_Suspension_Mode>
+      cmdSuspensionModeMap;
 };
 
 #endif // !FLASH_PARAMETER_SET_H

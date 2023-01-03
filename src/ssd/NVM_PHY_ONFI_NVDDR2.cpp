@@ -24,9 +24,8 @@ NVM_PHY_ONFI_NVDDR2::NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     bookKeepingTable[channelID] = new ChipBookKeepingEntry[chip_no_per_channel];
     for (unsigned int chipID = 0; chipID < chip_no_per_channel; chipID++) {
-      bookKeepingTable[channelID][chipID].Expected_command_exec_finish_time =
-          T0;
-      bookKeepingTable[channelID][chipID].Last_transfer_finish_time = T0;
+      bookKeepingTable[channelID][chipID].Expected_command_exec_finish_time = 0;
+      bookKeepingTable[channelID][chipID].Last_transfer_finish_time = 0;
       bookKeepingTable[channelID][chipID].Die_book_keeping_records =
           new DieBookKeepingEntry[DieNoPerChip];
       bookKeepingTable[channelID][chipID].Status = ChipStatus::IDLE;

@@ -12,8 +12,10 @@
 #include "../ssd/TSU_Base.h"
 #include "Flash_Parameter_Set.h"
 #include "Parameter_Set_Base.h"
+#include <unordered_map>
+#include <yaml-cpp/yaml.h>
 
-class Device_Parameter_Set : public Parameter_Set_Base {
+class Device_Parameter_Set {
 public:
   static int Seed; // Seed for random number generation (used in device's random
                    // number generators)
@@ -102,8 +104,34 @@ public:
   static unsigned int Chip_No_Per_Channel;
   static SSD_Components::ONFI_Protocol Flash_Comm_Protocol;
   static Flash_Parameter_Set Flash_Parameters;
-  void XML_serialize(Utils::XmlWriter &xmlwriter);
-  void XML_deserialize(rapidxml::xml_node<> *node);
+  // void XML_serialize(Utils::XmlWriter &xmlwriter);
+  // void XML_deserialize(rapidxml::xml_node<> *node);
+  void parseYAML(const YAML::Node &deviceParams);
+
+private:
+  static std::unordered_map<std::string, NVM::NVM_Type> memTypeMap;
+  static std::unordered_map<std::string, HostInterface_Types>
+      hostInterfaceTypeMap;
+  static std::unordered_map<std::string, SSD_Components::Caching_Mechanism>
+      cachingMechanismMap;
+  static std::unordered_map<std::string, SSD_Components::Cache_Sharing_Mode>
+      cacheSharingModeMap;
+  static std::unordered_map<std::string,
+                            SSD_Components::Flash_Address_Mapping_Type>
+      pageMappingMap;
+  static std::unordered_map<std::string, SSD_Components::CMT_Sharing_Mode>
+      cmtSharingModeMap;
+  static std::unordered_map<std::string,
+                            SSD_Components::Flash_Plane_Allocation_Scheme_Type>
+      planeAllocationSchemeMap;
+  static std::unordered_map<std::string, SSD_Components::Flash_Scheduling_Type>
+      schedulingTypeMap;
+  static std::unordered_map<std::string,
+                            SSD_Components::GC_Block_Selection_Policy_Type>
+      gcBlockSelectionPolicyMap;
+  static std::unordered_map<std::string,
+                            SSD_Components::ONFI_Protocol>
+      protocolMap;
 };
 
 #endif // !DEVICE_PARAMETER_SET_H

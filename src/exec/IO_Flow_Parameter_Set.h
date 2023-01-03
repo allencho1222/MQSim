@@ -10,29 +10,33 @@
 #include "Data_Cache_Manager_Base.h"
 #include "Parameter_Set_Base.h"
 #include <string>
+#include <yaml-cpp/yaml.h>
 
 enum class Flow_Type { SYNTHETIC, TRACE };
-class IO_Flow_Parameter_Set : public Parameter_Set_Base {
+class IO_Flow_Parameter_Set {
 public:
   SSD_Components::Caching_Mode Device_Level_Data_Caching_Mode;
   Flow_Type Type;
   IO_Flow_Priority_Class::Priority
       Priority_Class; // The priority class is only considered when the SSD
                       // device uses NVMe host interface
-  flash_channel_ID_type *Channel_IDs; // Resource partitioning: which channel
-                                      // ids are allocated to this flow
-  flash_chip_ID_type *Chip_IDs; // Resource partitioning: which chip ids are
-                                // allocated to this flow
-  flash_die_ID_type *
+  std::vector<flash_channel_ID_type>
+      Channel_IDs; // Resource partitioning: which channel
+                   // ids are allocated to this flow
+  std::vector<flash_chip_ID_type> Chip_IDs; // Resource partitioning: which chip
+                                            // ids are allocated to this flow
+  std::vector<flash_die_ID_type>
       Die_IDs; // Resource partitioning: which die ids are allocted to this flow
-  flash_plane_ID_type *Plane_IDs; // Resource partitioning: which plane ids are
-                                  // allocated to this flow
+  std::vector<flash_plane_ID_type>
+      Plane_IDs; // Resource partitioning: which plane ids are
+                 // allocated to this flow
   unsigned int
       Initial_Occupancy_Percentage; // Percentage of the logical space that is
                                     // written when preconditioning is performed
   int Channel_No, Chip_No, Die_No, Plane_No;
-  void XML_serialize(Utils::XmlWriter &xmlwrite);
-  void XML_deserialize(rapidxml::xml_node<> *node);
+  // void XML_serialize(Utils::XmlWriter &xmlwrite);
+  // void XML_deserialize(rapidxml::xml_node<> *node);
+  virtual void parseYAML(const YAML::Node &ioFlow);
 
 private:
 };
@@ -68,9 +72,10 @@ public:
                                   // generator considers
                                   // Total_Requests_To_Generate to decide when
                                   // to stop generating I/O requests
+  void parseYAML(const YAML::Node &ioFlow);
 
-  void XML_serialize(Utils::XmlWriter &xmlwriter);
-  void XML_deserialize(rapidxml::xml_node<> *node);
+  // void XML_serialize(Utils::XmlWriter &xmlwriter);
+  // void XML_deserialize(rapidxml::xml_node<> *node);
 };
 
 class IO_Flow_Parameter_Set_Trace_Based : public IO_Flow_Parameter_Set {
@@ -81,8 +86,9 @@ public:
   int Relay_Count;
   Trace_Time_Unit Time_Unit;
 
-  void XML_serialize(Utils::XmlWriter &xmlwriter);
-  void XML_deserialize(rapidxml::xml_node<> *node);
+  // void XML_serialize(Utils::XmlWriter &xmlwriter);
+  // void XML_deserialize(rapidxml::xml_node<> *node);
+  void parseYAML(const YAML::Node &ioFlow);
 };
 
 #endif // !IO_FLOW_PARAMETER_SET_H

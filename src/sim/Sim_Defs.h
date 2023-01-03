@@ -10,7 +10,7 @@ typedef uint16_t stream_id_type;
 typedef sim_time_type data_timestamp_type;
 
 #define INVALID_TIME 18446744073709551615ULL
-#define T0 0
+// #define T0 0
 #define INVALID_TIME_STAMP 18446744073709551615ULL
 #define MAXIMUM_TIME 18446744073709551615ULL
 #define ONE_SECOND 1000000000

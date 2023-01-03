@@ -63,8 +63,8 @@ Host_System::Host_System(
     switch (parameters->IO_Flow_Definitions[flow_id]->Type) {
     case Flow_Type::SYNTHETIC: {
       IO_Flow_Parameter_Set_Synthetic *flow_param =
-          (IO_Flow_Parameter_Set_Synthetic *)
-              parameters->IO_Flow_Definitions[flow_id];
+          static_cast<IO_Flow_Parameter_Set_Synthetic *>(
+              parameters->IO_Flow_Definitions[flow_id].get());
       if (flow_param->Working_Set_Percentage > 100 ||
           flow_param->Working_Set_Percentage < 1) {
         flow_param->Working_Set_Percentage = 100;
@@ -105,8 +105,8 @@ Host_System::Host_System(
     }
     case Flow_Type::TRACE: {
       IO_Flow_Parameter_Set_Trace_Based *flow_param =
-          (IO_Flow_Parameter_Set_Trace_Based *)
-              parameters->IO_Flow_Definitions[flow_id];
+          static_cast<IO_Flow_Parameter_Set_Trace_Based *>(
+              parameters->IO_Flow_Definitions[flow_id].get());
       io_flow = new Host_Components::IO_Flow_Trace_Based(
           this->ID() + ".IO_Flow.Trace." + flow_param->File_Path, flow_id,
           Utils::Logical_Address_Partitioning_Unit::Start_lha_available_to_flow(

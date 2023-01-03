@@ -1,0 +1,217 @@
+host_parameters:
+  # the PCIe bandwidth per lane in GB/s. Range = {all positive double precision values}.
+  pcie_lane_bandwidth: 1.00000
+  # the number of PCIe lanes. Range = {all positive integer values}.
+  pcie_lane_count: 4
+  # defines the aggregate hardware and software processing delay to 
+  # send/receive a SATA message to the SSD device in nanoseconds. Range = {all positive integer values}.
+  sata_processing_delay: 400000
+  # the toggle to enable response time logging. If enabled, response time is 
+  # calculated for each running I/O flow over simulation epochs and is reported
+  # in a log file at the end of each epoch. Range = {true, false}.
+  enable_responsetime_logging: false
+  # defines the epoch length for response time logging in nanoseconds. 
+  # Range = {all positive integer values}.
+  responsetime_logging_period_length: 1000000
+device_parameters:
+  # the seed value that is used for random number generation. 
+  # Range = {all positive integer values}.
+  seed: 321
+  # the toggle to enable preconditioning. Range = {true, false}.
+  enable_preconditioning: false
+  # the type of the non-volatile memory used for data storage. Range = {FLASH}.
+  memory_type: FLASH
+  # the type of host interface. Range = {NVME, SATA}.
+  host_interface_type: NVME
+  # the length of the host-side I/O queue. If the host interface is set to NVME,
+  # then IO_Queue_Depth defines the capacity of the I/O Submission and I/O 
+  # Completion Queues. If the host interface is set to SATA, then 
+  # IO_Queue_Depth defines the capacity of the Native Command Queue (NCQ). 
+  # Range = {all positive integer values}
+  io_queue_depth: 65535
+  # the value of the QueueFetchSize parameter as described in the FAST 2018 paper [1]. 
+  # Range = {all positive integer values}
+  queue_fetch_size: 512
+  # the data caching mechanism used on the device. 
+  # Range = {SIMPLE: implements a simple data destaging buffer, 
+  # ADVANCED: implements an advanced data caching mechanism with different 
+  # sharing options among the concurrent flows}.
+  caching_mechanism: ADVANCED
+  data_cache:
+    # the sharing mode of the DRAM data cache (buffer) among the concurrently 
+    # running I/O flows when an NVMe host interface is used. 
+    # Range = {SHARED, EQUAL_PARTITIONING}.
+    mode: SHARED
+    # the size of the DRAM data cache in bytes. Range = {all positive integers}
+    capacity: 268435456
+    # the size of the DRAM rows in bytes. 
+    # Range = {all positive power of two numbers}.
+    dram_row_size: 8192
+    # the DRAM data transfer rate in MT/s. 
+    # Range = {all positive integer values}.
+    dram_data_rate: 100
+    # the number of bytes that are transferred in one DRAM burst 
+    # (depends on the number of DRAM chips). 
+    # Range = {all positive integer values}.
+    burst_size: 4
+    # Range = {all positive integer values}.
+    tRCD: 13
+    # Range = {all positive integer values}.
+    tCL: 13
+    # Range = {all positive integer values}.
+    tRP: 13
+  page_mapping:
+    # the logical-to-physical address mapping policy implemented in the 
+    # Flash Translation Layer (FTL). Range = {PAGE_LEVEL, HYBRID}.
+    mode: PAGE_LEVEL
+    # if mapping is ideal, table is enabled in which all address translations 
+    # entries are always in CMT (i.e., CMT is infinite in size) and thus all 
+    # adddress translation requests are always successful (i.e., all the
+    # mapping entries are found in the DRAM and there is no need to read 
+    # mapping entries from flash)
+    ideal: false
+  cmt:
+    # the size of the SRAM/DRAM space in bytes used to cache the address 
+    # mapping table (Cached Mapping Table). 
+    # Range = {all positive integer values}.
+    capacity: 2097152
+    # the mode that determines how the entire CMT (Cached Mapping Table) space 
+    # is shared among concurrently running flows when an NVMe host interface 
+    # is used. Range = {SHARED, EQUAL_PARTITIONING}.
+    mode: SHARED
+  # the scheme for plane allocation as defined in Tavakkol et al. [3]. 
+  # Range = {CWDP, CWPD, CDWP, CDPW, CPWD, CPDW, WCDP, WCPD, WDCP, WDPC, WPCD, 
+  # WPDC, DCWP, DCPW, DWCP, DWPC, DPCW, DPWC, PCWD, PCDW, PWCD, PWDC, PDCW, 
+  # PDWC}
+  plane_allocation_scheme: CWDP
+  # the transaction scheduling policy that is used in the SSD back end. 
+  # Range = {OUT_OF_ORDER as defined in the Sprinkler paper [2], 
+  # PRIORITY_OUT_OF_ORDER which implements OUT_OF_ORDER and NVMe priorities}.
+  transaction_scheduling_policy: PRIORITY_OUT_OF_ORDER
+  garbage_collection:
+    # the ratio of reserved storage space with respect to the available flash 
+    # storage capacity. Range = {all positive double precision values}.
+    overprovisioning_ratio: 0.07
+    # the threshold for starting Garbage Collection (GC). When the ratio of 
+    # the free physical pages for a plane drops below this threshold, 
+    # GC execution begins. Range = {all positive double precision values}.
+    exec_threshold: 0.05000
+    # the threshold to stop pre-emptible GC execution (described in [7]). 
+    # Range = {all possible positive double precision values less than 
+    # GC_Exect_Threshold}.
+    hard_threshold: 0.005000
+    # the GC block selection policy. 
+    # Range {GREEDY, RGA (described in [4] and [5]), 
+    # RANDOM (described in [4]), RANDOM_P (described in [4]), 
+    # RANDOM_PP (described in [4]), FIFO (described in [6])}.
+    block_selection_policy: RGA
+    # used in GC_and_WL_Unit_Page_Level to determine 
+    # block_manager→Is_page_valid gc_write transaction
+    use_copyback: false
+    # the toggle to enable pre-emptible GC (described in [7]). 
+    # Range = {true, false}.
+    enable_preemption: false
+  wear_leveling:
+    # the toggle to enable static wear-leveling (described in [9]). 
+    # Range = {true, false}.
+    enable_static: true
+    # the threshold for starting static wear-leveling (described in [9]). When 
+    # the difference between the minimum and maximum erase count within a 
+    # memory unit (e.g., plane in flash memory) drops below this threshold, 
+    # static wear-leveling begins. Range = {all positive integer values}.
+    static_threshold: 100
+    # the toggle to enable dynamic wear-leveling (described in [9]). 
+    # Range = {true, false}.
+    enable_dynamic: true
+  suspend:
+    # the reasonable time to suspend an ongoing flash erase operation in favor 
+    # of a recently-queued read operation. 
+    # Range = {all positive integer values}.
+    erase_time_for_read: 700000
+    # the reasonable time to suspend an ongoing flash erase operation in favor 
+    # of a recently-queued read operation. 
+    # Range = {all positive integer values}.
+    erase_time_for_write: 700000
+    # the reasonable time to suspend an ongoing flash erase operation in favor 
+    # of a recently-queued program operation. 
+    # Range = {all positive integer values}.
+    write_time_for_read: 100000
+  channel:
+    # the number of flash channels in the SSD back end. 
+    # Range = {all positive integer values}.
+    channel_count: 8
+    # the width of each flash channel in byte. 
+    # Range = {all positive integer values}.
+    channel_width: 1
+    # the transfer rate of flash channels in the SSD back end in MT/s. 
+    # Range = {all positive integer values}.
+    transfer_rate: 333
+    # the number of flash chips attached to each channel in the SSD back end. 
+    # Range = {all positive integer values}.
+    num_chips: 4
+    # the Open NAND Flash Interface (ONFI) protocol used for data transfer 
+    # over flash channels in the SSD back end. Range = {NVDDR2}.
+    protocol: NVDDR2
+  flash_parameters:
+    # Range = {SLC, MLC, TLC}.
+    technology: MLC
+    # the type of suspend command support by flash chips. 
+    # Range = {NONE, PROGRAM, PROGRAM_ERASE, ERASE}.
+    cmd_suspension_mode: ERASE
+    # the latency of reading LSB bits of flash memory cells in nanoseconds. 
+    # Range = {all positive integer values}.
+    page_read_latency_lsb: 75000
+    # the latency of reading CSB bits of flash memory cells in nanoseconds. 
+    # Range = {all positive integer values}.
+    page_read_latency_csb: 75000
+    # the latency of reading MSB bits of flash memory cells in nanoseconds. 
+    # Range = {all positive integer values}.
+    page_read_latency_msb: 75000
+    # the latency of programming LSB bits of flash memory cells in nanoseconds. 
+    # Range = {all positive integer values}.
+    page_program_latency_lsb: 750000
+    # the latency of programming CSB bits of flash memory cells in nanoseconds. 
+    # Range = {all positive integer values}.
+    page_program_latency_csb: 750000
+    # the latency of programming MSB bits of flash memory cells in nanoseconds. 
+    # Range = {all positive integer values}.
+    page_program_latency_msb: 750000
+    # the latency of erasing a flash block in nanoseconds. 
+    # Range = {all positive integer values}.
+    block_erase_latency: 3800000
+    # the PE limit of each flash block. Range = {all positive integer values}.
+    block_pe_cycles_limit: 10000
+    # the time taken to suspend an ongoing program operation in nanoseconds. 
+    # Range = {all positive integer values}.
+    suspend_program_time: 100000
+    # the time taken to suspend an ongoing erase operation in nanoseconds. 
+    # Range = {all positive integer values}.
+    suspend_erase_time: 700000
+    # the number of dies in each flash chip. 
+    # Range = {all positive integer values}.
+    num_dies_per_chip: 2
+    # the number of planes in each die. Range = {all positive integer values}.
+    num_planes_per_die: 2
+    # the number of flash blocks in each plane. 
+    # Range = {all positive integer values}.
+    num_blocks_per_plane: 256
+    # the number of physical pages in each flash block. 
+    # Range = {all positive integer values}.
+    num_pages_per_block: 256
+    # the size of each physical flash page in bytes. 
+    # Range = {all positive integer values}.
+    page_capacity: 8192
+    # the size of the metadata area of each physical flash page in bytes. 
+    # Range = {all positive integer values}.
+    page_metadata_capacity: 448
+result_file:
+  # a path to an output of host
+  host: host.result
+  # a path to an output of host interface
+  host_interface: host_interface.result
+  # a path to an output of TSU
+  tsu: tsu.result
+  # a path to an output of FTL
+  ftl: ftl.result
+  # a path to an output of chip
+  chip: chip.result
