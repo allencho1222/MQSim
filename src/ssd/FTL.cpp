@@ -998,142 +998,179 @@ void FTL::Perform_precondition(
   }
 }
 
-void FTL::Report_results_in_XML(std::string name_prefix,
-                                Utils::XmlWriter &xmlwriter) {
-  std::string tmp = name_prefix + ".FTL";
-  xmlwriter.Write_start_element_tag(tmp);
+// void FTL::Report_results_in_XML(std::string name_prefix,
+//                                 Utils::XmlWriter &xmlwriter) {
+//   std::string tmp = name_prefix + ".FTL";
+//   xmlwriter.Write_start_element_tag(tmp);
+//
+//   std::string attr = "Issued_Flash_Read_CMD";
+//   std::string val = std::to_string(Stats::IssuedReadCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Interleaved_Read_CMD";
+//   val = std::to_string(Stats::IssuedInterleaveReadCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Multiplane_Read_CMD";
+//   val = std::to_string(Stats::IssuedMultiplaneReadCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Copyback_Read_CMD";
+//   val = std::to_string(Stats::IssuedCopybackReadCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Multiplane_Copyback_Read_CMD";
+//   val = std::to_string(Stats::IssuedMultiplaneCopybackReadCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Program_CMD";
+//   val = std::to_string(Stats::IssuedProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Interleaved_Program_CMD";
+//   val = std::to_string(Stats::IssuedInterleaveProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Multiplane_Program_CMD";
+//   val = std::to_string(Stats::IssuedMultiplaneProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Interleaved_Multiplane_Program_CMD";
+//   val = std::to_string(Stats::IssuedInterleaveMultiplaneProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Copyback_Program_CMD";
+//   val = std::to_string(Stats::IssuedCopybackProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Multiplane_Copyback_Program_CMD";
+//   val = std::to_string(Stats::IssuedMultiplaneCopybackProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Erase_CMD";
+//   val = std::to_string(Stats::IssuedEraseCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Interleaved_Erase_CMD";
+//   val = std::to_string(Stats::IssuedInterleaveEraseCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Multiplane_Erase_CMD";
+//   val = std::to_string(Stats::IssuedMultiplaneEraseCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Interleaved_Multiplane_Erase_CMD";
+//   val = std::to_string(Stats::IssuedInterleaveMultiplaneEraseCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Suspend_Program_CMD";
+//   val = std::to_string(Stats::IssuedSuspendProgramCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Suspend_Erase_CMD";
+//   val = std::to_string(Stats::IssuedSuspendEraseCMD);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Read_CMD_For_Mapping";
+//   val = std::to_string(Stats::Total_flash_reads_for_mapping);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Issued_Flash_Program_CMD_For_Mapping";
+//   val = std::to_string(Stats::Total_flash_writes_for_mapping);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "CMT_Hits";
+//   val = std::to_string(Stats::CMT_hits);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "CMT_Hits_For_Read";
+//   val = std::to_string(Stats::readTR_CMT_hits);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "CMT_Hits_For_Write";
+//   val = std::to_string(Stats::writeTR_CMT_hits);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "CMT_Misses";
+//   val = std::to_string(Stats::CMT_miss);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "CMT_Misses_For_Read";
+//   val = std::to_string(Stats::readTR_CMT_miss);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "CMT_Misses_For_Write";
+//   val = std::to_string(Stats::writeTR_CMT_miss);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Total_CMT_Queries";
+//   val = std::to_string(Stats::total_CMT_queries);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Total_CMT_Queries_For_Reads";
+//   val = std::to_string(Stats::total_readTR_CMT_queries);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Total_CMT_Queries_For_Writes";
+//   val = std::to_string(Stats::total_writeTR_CMT_queries);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Total_GC_Executions";
+//   val = std::to_string(Stats::Total_gc_executions);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Average_Page_Movement_For_GC";
+//   val = std::to_string(double(Stats::Total_page_movements_for_gc) /
+//                        double(Stats::Total_gc_executions));
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Total_WL_Executions";
+//   val = std::to_string(Stats::Total_wl_executions);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Average_Page_Movement_For_WL";
+//   val = std::to_string(double(Stats::Total_page_movements_for_wl) /
+//                        double(Stats::Total_wl_executions));
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   xmlwriter.Write_end_element_tag();
+// }
 
-  std::string attr = "Issued_Flash_Read_CMD";
-  std::string val = std::to_string(Stats::IssuedReadCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Interleaved_Read_CMD";
-  val = std::to_string(Stats::IssuedInterleaveReadCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Multiplane_Read_CMD";
-  val = std::to_string(Stats::IssuedMultiplaneReadCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Copyback_Read_CMD";
-  val = std::to_string(Stats::IssuedCopybackReadCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Multiplane_Copyback_Read_CMD";
-  val = std::to_string(Stats::IssuedMultiplaneCopybackReadCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Program_CMD";
-  val = std::to_string(Stats::IssuedProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Interleaved_Program_CMD";
-  val = std::to_string(Stats::IssuedInterleaveProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Multiplane_Program_CMD";
-  val = std::to_string(Stats::IssuedMultiplaneProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Interleaved_Multiplane_Program_CMD";
-  val = std::to_string(Stats::IssuedInterleaveMultiplaneProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Copyback_Program_CMD";
-  val = std::to_string(Stats::IssuedCopybackProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Multiplane_Copyback_Program_CMD";
-  val = std::to_string(Stats::IssuedMultiplaneCopybackProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Erase_CMD";
-  val = std::to_string(Stats::IssuedEraseCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Interleaved_Erase_CMD";
-  val = std::to_string(Stats::IssuedInterleaveEraseCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Multiplane_Erase_CMD";
-  val = std::to_string(Stats::IssuedMultiplaneEraseCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Interleaved_Multiplane_Erase_CMD";
-  val = std::to_string(Stats::IssuedInterleaveMultiplaneEraseCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Suspend_Program_CMD";
-  val = std::to_string(Stats::IssuedSuspendProgramCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Suspend_Erase_CMD";
-  val = std::to_string(Stats::IssuedSuspendEraseCMD);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Read_CMD_For_Mapping";
-  val = std::to_string(Stats::Total_flash_reads_for_mapping);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Issued_Flash_Program_CMD_For_Mapping";
-  val = std::to_string(Stats::Total_flash_writes_for_mapping);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "CMT_Hits";
-  val = std::to_string(Stats::CMT_hits);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "CMT_Hits_For_Read";
-  val = std::to_string(Stats::readTR_CMT_hits);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "CMT_Hits_For_Write";
-  val = std::to_string(Stats::writeTR_CMT_hits);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "CMT_Misses";
-  val = std::to_string(Stats::CMT_miss);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "CMT_Misses_For_Read";
-  val = std::to_string(Stats::readTR_CMT_miss);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "CMT_Misses_For_Write";
-  val = std::to_string(Stats::writeTR_CMT_miss);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Total_CMT_Queries";
-  val = std::to_string(Stats::total_CMT_queries);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Total_CMT_Queries_For_Reads";
-  val = std::to_string(Stats::total_readTR_CMT_queries);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Total_CMT_Queries_For_Writes";
-  val = std::to_string(Stats::total_writeTR_CMT_queries);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Total_GC_Executions";
-  val = std::to_string(Stats::Total_gc_executions);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Average_Page_Movement_For_GC";
-  val = std::to_string(double(Stats::Total_page_movements_for_gc) /
-                       double(Stats::Total_gc_executions));
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Total_WL_Executions";
-  val = std::to_string(Stats::Total_wl_executions);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Average_Page_Movement_For_WL";
-  val = std::to_string(double(Stats::Total_page_movements_for_wl) /
-                       double(Stats::Total_wl_executions));
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  xmlwriter.Write_end_element_tag();
+void FTL::reportResults(fmt::ostream &output) {
+  auto header = "flash_read_cmd "
+                "flash_interleaved_read_cmd "
+                "flash_multiplane_read_cmd "
+                "flash_copyback_read_cmd "
+                "flash_multiplane_copyback_read_cmd "
+                "flash_program_cmd "
+                "flash_interleaved_program_cmd "
+                "flash_multiplane_program_cmd "
+                "flash_interleaved_multiplane_program_cmd "
+                "flash_copyback_program_cmd "
+                "flash_multiplane_copyback_program_cmd "
+                "flash_erase_cmd "
+                "flash_interleaved_erase_cmd "
+                "flash_multiplane_erase_cmd "
+                "flash_interleaved_multiplane_erase_cmd "
+                "flash_suspend_program_cmd "
+                "flash_suspend_erase_cmd "
+                "flash_read_mapping_cmd "
+                "flash_program_mapping_cmd "
+                "cmt_hits "
+                "cmt_hits_for_read "
+                "cmt_hits_for_write "
+                "cmt_misses "
+                "cmt_misses_for_read "
+                "cmt_misses_for_write "
+                "total_cmt_queries "
+                "total_cmt_queries_for_read "
+                "total_cmt_queries_for_write "
+                "total_gc_executions "
+                "avg_page_movement_for_gc "
+                "total_wl_executions "
+                "avg_page_movement_for_wl";
+  output.print("{}\n", header);
+  output.print("{}\n", *this);
 }
 
 void FTL::Start_simulation() {}
@@ -1149,3 +1186,53 @@ page_status_type FTL::Find_NVM_subunit_access_bitmap(LHA_type lha) {
          << (int)(lha % page_size_in_sectors);
 }
 } // namespace SSD_Components
+  //
+template <typename FormatContext>
+auto fmt::formatter<SSD_Components::FTL>::format(const SSD_Components::FTL &ftl,
+                                                 FormatContext &ctx) const
+    -> decltype(ctx.out()) {
+
+  constexpr auto items = "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {}";
+  return fmt::format_to(
+      ctx.out(), items, 
+      SSD_Components::Stats::IssuedReadCMD,
+      SSD_Components::Stats::IssuedInterleaveReadCMD,
+      SSD_Components::Stats::IssuedMultiplaneReadCMD,
+      SSD_Components::Stats::IssuedCopybackReadCMD,
+      SSD_Components::Stats::IssuedMultiplaneCopybackReadCMD,
+      SSD_Components::Stats::IssuedProgramCMD,
+      SSD_Components::Stats::IssuedInterleaveProgramCMD,
+      SSD_Components::Stats::IssuedMultiplaneProgramCMD,
+      SSD_Components::Stats::IssuedInterleaveMultiplaneProgramCMD,
+      SSD_Components::Stats::IssuedCopybackProgramCMD,
+      SSD_Components::Stats::IssuedMultiplaneCopybackProgramCMD,
+      SSD_Components::Stats::IssuedEraseCMD,
+      SSD_Components::Stats::IssuedInterleaveEraseCMD,
+      SSD_Components::Stats::IssuedMultiplaneEraseCMD,
+      SSD_Components::Stats::IssuedInterleaveMultiplaneEraseCMD,
+      SSD_Components::Stats::IssuedSuspendProgramCMD,
+      SSD_Components::Stats::IssuedSuspendEraseCMD,
+      SSD_Components::Stats::Total_flash_reads_for_mapping,
+      SSD_Components::Stats::Total_flash_writes_for_mapping,
+      SSD_Components::Stats::CMT_hits,
+      SSD_Components::Stats::readTR_CMT_hits,
+      SSD_Components::Stats::writeTR_CMT_hits, 
+      SSD_Components::Stats::CMT_miss,
+      SSD_Components::Stats::readTR_CMT_miss,
+      SSD_Components::Stats::writeTR_CMT_miss,
+      SSD_Components::Stats::total_CMT_queries,
+      SSD_Components::Stats::total_readTR_CMT_queries,
+      SSD_Components::Stats::total_writeTR_CMT_queries,
+      SSD_Components::Stats::Total_gc_executions,
+      double(SSD_Components::Stats::Total_page_movements_for_gc) /
+          double(SSD_Components::Stats::Total_gc_executions),
+      SSD_Components::Stats::Total_wl_executions,
+      double(SSD_Components::Stats::Total_page_movements_for_wl) /
+          double(SSD_Components::Stats::Total_wl_executions));
+}

@@ -7,6 +7,7 @@
 #include "../ssd/Host_Interface_NVMe.h"
 #include "../utils/Logical_Address_Partitioning_Unit.h"
 #include "../utils/StringTools.h"
+#include "Execution_Parameter_Set.h"
 
 Host_System::Host_System(
     Host_Parameter_Set *parameters, bool preconditioning_required,
@@ -219,17 +220,44 @@ void Host_System::Validate_simulation_config() {
 
 void Host_System::Execute_simulator_event(MQSimEngine::Sim_Event *event) {}
 
-void Host_System::Report_results_in_XML(std::string name_prefix,
-                                        Utils::XmlWriter &xmlwriter) {
-  std::string tmp;
-  tmp = ID();
-  xmlwriter.Write_open_tag(tmp);
+// void Host_System::Report_results_in_XML(std::string name_prefix,
+//                                         Utils::XmlWriter &xmlwriter) {
+//   std::string tmp;
+//   tmp = ID();
+//   xmlwriter.Write_open_tag(tmp);
+//
+//   for (auto &flow : IO_flows) {
+//     flow->Report_results_in_XML("Host", xmlwriter);
+//   }
+//
+//   xmlwriter.Write_close_tag();
+// }
 
+void Host_System::reportResults(const Execution_Parameter_Set &execParams) {
+  auto output = fmt::output_file(execParams.hostResultFilePath);
+  constexpr auto header = "id "
+                          "num_reqs "
+                          "num_read_reqs "
+                          "num_write_reqs "
+                          "iops "
+                          "read_iops "
+                          "write_iops "
+                          "bytes_transferred "
+                          "read_bytes_transferred "
+                          "write_bytes_transferred "
+                          "bandwidth "
+                          "read_bandwidth "
+                          "write_bandwidth "
+                          "devicee_response_time "
+                          "min_device_response_time "
+                          "max_device_resposne_Time "
+                          "end_to_end_req_delay "
+                          "min_end_to_end_req_delay "
+                          "max_end_to_end_req_delay";
+  output.print("{}\n", header);
   for (auto &flow : IO_flows) {
-    flow->Report_results_in_XML("Host", xmlwriter);
+    flow->reportResults(output);
   }
-
-  xmlwriter.Write_close_tag();
 }
 
 std::vector<Utils::Workload_Statistics *>

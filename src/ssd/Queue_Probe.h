@@ -23,18 +23,18 @@ public:
   void DequeueRequest(NVM_Transaction *transaction);
   void ResetEpochStatistics();
   void Snapshot(std::string id, Utils::XmlWriter &writer);
-  unsigned long NRequests();
-  unsigned long NDepartures();
-  int QueueLength();
+  unsigned long NRequests() const;
+  unsigned long NDepartures() const;
+  int QueueLength() const;
   std::vector<StateStatistics> States();
-  unsigned int MaxQueueLength();
-  double AvgQueueLength();
-  double STDevQueueLength();
-  double AvgQueueLengthEpoch();
-  sim_time_type MaxWaitingTime();
-  sim_time_type AvgWaitingTime();
-  sim_time_type AvgWaitingTimeEpoch();
-  sim_time_type TotalWaitingTime();
+  unsigned int MaxQueueLength() const;
+  double AvgQueueLength() const;
+  double STDevQueueLength() const;
+  double AvgQueueLengthEpoch() const;
+  sim_time_type MaxWaitingTime() const;
+  sim_time_type AvgWaitingTime() const;
+  sim_time_type AvgWaitingTimeEpoch() const;
+  sim_time_type TotalWaitingTime() const;
 
 private:
   unsigned int count = 0;

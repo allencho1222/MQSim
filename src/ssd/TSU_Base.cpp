@@ -80,8 +80,9 @@ void TSU_Base::handle_chip_idle_signal(NVM::FlashMemory::Flash_Chip *chip) {
   }
 }
 
-void TSU_Base::Report_results_in_XML(std::string name_prefix,
-                                     Utils::XmlWriter &xmlwriter) {}
+// void TSU_Base::Report_results_in_XML(std::string name_prefix,
+//                                      Utils::XmlWriter &xmlwriter) {}
+void TSU_Base::reportResults(fmt::ostream& output) {}
 
 bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
                                      Flash_Transaction_Queue *sourceQueue2,

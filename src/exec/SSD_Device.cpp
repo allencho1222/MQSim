@@ -14,6 +14,7 @@
 #include "../ssd/TSU_Priority_OutOfOrder.h"
 #include "../utils/Logical_Address_Partitioning_Unit.h"
 #include "Execution_Parameter_Set.h"
+#include "FTL.h"
 #include <ctime>
 #include <stdexcept>
 #include <vector>
@@ -442,16 +443,14 @@ SSD_Device::SSD_Device(
               Get_total_device_lha_count(),
           parameters.IO_Queue_Depth, parameters.IO_Queue_Depth,
           (unsigned int)io_flows.size(), parameters.Queue_Fetch_Size,
-          parameters.Flash_Parameters.Page_Capacity / SECTOR_SIZE_IN_BYTE,
-          dcm);
+          parameters.Flash_Parameters.Page_Capacity / SECTOR_SIZE_IN_BYTE, dcm);
       break;
     case HostInterface_Types::SATA:
       device->Host_interface = new SSD_Components::Host_Interface_SATA(
           device->ID() + ".HostInterface", parameters.IO_Queue_Depth,
           Utils::Logical_Address_Partitioning_Unit::
               Get_total_device_lha_count(),
-          parameters.Flash_Parameters.Page_Capacity / SECTOR_SIZE_IN_BYTE,
-          dcm);
+          parameters.Flash_Parameters.Page_Capacity / SECTOR_SIZE_IN_BYTE, dcm);
 
       break;
     default:
@@ -513,30 +512,54 @@ void SSD_Device::Validate_simulation_config() {}
 
 void SSD_Device::Execute_simulator_event(MQSimEngine::Sim_Event *event) {}
 
-void SSD_Device::Report_results_in_XML(std::string name_prefix,
-                                       Utils::XmlWriter &xmlwriter) {
-  std::string tmp;
-  tmp = ID();
-  xmlwriter.Write_open_tag(tmp);
-
-  this->Host_interface->Report_results_in_XML(ID(), xmlwriter);
+// void SSD_Device::Report_results_in_XML(std::string name_prefix,
+//                                        Utils::XmlWriter &xmlwriter) {
+//   std::string tmp;
+//   tmp = ID();
+//   xmlwriter.Write_open_tag(tmp);
+//
+//   this->Host_interface->Report_results_in_XML(ID(), xmlwriter);
+//   if (Memory_Type == NVM::NVM_Type::FLASH) {
+//     ((SSD_Components::FTL *)this->Firmware)
+//         ->Report_results_in_XML(ID(), xmlwriter);
+//     ((SSD_Components::FTL *)this->Firmware)
+//         ->TSU->Report_results_in_XML(ID(), xmlwriter);
+//
+//     for (unsigned int channel_cntr = 0; channel_cntr < Channel_count;
+//          channel_cntr++) {
+//       for (unsigned int chip_cntr = 0; chip_cntr < Chip_no_per_channel;
+//            chip_cntr++) {
+//         ((SSD_Components::ONFI_Channel_NVDDR2 *)Channels[channel_cntr])
+//             ->Chips[chip_cntr]
+//             ->Report_results_in_XML(ID(), xmlwriter);
+//       }
+//     }
+//   }
+//   xmlwriter.Write_close_tag();
+// }
+//
+void SSD_Device::reportResults(const Execution_Parameter_Set &execParams) {
+  auto hostInterfaceOutput =
+      fmt::output_file(execParams.hostInterfaceResultFilePath);
+  this->Host_interface->reportResults(hostInterfaceOutput);
+  auto ftlOutput = fmt::output_file(execParams.ftlResultFilePath);
+  auto tsuOutput = fmt::output_file(execParams.tsuResultFilePath);
   if (Memory_Type == NVM::NVM_Type::FLASH) {
-    ((SSD_Components::FTL *)this->Firmware)
-        ->Report_results_in_XML(ID(), xmlwriter);
-    ((SSD_Components::FTL *)this->Firmware)
-        ->TSU->Report_results_in_XML(ID(), xmlwriter);
+    ((SSD_Components::FTL *)this->Firmware)->reportResults(ftlOutput);
+    ((SSD_Components::FTL *)this->Firmware)->TSU->reportResults(tsuOutput);
 
+    auto chipOutput = fmt::output_file(execParams.chipResultFilePath);
     for (unsigned int channel_cntr = 0; channel_cntr < Channel_count;
          channel_cntr++) {
       for (unsigned int chip_cntr = 0; chip_cntr < Chip_no_per_channel;
            chip_cntr++) {
         ((SSD_Components::ONFI_Channel_NVDDR2 *)Channels[channel_cntr])
             ->Chips[chip_cntr]
-            ->Report_results_in_XML(ID(), xmlwriter);
+            // ->Report_results_in_XML(ID(), xmlwriter);
+            ->reportResults(chipOutput);
       }
     }
   }
-  xmlwriter.Write_close_tag();
 }
 
 unsigned int SSD_Device::Get_no_of_LHAs_in_an_NVM_write_unit() {

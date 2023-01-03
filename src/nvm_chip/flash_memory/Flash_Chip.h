@@ -11,6 +11,7 @@
 #include "Flash_Command.h"
 #include <stdexcept>
 #include <vector>
+#include <fmt/os.h>
 
 namespace NVM {
 namespace FlashMemory {
@@ -122,8 +123,9 @@ public:
   void Resume(flash_die_ID_type dieID);
   sim_time_type GetSuspendProgramTime();
   sim_time_type GetSuspendEraseTime();
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(fmt::ostream& output);
   LPA_type Get_metadata(
       flash_die_ID_type die_id, flash_plane_ID_type plane_id,
       flash_block_ID_type block_id,
@@ -132,6 +134,7 @@ public:
                     // execution! The GC unit may need to know the metadata of a
                     // page to decide if a page is valid or invalid.
 private:
+  static bool isHeaderPrinted;
   Flash_Technology_Type flash_technology;
   Internal_Status status;
   unsigned int idleDieNo;

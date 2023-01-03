@@ -523,75 +523,108 @@ uint16_t Host_Interface_NVMe::Get_completion_queue_depth() {
   return completion_queue_depth;
 }
 
-void Host_Interface_NVMe::Report_results_in_XML(std::string name_prefix,
-                                                Utils::XmlWriter &xmlwriter) {
-  std::string tmp = name_prefix + ".HostInterface";
-  xmlwriter.Write_open_tag(tmp);
-
-  std::string attr = "Name";
-  std::string val = ID();
-  xmlwriter.Write_attribute_string(attr, val);
-
-  for (unsigned int stream_id = 0; stream_id < no_of_input_streams;
-       stream_id++) {
-    std::string tmp = name_prefix + ".IO_Stream";
-    xmlwriter.Write_open_tag(tmp);
-
-    attr = "Stream_ID";
-    val = std::to_string(stream_id);
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Read_Transaction_Turnaround_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_read_transaction_turnaround_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Read_Transaction_Execution_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_read_transaction_execution_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Read_Transaction_Transfer_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_read_transaction_transfer_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Read_Transaction_Waiting_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_read_transaction_waiting_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Write_Transaction_Turnaround_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_write_transaction_turnaround_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Write_Transaction_Execution_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_write_transaction_execution_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Write_Transaction_Transfer_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_write_transaction_transfer_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    attr = "Average_Write_Transaction_Waiting_Time";
-    val = std::to_string(
-        input_stream_manager->Get_average_write_transaction_waiting_time(
-            stream_id));
-    xmlwriter.Write_attribute_string(attr, val);
-
-    xmlwriter.Write_close_tag();
+// void Host_Interface_NVMe::Report_results_in_XML(std::string name_prefix,
+//                                                 Utils::XmlWriter &xmlwriter) {
+//   std::string tmp = name_prefix + ".HostInterface";
+//   xmlwriter.Write_open_tag(tmp);
+//
+//   std::string attr = "Name";
+//   std::string val = ID();
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   for (unsigned int stream_id = 0; stream_id < no_of_input_streams;
+//        stream_id++) {
+//     std::string tmp = name_prefix + ".IO_Stream";
+//     xmlwriter.Write_open_tag(tmp);
+//
+//     attr = "Stream_ID";
+//     val = std::to_string(stream_id);
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Read_Transaction_Turnaround_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_read_transaction_turnaround_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Read_Transaction_Execution_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_read_transaction_execution_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Read_Transaction_Transfer_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_read_transaction_transfer_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Read_Transaction_Waiting_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_read_transaction_waiting_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Write_Transaction_Turnaround_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_write_transaction_turnaround_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Write_Transaction_Execution_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_write_transaction_execution_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Write_Transaction_Transfer_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_write_transaction_transfer_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     attr = "Average_Write_Transaction_Waiting_Time";
+//     val = std::to_string(
+//         input_stream_manager->Get_average_write_transaction_waiting_time(
+//             stream_id));
+//     xmlwriter.Write_attribute_string(attr, val);
+//
+//     xmlwriter.Write_close_tag();
+//   }
+//
+//   xmlwriter.Write_close_tag();
+// }
+void Host_Interface_NVMe::reportResults(fmt::ostream &output) {
+  constexpr auto header = 
+    "stream_id "
+    "avg_read_transaction_turnaround_time "
+    "avg_read_transaction_exec_time "
+    "avg_read_transaction_transfer_time "
+    "avg_read_transaction_wait_time "
+    "avg_write_transaction_turnaround_time "
+    "avg_write_transaction_exec_time "
+    "avg_write_transaction_transfer_time "
+    "avg_write_transaction_wait_time";
+  output.print("{}\n", header);
+  for (uint32_t stream_id = 0; stream_id < no_of_input_streams; ++stream_id) {
+    output.print("{} {} {} {} {} {} {} {} {}\n",
+      stream_id,
+      input_stream_manager
+        ->Get_average_read_transaction_turnaround_time(stream_id),
+      input_stream_manager
+        ->Get_average_read_transaction_execution_time(stream_id),
+      input_stream_manager
+        ->Get_average_read_transaction_transfer_time(stream_id),
+      input_stream_manager
+        ->Get_average_read_transaction_waiting_time(stream_id),
+      input_stream_manager
+        ->Get_average_write_transaction_turnaround_time(stream_id),
+      input_stream_manager
+        ->Get_average_write_transaction_execution_time(stream_id),
+      input_stream_manager
+        ->Get_average_write_transaction_transfer_time(stream_id),
+      input_stream_manager
+        ->Get_average_write_transaction_waiting_time(stream_id));
   }
-
-  xmlwriter.Write_close_tag();
 }
 } // namespace SSD_Components

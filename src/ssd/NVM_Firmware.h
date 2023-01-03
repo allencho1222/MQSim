@@ -26,8 +26,8 @@ public:
                          // where b = ceiling(B_nvm / B_lha).
   virtual void Perform_precondition(
       std::vector<Utils::Workload_Statistics *> workload_stats) = 0;
-  virtual void Report_results_in_XML(std::string name_prefix,
-                                     Utils::XmlWriter &xmlwriter) = 0;
+  // virtual void Report_results_in_XML(std::string name_prefix,
+  //                                    Utils::XmlWriter &xmlwriter) = 0;
 };
 } // namespace SSD_Components
 

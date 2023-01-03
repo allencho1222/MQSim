@@ -10,6 +10,7 @@
 #include <cstring>
 #include <stdint.h>
 #include <vector>
+#include <fmt/os.h>
 
 namespace Host_Components {
 class PCIe_Switch;
@@ -106,8 +107,7 @@ protected:
   std::list<DMA_Req_Item *> dma_list;
 };
 
-class Host_Interface_Base : public MQSimEngine::Sim_Object,
-                            public MQSimEngine::Sim_Reporter {
+class Host_Interface_Base : public MQSimEngine::Sim_Object {
   friend class Input_Stream_Manager_Base;
   friend class Input_Stream_Manager_NVMe;
   friend class Input_Stream_Manager_SATA;
@@ -150,6 +150,8 @@ public:
   void Attach_to_device(Host_Components::PCIe_Switch *pcie_switch);
   LHA_type Get_max_logical_sector_address();
   unsigned int Get_no_of_LHAs_in_an_NVM_write_unit();
+
+  virtual void reportResults(fmt::ostream &output) = 0;
 
 protected:
   HostInterface_Types type;

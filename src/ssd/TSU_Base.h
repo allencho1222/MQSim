@@ -8,6 +8,7 @@
 #include "Flash_Transaction_Queue.h"
 #include "NVM_PHY_ONFI_NVDDR2.h"
 #include <list>
+#include <fmt/os.h>
 
 namespace SSD_Components {
 enum class Flash_Scheduling_Type { OUT_OF_ORDER, PRIORITY_OUT_OF_ORDER, FLIN };
@@ -54,8 +55,9 @@ public:
    * transactions could be mixes of reads, writes, and erases.
    */
   virtual void Schedule() = 0;
-  virtual void Report_results_in_XML(std::string name_prefix,
-                                     Utils::XmlWriter &xmlwriter);
+  // virtual void Report_results_in_XML(std::string name_prefix,
+  //                                    Utils::XmlWriter &xmlwriter);
+  virtual void reportResults(fmt::ostream& output);
 
 protected:
   FTL *ftl;

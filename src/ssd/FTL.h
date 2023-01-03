@@ -5,6 +5,7 @@
 #include "../utils/RandomGenerator.h"
 #include "NVM_Firmware.h"
 #include "Stats.h"
+#include <fmt/os.h>
 
 namespace SSD_Components {
 enum class SimulationMode { STANDALONE, FULL_SYSTEM };
@@ -37,8 +38,9 @@ public:
   GC_and_WL_Unit_Base *GC_and_WL_Unit;
   TSU_Base *TSU;
   NVM_PHY_ONFI *PHY;
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(fmt::ostream &output);
 
 private:
   unsigned int channel_no, chip_no_per_channel, die_no_per_chip,
@@ -52,5 +54,15 @@ private:
   sim_time_type avg_flash_program_latency;
 };
 } // namespace SSD_Components
+
+template <> struct fmt::formatter<SSD_Components::FTL> {
+  // Parses format specifications of the form ['f' | 'e'].
+  constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+  template <typename FormatContext>
+  auto format(const SSD_Components::FTL &ftl, FormatContext &ctx) const
+      -> decltype(ctx.out());
+};
 
 #endif // !FTL_H

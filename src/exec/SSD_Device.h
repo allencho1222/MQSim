@@ -17,6 +17,7 @@
 #include "../utils/Workload_Statistics.h"
 #include "Device_Parameter_Set.h"
 #include "IO_Flow_Parameter_Set.h"
+#include <fmt/format.h>
 #include <vector>
 
 /*********************************************************************************************************
@@ -27,8 +28,8 @@
  *
  *********************************************************************************************************/
 
-class SSD_Device : public MQSimEngine::Sim_Object,
-                   public MQSimEngine::Sim_Reporter {
+class Execution_Parameter_Set;
+class SSD_Device : public MQSimEngine::Sim_Object {
 public:
   SSD_Device(Device_Parameter_Set *parameters,
              std::vector<IO_Flow_Parameter_Set *> *io_flows);
@@ -43,8 +44,9 @@ public:
   SSD_Components::NVM_Firmware *Firmware;
   SSD_Components::NVM_PHY_Base *PHY;
   std::vector<SSD_Components::NVM_Channel_Base *> Channels;
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(const Execution_Parameter_Set &execParams);
   unsigned int Get_no_of_LHAs_in_an_NVM_write_unit();
 
   void Attach_to_host(Host_Components::PCIe_Switch *pcie_switch);

@@ -8,6 +8,7 @@
 #include <list>
 #include <map>
 #include <vector>
+#include <fmt/os.h>
 
 namespace SSD_Components {
 class Input_Stream_NVMe : public Input_Stream_Base {
@@ -127,8 +128,9 @@ public:
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   uint16_t Get_submission_queue_depth();
   uint16_t Get_completion_queue_depth();
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(fmt::ostream& output);
 
 private:
   uint16_t submission_queue_depth, completion_queue_depth;

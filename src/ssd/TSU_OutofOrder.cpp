@@ -41,27 +41,20 @@ TSU_OutOfOrder::TSU_OutOfOrder(
         new Flash_Transaction_Queue[chip_no_per_channel];
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      UserReadTRQueue[channelID][chip_cntr].Set_id(
-          "User_Read_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
-      UserWriteTRQueue[channelID][chip_cntr].Set_id(
-          "User_Write_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
-      GCReadTRQueue[channelID][chip_cntr].Set_id(
-          "GC_Read_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
-      MappingReadTRQueue[channelID][chip_cntr].Set_id(
-          "Mapping_Read_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
-      MappingWriteTRQueue[channelID][chip_cntr].Set_id(
-          "Mapping_Write_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
-      GCWriteTRQueue[channelID][chip_cntr].Set_id(
-          "GC_Write_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
-      GCEraseTRQueue[channelID][chip_cntr].Set_id(
-          "GC_Erase_TR_Queue@" + std::to_string(channelID) + "@" +
-          std::to_string(chip_cntr));
+      UserReadTRQueue[channelID][chip_cntr].Set_id("User_Read_TR_Queue",
+                                                   channelID, chip_cntr);
+      UserWriteTRQueue[channelID][chip_cntr].Set_id("User_Write_TR_Queue",
+                                                    channelID, chip_cntr);
+      GCReadTRQueue[channelID][chip_cntr].Set_id("GC_Read_TR_Queue", channelID,
+                                                 chip_cntr);
+      MappingReadTRQueue[channelID][chip_cntr].Set_id("Mapping_Read_TR_Queue",
+                                                      channelID, chip_cntr);
+      MappingWriteTRQueue[channelID][chip_cntr].Set_id("Mapping_Write_TR_Queue",
+                                                       channelID, chip_cntr);
+      GCWriteTRQueue[channelID][chip_cntr].Set_id("GC_Write_TR_Queue",
+                                                  channelID, chip_cntr);
+      GCEraseTRQueue[channelID][chip_cntr].Set_id("GC_Erase_TR_Queue",
+                                                  channelID, chip_cntr);
     }
   }
 }
@@ -91,71 +84,147 @@ void TSU_OutOfOrder::Validate_simulation_config() {}
 
 void TSU_OutOfOrder::Execute_simulator_event(MQSimEngine::Sim_Event *event) {}
 
-void TSU_OutOfOrder::Report_results_in_XML(std::string name_prefix,
-                                           Utils::XmlWriter &xmlwriter) {
-  name_prefix = name_prefix + ".TSU";
-  xmlwriter.Write_open_tag(name_prefix);
-
-  TSU_Base::Report_results_in_XML(name_prefix, xmlwriter);
-
+void TSU_OutOfOrder::reportResults(fmt::ostream &output) {
+  // name_prefix = name_prefix + ".TSU";
+  // xmlwriter.Write_open_tag(name_prefix);
+  //
+  // TSU_Base::Report_results_in_XML(name_prefix, xmlwriter);
+  //
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      UserReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".User_Read_TR_Queue", xmlwriter);
+      output.print("{}\n", UserReadTRQueue[channelID][chip_cntr]);
     }
   }
 
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      UserWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".User_Write_TR_Queue", xmlwriter);
+      output.print("{}\n", UserWriteTRQueue[channelID][chip_cntr]);
     }
   }
 
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      MappingReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".Mapping_Read_TR_Queue", xmlwriter);
+      output.print("{}\n", MappingReadTRQueue[channelID][chip_cntr]);
+      // MappingReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
+      //     name_prefix + ".Mapping_Read_TR_Queue", xmlwriter);
     }
   }
 
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      MappingWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".Mapping_Write_TR_Queue", xmlwriter);
+      output.print("{}\n", MappingWriteTRQueue[channelID][chip_cntr]);
+      // MappingWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
+      //     name_prefix + ".Mapping_Write_TR_Queue", xmlwriter);
     }
   }
 
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      GCReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".GC_Read_TR_Queue", xmlwriter);
+      output.print("{}\n", GCReadTRQueue[channelID][chip_cntr]);
+      // GCReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
+      //     name_prefix + ".GC_Read_TR_Queue", xmlwriter);
     }
   }
 
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      GCWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".GC_Write_TR_Queue", xmlwriter);
+      output.print("{}\n", GCWriteTRQueue[channelID][chip_cntr]);
+      // GCWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
+      //     name_prefix + ".GC_Write_TR_Queue", xmlwriter);
     }
   }
 
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      GCEraseTRQueue[channelID][chip_cntr].Report_results_in_XML(
-          name_prefix + ".GC_Erase_TR_Queue", xmlwriter);
+      output.print("{}\n", GCEraseTRQueue[channelID][chip_cntr]);
+      // GCEraseTRQueue[channelID][chip_cntr].Report_results_in_XML(
+      //     name_prefix + ".GC_Erase_TR_Queue", xmlwriter);
     }
   }
 
-  xmlwriter.Write_close_tag();
+  // for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+  //   for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+  //        chip_cntr++) {
+  //     output.print("{}\n", GCEraseRetryTRQueue[channelID][chip_cntr]);
+  //     // GCEraseRetryTRQueue[channelID][chip_cntr].Report_results_in_XML(
+  //     //     name_prefix + ".GC_EraseRetry_TR_Queue", xmlwriter);
+  //   }
+  // }
+  // xmlwriter.Write_close_tag();
 }
+
+// void TSU_OutOfOrder::Report_results_in_XML(std::string name_prefix,
+//                                            Utils::XmlWriter &xmlwriter) {
+//   name_prefix = name_prefix + ".TSU";
+//   xmlwriter.Write_open_tag(name_prefix);
+//
+//   TSU_Base::Report_results_in_XML(name_prefix, xmlwriter);
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       UserReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".User_Read_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       UserWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".User_Write_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       MappingReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".Mapping_Read_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       MappingWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".Mapping_Write_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       GCReadTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".GC_Read_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       GCWriteTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".GC_Write_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+//     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+//          chip_cntr++) {
+//       GCEraseTRQueue[channelID][chip_cntr].Report_results_in_XML(
+//           name_prefix + ".GC_Erase_TR_Queue", xmlwriter);
+//     }
+//   }
+//
+//   xmlwriter.Write_close_tag();
+// }
 
 void TSU_OutOfOrder::Schedule() {
   opened_scheduling_reqs--;

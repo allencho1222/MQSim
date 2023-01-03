@@ -603,93 +603,120 @@ uint32_t IO_Flow_Base::Get_end_to_end_request_delay_short_term() {
                     SIM_TIME_TO_MICROSECONDS_COEFF);
 }
 
-void IO_Flow_Base::Report_results_in_XML(std::string name_prefix,
-                                         Utils::XmlWriter &xmlwriter) {
-  std::string tmp = name_prefix + ".IO_Flow";
-  xmlwriter.Write_open_tag(tmp);
-
-  std::string attr = "Name";
-  std::string val = ID();
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Request_Count";
-  val = std::to_string(STAT_generated_request_count);
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Read_Request_Count";
-  val = std::to_string(STAT_generated_read_request_count);
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Write_Request_Count";
-  val = std::to_string(STAT_generated_write_request_count);
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "IOPS";
-  val = std::to_string((double)STAT_generated_request_count /
-                       (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "IOPS_Read";
-  val = std::to_string((double)STAT_generated_read_request_count /
-                       (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "IOPS_Write";
-  val = std::to_string((double)STAT_generated_write_request_count /
-                       (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Bytes_Transferred";
-  val = std::to_string((double)STAT_transferred_bytes_total);
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Bytes_Transferred_Read";
-  val = std::to_string((double)STAT_transferred_bytes_read);
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Bytes_Transferred_Write";
-  val = std::to_string((double)STAT_transferred_bytes_write);
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Bandwidth";
-  val = std::to_string((double)STAT_transferred_bytes_total /
-                       (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Bandwidth_Read";
-  val = std::to_string((double)STAT_transferred_bytes_read /
-                       (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Bandwidth_Write";
-  val = std::to_string((double)STAT_transferred_bytes_write /
-                       (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Device_Response_Time";
-  val = std::to_string(Get_device_response_time());
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Min_Device_Response_Time";
-  val = std::to_string(Get_min_device_response_time());
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Max_Device_Response_Time";
-  val = std::to_string(Get_max_device_response_time());
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "End_to_End_Request_Delay";
-  val = std::to_string(Get_end_to_end_request_delay());
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Min_End_to_End_Request_Delay";
-  val = std::to_string(Get_min_end_to_end_request_delay());
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Max_End_to_End_Request_Delay";
-  val = std::to_string(Get_max_end_to_end_request_delay());
-  xmlwriter.Write_attribute_string(attr, val);
-
-  xmlwriter.Write_close_tag();
+// void IO_Flow_Base::Report_results_in_XML(std::string name_prefix,
+//                                          Utils::XmlWriter &xmlwriter) {
+//   std::string tmp = name_prefix + ".IO_Flow";
+//   xmlwriter.Write_open_tag(tmp);
+//
+//   std::string attr = "Name";
+//   std::string val = ID();
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Request_Count";
+//   val = std::to_string(STAT_generated_request_count);
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Read_Request_Count";
+//   val = std::to_string(STAT_generated_read_request_count);
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Write_Request_Count";
+//   val = std::to_string(STAT_generated_write_request_count);
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "IOPS";
+//   val = std::to_string((double)STAT_generated_request_count /
+//                        (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "IOPS_Read";
+//   val = std::to_string((double)STAT_generated_read_request_count /
+//                        (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "IOPS_Write";
+//   val = std::to_string((double)STAT_generated_write_request_count /
+//                        (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Bytes_Transferred";
+//   val = std::to_string((double)STAT_transferred_bytes_total);
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Bytes_Transferred_Read";
+//   val = std::to_string((double)STAT_transferred_bytes_read);
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Bytes_Transferred_Write";
+//   val = std::to_string((double)STAT_transferred_bytes_write);
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Bandwidth";
+//   val = std::to_string((double)STAT_transferred_bytes_total /
+//                        (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Bandwidth_Read";
+//   val = std::to_string((double)STAT_transferred_bytes_read /
+//                        (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Bandwidth_Write";
+//   val = std::to_string((double)STAT_transferred_bytes_write /
+//                        (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Device_Response_Time";
+//   val = std::to_string(Get_device_response_time());
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Min_Device_Response_Time";
+//   val = std::to_string(Get_min_device_response_time());
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Max_Device_Response_Time";
+//   val = std::to_string(Get_max_device_response_time());
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "End_to_End_Request_Delay";
+//   val = std::to_string(Get_end_to_end_request_delay());
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Min_End_to_End_Request_Delay";
+//   val = std::to_string(Get_min_end_to_end_request_delay());
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Max_End_to_End_Request_Delay";
+//   val = std::to_string(Get_max_end_to_end_request_delay());
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   xmlwriter.Write_close_tag();
+// }
+//
+void IO_Flow_Base::reportResults(fmt::ostream &output) {
+  constexpr auto items = "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {} {} {} {} "
+                         "{} {} {} {}\n";
+  output.print(
+      items, ID(), STAT_generated_request_count,
+      STAT_generated_read_request_count, STAT_generated_write_request_count,
+      (double)STAT_generated_request_count /
+          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+      (double)STAT_generated_read_request_count /
+          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+      (double)STAT_generated_write_request_count /
+          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+      (double)STAT_transferred_bytes_total, (double)STAT_transferred_bytes_read,
+      (double)STAT_transferred_bytes_write,
+      (double)STAT_transferred_bytes_total /
+          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+      (double)STAT_transferred_bytes_read /
+          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+      (double)STAT_transferred_bytes_write /
+          (Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
+      Get_device_response_time(), Get_min_device_response_time(),
+      Get_max_device_response_time(), Get_end_to_end_request_delay(),
+      Get_min_end_to_end_request_delay(), Get_max_end_to_end_request_delay());
 }
 } // namespace Host_Components

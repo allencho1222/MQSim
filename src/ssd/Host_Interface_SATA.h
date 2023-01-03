@@ -4,6 +4,7 @@
 #include "Host_Interface_Base.h"
 #include "Host_Interface_Defs.h"
 #include "User_Request.h"
+#include <fmt/os.h>
 
 namespace SSD_Components {
 #define SATA_STREAM_ID ((stream_id_type)(0))
@@ -103,8 +104,9 @@ public:
   void Start_simulation();
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(fmt::ostream &output) {}
 
 private:
   uint16_t ncq_depth;

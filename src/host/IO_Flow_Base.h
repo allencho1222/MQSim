@@ -4,16 +4,17 @@
 #include "../sim/Sim_Defs.h"
 #include "../sim/Sim_Object.h"
 #include "../sim/Sim_Reporter.h"
-#include "../ssd/SSD_Defs.h"
 #include "../ssd/Host_Interface_Defs.h"
+#include "../ssd/SSD_Defs.h"
 #include "../utils/Workload_Statistics.h"
-//#include "../utils/Logical_Address_Partitioning_Unit.h"
+// #include "../utils/Logical_Address_Partitioning_Unit.h"
 #include <iostream>
 #include <list>
 #include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <fmt/os.h>
 
 namespace Host_Components {
 struct NVMe_Queue_Pair {
@@ -41,8 +42,7 @@ struct NVMe_Queue_Pair {
 class PCIe_Root_Complex;
 class Host_IO_Request;
 class SATA_HBA;
-class IO_Flow_Base : public MQSimEngine::Sim_Object,
-                     public MQSimEngine::Sim_Reporter {
+class IO_Flow_Base : public MQSimEngine::Sim_Object {
 public:
   IO_Flow_Base(const sim_object_id_type &name, uint16_t flow_id,
                LHA_type start_lsa_on_device, LHA_type end_lsa_address_on_device,
@@ -73,8 +73,9 @@ public:
   uint32_t Get_end_to_end_request_delay();     // in microseconds
   uint32_t Get_min_end_to_end_request_delay(); // in microseconds
   uint32_t Get_max_end_to_end_request_delay(); // in microseconds
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(fmt::ostream &output);
   virtual void Get_statistics(
       Utils::Workload_Statistics &stats,
       LPA_type (*Convert_host_logical_address_to_device_address)(LHA_type lha),

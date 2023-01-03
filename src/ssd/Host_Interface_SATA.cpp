@@ -411,65 +411,65 @@ void Host_Interface_SATA::Start_simulation() {}
 void Host_Interface_SATA::Execute_simulator_event(
     MQSimEngine::Sim_Event *event) {}
 
-void Host_Interface_SATA::Report_results_in_XML(std::string name_prefix,
-                                                Utils::XmlWriter &xmlwriter) {
-  std::string tmp = name_prefix + ".HostInterface";
-  xmlwriter.Write_open_tag(tmp);
-
-  std::string attr = "Name";
-  std::string val = ID();
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Read_Transaction_Turnaround_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_read_transaction_turnaround_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Read_Transaction_Execution_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_read_transaction_execution_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Read_Transaction_Transfer_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_read_transaction_transfer_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Read_Transaction_Waiting_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_read_transaction_waiting_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Write_Transaction_Turnaround_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_write_transaction_turnaround_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Write_Transaction_Execution_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_write_transaction_execution_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Write_Transaction_Transfer_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_write_transaction_transfer_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  attr = "Average_Write_Transaction_Waiting_Time";
-  val = std::to_string(
-      input_stream_manager->Get_average_write_transaction_waiting_time(
-          SATA_STREAM_ID));
-  xmlwriter.Write_attribute_string(attr, val);
-
-  xmlwriter.Write_close_tag();
-}
+// void Host_Interface_SATA::Report_results_in_XML(std::string name_prefix,
+//                                                 Utils::XmlWriter &xmlwriter) {
+//   std::string tmp = name_prefix + ".HostInterface";
+//   xmlwriter.Write_open_tag(tmp);
+//
+//   std::string attr = "Name";
+//   std::string val = ID();
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Read_Transaction_Turnaround_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_read_transaction_turnaround_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Read_Transaction_Execution_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_read_transaction_execution_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Read_Transaction_Transfer_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_read_transaction_transfer_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Read_Transaction_Waiting_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_read_transaction_waiting_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Write_Transaction_Turnaround_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_write_transaction_turnaround_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Write_Transaction_Execution_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_write_transaction_execution_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Write_Transaction_Transfer_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_write_transaction_transfer_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   attr = "Average_Write_Transaction_Waiting_Time";
+//   val = std::to_string(
+//       input_stream_manager->Get_average_write_transaction_waiting_time(
+//           SATA_STREAM_ID));
+//   xmlwriter.Write_attribute_string(attr, val);
+//
+//   xmlwriter.Write_close_tag();
+// }
 
 uint16_t Host_Interface_SATA::Get_ncq_depth() { return ncq_depth; }
 } // namespace SSD_Components

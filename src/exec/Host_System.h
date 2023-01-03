@@ -13,11 +13,11 @@
 #include "../utils/Workload_Statistics.h"
 #include "Host_Parameter_Set.h"
 #include "SSD_Device.h"
-#include <vector>
 #include <fmt/os.h>
+#include <vector>
 
-class Host_System : public MQSimEngine::Sim_Object,
-                    public MQSimEngine::Sim_Reporter {
+class Execution_Parameter_Set;
+class Host_System : public MQSimEngine::Sim_Object {
 public:
   Host_System(Host_Parameter_Set *parameters, bool preconditioning_required,
               SSD_Components::Host_Interface_Base *ssd_host_interface);
@@ -25,8 +25,9 @@ public:
   void Start_simulation();
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *event);
-  void Report_results_in_XML(std::string name_prefix,
-                             Utils::XmlWriter &xmlwriter);
+  // void Report_results_in_XML(std::string name_prefix,
+  //                            Utils::XmlWriter &xmlwriter);
+  void reportResults(const Execution_Parameter_Set &execParams);
 
   void Attach_ssd_device(SSD_Device *ssd_device);
   const std::vector<Host_Components::IO_Flow_Base *> Get_io_flows();

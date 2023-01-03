@@ -1,11 +1,18 @@
 #include "Flash_Transaction_Queue.h"
 
 namespace SSD_Components {
-Flash_Transaction_Queue::Flash_Transaction_Queue() {}
+Flash_Transaction_Queue::Flash_Transaction_Queue() : priority("NONE") {}
 
-Flash_Transaction_Queue::Flash_Transaction_Queue(std::string id) : id(id) {}
+Flash_Transaction_Queue::Flash_Transaction_Queue(std::string name)
+    : name(name), priority("NONE") {}
 
-void Flash_Transaction_Queue::Set_id(std::string id) { this->id = id; }
+void Flash_Transaction_Queue::Set_id(std::string name, int channelID,
+                                     int chipID, std::string priority) {
+  this->name = name;
+  this->channelID = channelID;
+  this->chipID = chipID;
+  this->priority = priority;
+}
 
 void Flash_Transaction_Queue::push_back(
     NVM_Transaction_Flash *const &transaction) {
@@ -43,43 +50,70 @@ void Flash_Transaction_Queue::pop_front() {
   list<NVM_Transaction_Flash *>::pop_front();
 }
 
-void Flash_Transaction_Queue::Report_results_in_XML(
-    std::string name_prefix, Utils::XmlWriter &xmlwriter) {
-  std::string tmp = name_prefix;
-  xmlwriter.Write_start_element_tag(tmp);
+// void Flash_Transaction_Queue::Report_results_in_XML(
+//     std::string name_prefix, Utils::XmlWriter &xmlwriter) {
+//   std::string tmp = name_prefix;
+//   xmlwriter.Write_start_element_tag(tmp);
+//
+//   std::string attr = "Name";
+//   std::string val = id;
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "No_Of_Transactions_Enqueued";
+//   val = std::to_string(RequestQueueProbe.NRequests());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "No_Of_Transactions_Dequeued";
+//   val = std::to_string(RequestQueueProbe.NDepartures());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Avg_Queue_Length";
+//   val = std::to_string(RequestQueueProbe.AvgQueueLength());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Max_Queue_Length";
+//   val = std::to_string(RequestQueueProbe.MaxQueueLength());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "STDev_Queue_Length";
+//   val = std::to_string(RequestQueueProbe.STDevQueueLength());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Avg_Transaction_Waiting_Time";
+//   val = std::to_string(RequestQueueProbe.AvgWaitingTime());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Max_Transaction_Waiting_Time";
+//   val = std::to_string(RequestQueueProbe.MaxWaitingTime());
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   xmlwriter.Write_end_element_tag();
+// }
 
-  std::string attr = "Name";
-  std::string val = id;
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "No_Of_Transactions_Enqueued";
-  val = std::to_string(RequestQueueProbe.NRequests());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "No_Of_Transactions_Dequeued";
-  val = std::to_string(RequestQueueProbe.NDepartures());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Avg_Queue_Length";
-  val = std::to_string(RequestQueueProbe.AvgQueueLength());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Max_Queue_Length";
-  val = std::to_string(RequestQueueProbe.MaxQueueLength());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "STDev_Queue_Length";
-  val = std::to_string(RequestQueueProbe.STDevQueueLength());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Avg_Transaction_Waiting_Time";
-  val = std::to_string(RequestQueueProbe.AvgWaitingTime());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Max_Transaction_Waiting_Time";
-  val = std::to_string(RequestQueueProbe.MaxWaitingTime());
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  xmlwriter.Write_end_element_tag();
+int Flash_Transaction_Queue::getNumEnqueued() const {
+  return RequestQueueProbe.NRequests();
 }
+int Flash_Transaction_Queue::getNumDequeued() const {
+  return RequestQueueProbe.NDepartures();
+}
+int Flash_Transaction_Queue::getAvgQueueLength() const {
+  return RequestQueueProbe.AvgQueueLength();
+}
+int Flash_Transaction_Queue::getMaxQueueLength() const {
+  return RequestQueueProbe.MaxQueueLength();
+}
+int Flash_Transaction_Queue::getAvgWaitTime() const {
+  return RequestQueueProbe.AvgWaitingTime();
+}
+int Flash_Transaction_Queue::getMaxWaitTime() const {
+  return RequestQueueProbe.MaxWaitingTime();
+}
+
+std::string Flash_Transaction_Queue::getName() const { return name; }
+
+int Flash_Transaction_Queue::getChannelID() const { return channelID; }
+
+int Flash_Transaction_Queue::getChipID() const { return chipID; }
+
+std::string Flash_Transaction_Queue::getPriority() const { return priority; }
 } // namespace SSD_Components

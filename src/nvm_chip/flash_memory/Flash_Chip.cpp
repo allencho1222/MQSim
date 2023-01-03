@@ -5,6 +5,7 @@
 
 namespace NVM {
 namespace FlashMemory {
+bool Flash_Chip::isHeaderPrinted = false;
 Flash_Chip::Flash_Chip(
     const sim_object_id_type &id, flash_channel_ID_type channelID,
     flash_chip_ID_type localChipID, Flash_Technology_Type flash_technology,
@@ -302,36 +303,56 @@ sim_time_type Flash_Chip::GetSuspendProgramTime() {
 
 sim_time_type Flash_Chip::GetSuspendEraseTime() { return _suspendEraseLatency; }
 
-void Flash_Chip::Report_results_in_XML(std::string name_prefix,
-                                       Utils::XmlWriter &xmlwriter) {
-  std::string tmp = name_prefix;
-  xmlwriter.Write_start_element_tag(tmp + ".FlashChips");
-
-  std::string attr = "ID";
-  std::string val =
-      "@" + std::to_string(ChannelID) + "@" + std::to_string(ChipID);
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Fraction_of_Time_in_Execution";
-  val = std::to_string(STAT_totalExecTime / double(Simulator->Time()));
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Fraction_of_Time_in_DataXfer";
-  val = std::to_string(STAT_totalXferTime / double(Simulator->Time()));
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Fraction_of_Time_in_DataXfer_and_Execution";
-  val = std::to_string(STAT_totalOverlappedXferExecTime /
-                       double(Simulator->Time()));
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  attr = "Fraction_of_Time_Idle";
-  val = std::to_string((Simulator->Time() - STAT_totalOverlappedXferExecTime -
-                        STAT_totalXferTime) /
-                       double(Simulator->Time()));
-  xmlwriter.Write_attribute_string_inline(attr, val);
-
-  xmlwriter.Write_end_element_tag();
+void Flash_Chip::reportResults(fmt::ostream &output) {
+  if (!isHeaderPrinted) {
+    constexpr auto header = "channel "
+                            "chip "
+                            "frac_exec "
+                            "frac_data_transfer "
+                            "frac_data_transfer_and_exec "
+                            "frac_idle";
+    output.print("{}\n", header);
+    isHeaderPrinted = true;
+  }
+  output.print("{} {} {} {} {} {}\n", ChannelID, ChipID,
+               STAT_totalExecTime / double(Simulator->Time()),
+               STAT_totalXferTime / double(Simulator->Time()),
+               STAT_totalOverlappedXferExecTime / double(Simulator->Time()),
+               (Simulator->Time() - STAT_totalOverlappedXferExecTime -
+                STAT_totalXferTime) /
+                   double(Simulator->Time()));
 }
+
+// void Flash_Chip::Report_results_in_XML(std::string name_prefix,
+//                                        Utils::XmlWriter &xmlwriter) {
+//   std::string tmp = name_prefix;
+//   xmlwriter.Write_start_element_tag(tmp + ".FlashChips");
+//
+//   std::string attr = "ID";
+//   std::string val =
+//       "@" + std::to_string(ChannelID) + "@" + std::to_string(ChipID);
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Fraction_of_Time_in_Execution";
+//   val = std::to_string(STAT_totalExecTime / double(Simulator->Time()));
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Fraction_of_Time_in_DataXfer";
+//   val = std::to_string(STAT_totalXferTime / double(Simulator->Time()));
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Fraction_of_Time_in_DataXfer_and_Execution";
+//   val = std::to_string(STAT_totalOverlappedXferExecTime /
+//                        double(Simulator->Time()));
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   attr = "Fraction_of_Time_Idle";
+//   val = std::to_string((Simulator->Time() - STAT_totalOverlappedXferExecTime -
+//                         STAT_totalXferTime) /
+//                        double(Simulator->Time()));
+//   xmlwriter.Write_attribute_string_inline(attr, val);
+//
+//   xmlwriter.Write_end_element_tag();
+// }
 } // namespace FlashMemory
 } // namespace NVM
