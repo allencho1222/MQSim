@@ -45,54 +45,32 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
           // Initialize block pool for plane
           for (unsigned int blockID = 0; blockID < block_no_per_plane;
                blockID++) {
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .BlockID = blockID;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Current_page_write_index = 0;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Current_status = Block_Service_Status::IDLE;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Invalid_page_count = 0;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Erase_count = 0;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Holds_mapping_data = false;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Has_ongoing_gc_wl = false;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Erase_transaction = NULL;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Ongoing_user_program_count = 0;
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Ongoing_user_read_count = 0;
+            auto &block = plane_manager[channelID][chipID][dieID][planeID]
+                              .Blocks[blockID];
+            block.BlockID = blockID;
+            block.Current_page_write_index = 0;
+            block.Current_status = Block_Service_Status::IDLE;
+            block.Invalid_page_count = 0;
+            block.Erase_count = 0;
+            block.Holds_mapping_data = false;
+            block.Has_ongoing_gc_wl = false;
+            block.Erase_transaction = NULL;
+            block.Ongoing_user_program_count = 0;
+            block.Ongoing_user_read_count = 0;
+            block.isFullyErased = true;
+            block.isShallowlyErased = true;
+            block.willBeFullyErased = true;
             Block_Pool_Slot_Type::Page_vector_size =
                 pages_no_per_block / (sizeof(uint64_t) * 8) +
                 (pages_no_per_block % (sizeof(uint64_t) * 8) == 0 ? 0 : 1);
-            plane_manager[channelID][chipID][dieID][planeID]
-                .Blocks[blockID]
-                .Invalid_page_bitmap =
+            block.Invalid_page_bitmap =
                 new uint64_t[Block_Pool_Slot_Type::Page_vector_size];
             for (unsigned int i = 0; i < Block_Pool_Slot_Type::Page_vector_size;
                  i++) {
-              plane_manager[channelID][chipID][dieID][planeID]
-                  .Blocks[blockID]
-                  .Invalid_page_bitmap[i] = All_VALID_PAGE;
+              block.Invalid_page_bitmap[i] = All_VALID_PAGE;
             }
             plane_manager[channelID][chipID][dieID][planeID]
-                .Add_to_free_block_pool(
-                    &plane_manager[channelID][chipID][dieID][planeID]
-                         .Blocks[blockID],
-                    false);
+                .Add_to_free_block_pool(&block, false);
           }
           plane_manager[channelID][chipID][dieID][planeID].Data_wf =
               new Block_Pool_Slot_Type *[total_concurrent_streams_no];
@@ -282,7 +260,13 @@ void Flash_Block_Manager_Base::GC_WL_started(
   PlaneBookKeepingType *plane_record =
       &plane_manager[block_address.ChannelID][block_address.ChipID]
                     [block_address.DieID][block_address.PlaneID];
-  plane_record->Blocks[block_address.BlockID].Has_ongoing_gc_wl = true;
+  auto &block = plane_record->Blocks[block_address.BlockID];
+  assert(block.isFullyErased);
+  assert(block.isShallowlyErased);
+  block.Has_ongoing_gc_wl = true;
+  block.isFullyErased = false;
+  block.isShallowlyErased = false;
+  block.willBeFullyErased = false;
 }
 
 void Flash_Block_Manager_Base::program_transaction_issued(
@@ -345,4 +329,58 @@ bool Flash_Block_Manager_Base::Is_page_valid(Block_Pool_Slot_Type *block,
   }
   return false;
 }
+
+void Flash_Block_Manager_Base::scheduleBlockFullErase(
+    const NVM::FlashMemory::Physical_Page_Address &addr) {
+  PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  auto &block = planeRecord->Blocks[addr.BlockID];
+  assert(block.isShallowlyErased);
+  assert(!block.isFullyErased);
+  block.willBeFullyErased = true;
+}
+
+bool Flash_Block_Manager_Base::isBlockBeingFullyErased(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  const PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  const auto &block = planeRecord->Blocks[addr.BlockID];
+  return block.willBeFullyErased;
+}
+
+bool Flash_Block_Manager_Base::isBlockFullyErased(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  const auto &block = planeRecord->Blocks[addr.BlockID];
+  return block.isFullyErased;
+}
+
+bool Flash_Block_Manager_Base::isBlockShallowlyErased(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  const auto &block = planeRecord->Blocks[addr.BlockID];
+  return block.isShallowlyErased;
+}
+
+void Flash_Block_Manager_Base::fullyEraseBlock(
+    const NVM::FlashMemory::Physical_Page_Address &addr) {
+  PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  auto &block = planeRecord->Blocks[addr.BlockID];
+  assert(!block.isFullyErased);
+  assert(block.willBeFullyErased);
+  planeRecord->Blocks[addr.BlockID].isFullyErased = true;
+}
+
+void Flash_Block_Manager_Base::shallowlyEraseBlock(
+    const NVM::FlashMemory::Physical_Page_Address &addr) {
+  PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  auto &block = planeRecord->Blocks[addr.BlockID];
+  assert(!block.isShallowlyErased);
+  planeRecord->Blocks[addr.BlockID].isShallowlyErased = true;
+}
+
 } // namespace SSD_Components

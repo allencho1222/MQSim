@@ -1,6 +1,7 @@
 #include "NVM_PHY_ONFI_NVDDR2.h"
 #include "../sim/Engine.h"
 #include "Stats.h"
+#include <spdlog/spdlog.h>
 #include <stdexcept>
 
 namespace SSD_Components {
@@ -205,7 +206,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
         suspendTime = target_channel->ProgramSuspendCommandTime +
                       targetChip->GetSuspendProgramTime();
         break;
-      case Transaction_Type::ERASE:
+      case Transaction_Type::SHALLOW_ERASE:
+      case Transaction_Type::FULL_ERASE:
         Stats::IssuedSuspendEraseCMD++;
         suspendTime = target_channel->EraseSuspendCommandTime +
                       targetChip->GetSuspendEraseTime();
@@ -405,7 +407,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
       }
     }
     break;
-  case Transaction_Type::ERASE:
+  case Transaction_Type::SHALLOW_ERASE:
+  case Transaction_Type::FULL_ERASE:
     // DEBUG2("Chip " << targetChip->ChannelID << ", " << targetChip->ChipID <<
     // ", " << transaction_list.front()->Address.DieID << ": Sending erase
     // command to chip")
@@ -416,6 +419,9 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
       Stats::IssuedMultiplaneEraseCMD++;
       dieBKE->ActiveCommand->CommandCode = CMD_ERASE_BLOCK_MULTIPLANE;
     }
+
+    dieBKE->ActiveCommand->isFullErase =
+        transaction_list.front()->Type == Transaction_Type::FULL_ERASE;
 
     for (std::list<NVM_Transaction_Flash *>::iterator it =
              transaction_list.begin();
@@ -445,9 +451,11 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
 
     dieBKE->Expected_finish_time =
         chipBKE->Last_transfer_finish_time +
-        targetChip->Get_command_execution_latency(
-            dieBKE->ActiveCommand->CommandCode,
-            dieBKE->ActiveCommand->Address[0].PageID);
+        targetChip->getAdaptiveEraseLatency(transaction_list.front()->Type ==
+                                            Transaction_Type::FULL_ERASE);
+    // targetChip->Get_command_execution_latency(
+    //     dieBKE->ActiveCommand->CommandCode,
+    //     dieBKE->ActiveCommand->Address[0].PageID);
     if (chipBKE->Expected_command_exec_finish_time <
         dieBKE->Expected_finish_time) {
       chipBKE->Expected_command_exec_finish_time = dieBKE->Expected_finish_time;
@@ -898,7 +906,8 @@ void NVM_PHY_ONFI_NVDDR2::perform_interleaved_cmd_data_transfer(
           (int)NVDDR2_SimEventType::READ_CMD_ADDR_TRANSFERRED);
     }
     break;
-  case Transaction_Type::ERASE:
+  case Transaction_Type::SHALLOW_ERASE:
+  case Transaction_Type::FULL_ERASE:
     chip->StartCMDXfer();
     bookKeepingTable[chip->ChannelID][chip->ChipID].Status = ChipStatus::CMD_IN;
     Simulator->Register_sim_event(

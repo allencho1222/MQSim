@@ -214,7 +214,6 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
     address_mapping_unit->Set_barrier_for_accessing_physical_block(
         gc_candidate_address); // Lock the block, so no user request can
                                // intervene while the GC is progressing
-
     // If there are ongoing requests targeting the candidate block, the gc
     // execution should be postponed
     if (block_manager->Can_execute_gc_wl(gc_candidate_address)) {

@@ -9,9 +9,10 @@
 #include "Die.h"
 #include "FlashTypes.h"
 #include "Flash_Command.h"
+#include <cassert>
+#include <fmt/os.h>
 #include <stdexcept>
 #include <vector>
-#include <fmt/os.h>
 
 namespace NVM {
 namespace FlashMemory {
@@ -25,7 +26,8 @@ public:
              Flash_Technology_Type flash_technology, unsigned int dieNo,
              unsigned int PlaneNoPerDie, unsigned int Block_no_per_plane,
              unsigned int Page_no_per_block, sim_time_type *readLatency,
-             sim_time_type *programLatency, sim_time_type eraseLatency,
+             sim_time_type *programLatency, sim_time_type shallowEraseLatency,
+             sim_time_type fullEraseLatency,
              sim_time_type suspendProgramLatency,
              sim_time_type suspendEraseLatency,
              sim_time_type commProtocolDelayRead = 20,
@@ -111,12 +113,19 @@ public:
     case CMD_PROGRAM_PAGE_COPYBACK:
     case CMD_PROGRAM_PAGE_COPYBACK_MULTIPLANE:
       return _programLatency[latencyType] + _RBSignalDelayWrite;
-    case CMD_ERASE_BLOCK:
-    case CMD_ERASE_BLOCK_MULTIPLANE:
-      return _eraseLatency + _RBSignalDelayErase;
+    // case CMD_ERASE_BLOCK:
+    // case CMD_ERASE_BLOCK_MULTIPLANE:
+    //   assert(false);
+    //   // return _eraseLatency + _RBSignalDelayErase;
+    //   return 0;
     default:
       throw std::invalid_argument("Unsupported command for flash chip.");
     }
+  }
+
+  sim_time_type getAdaptiveEraseLatency(bool isFullErase) const {
+    return (isFullErase ? _fullEraseLatency : _shallowEraseLatency) +
+           _RBSignalDelayErase;
   }
 
   void Suspend(flash_die_ID_type dieID);
@@ -125,7 +134,7 @@ public:
   sim_time_type GetSuspendEraseTime();
   // void Report_results_in_XML(std::string name_prefix,
   //                            Utils::XmlWriter &xmlwriter);
-  void reportResults(fmt::ostream& output);
+  void reportResults(fmt::ostream &output);
   LPA_type Get_metadata(
       flash_die_ID_type die_id, flash_plane_ID_type plane_id,
       flash_block_ID_type block_id,
@@ -145,7 +154,8 @@ private:
   unsigned int plane_no_in_die;   // indicate how many planes in a die
   unsigned int block_no_in_plane; // indicate how many blocks in a plane
   unsigned int page_no_per_block; // indicate how many pages in a block
-  sim_time_type *_readLatency, *_programLatency, _eraseLatency;
+  sim_time_type *_readLatency, *_programLatency, _shallowEraseLatency,
+      _fullEraseLatency;
   sim_time_type _suspendProgramLatency, _suspendEraseLatency;
   sim_time_type _RBSignalDelayRead, _RBSignalDelayWrite, _RBSignalDelayErase;
   sim_time_type lastTransferStart;

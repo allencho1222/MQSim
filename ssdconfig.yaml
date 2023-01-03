@@ -182,7 +182,10 @@ device_parameters:
     page_program_latency_msb: 750000
     # the latency of erasing a flash block in nanoseconds. 
     # Range = {all positive integer values}.
-    block_erase_latency: 3800000
+    full_block_erase_latency: 3800000
+    # the latency of erasing a flash block in nanoseconds. 
+    # Range = {all positive integer values}.
+    shallow_block_erase_latency: 500000
     # the PE limit of each flash block. Range = {all positive integer values}.
     block_pe_cycles_limit: 10000
     # the time taken to suspend an ongoing program operation in nanoseconds. 

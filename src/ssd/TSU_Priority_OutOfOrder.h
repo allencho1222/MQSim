@@ -33,14 +33,14 @@ public:
                           bool ProgramSuspensionEnabled);
   ~TSU_Priority_OutOfOrder();
 
-  void Schedule();
+  void Schedule() override;
 
-  void Start_simulation(bool isPreconditioning);
-  void Validate_simulation_config();
-  void Execute_simulator_event(MQSimEngine::Sim_Event *);
+  void Start_simulation() override;
+  void Validate_simulation_config() override;
+  void Execute_simulator_event(MQSimEngine::Sim_Event *) override;
   // void Report_results_in_XML(std::string name_prefix,
   //                            Utils::XmlWriter &xmlwriter);
-  void reportResults(fmt::ostream& output);
+  void reportResults(fmt::ostream& output) override;
 
   void eraseTransaction(LPA_type lpa) override;
   void eraseLock(LPA_type lpa) override;
@@ -52,7 +52,9 @@ private:
   Flash_Transaction_Queue ***UserWriteTRQueue;
   Flash_Transaction_Queue **GCReadTRQueue;
   Flash_Transaction_Queue **GCWriteTRQueue;
-  Flash_Transaction_Queue **GCEraseTRQueue;
+  Flash_Transaction_Queue **GCFullEraseTRQueue;
+  Flash_Transaction_Queue **GCShallowEraseTRQueue;
+  Flash_Transaction_Queue **GCEraseRetryTRQueue;
   Flash_Transaction_Queue **MappingReadTRQueue;
   Flash_Transaction_Queue **MappingWriteTRQueue;
   IO_Flow_Priority_Class::Priority **nextPriorityClassRead;
@@ -60,9 +62,10 @@ private:
   int **currentWeightRead;
   int **currentWeightWrite;
 
-  bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip);
-  bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip);
-  bool service_erase_transaction(NVM::FlashMemory::Flash_Chip *chip);
+  bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
+  bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
+  bool service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
+  bool service_shallow_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   Flash_Transaction_Queue *
   get_next_read_service_queue(NVM::FlashMemory::Flash_Chip *chip);
   Flash_Transaction_Queue *

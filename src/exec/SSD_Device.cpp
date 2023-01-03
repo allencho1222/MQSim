@@ -103,7 +103,9 @@ SSD_Device::SSD_Device(
               parameters.Flash_Parameters.Plane_No_Per_Die,
               parameters.Flash_Parameters.Block_No_Per_Plane,
               parameters.Flash_Parameters.Page_No_Per_Block, read_latencies,
-              write_latencies, parameters.Flash_Parameters.Block_Erase_Latency,
+              write_latencies, 
+              parameters.Flash_Parameters.Shallow_Block_Erase_Latency,
+              parameters.Flash_Parameters.Full_Block_Erase_Latency,
               parameters.Flash_Parameters.Suspend_Program_Time,
               parameters.Flash_Parameters.Suspend_Erase_Time);
           Simulator->AddObject(

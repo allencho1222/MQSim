@@ -87,7 +87,7 @@ void TSU_Base::handle_chip_idle_signal(NVM::FlashMemory::Flash_Chip *chip) {
 
 // void TSU_Base::Report_results_in_XML(std::string name_prefix,
 //                                      Utils::XmlWriter &xmlwriter) {}
-void TSU_Base::reportResults(fmt::ostream& output) {}
+void TSU_Base::reportResults(fmt::ostream &output) {}
 
 bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
                                      Flash_Transaction_Queue *sourceQueue2,
@@ -180,4 +180,26 @@ void TSU_Base::Submit_transaction(NVM_Transaction_Flash *transaction) {
   transaction->enqueuedAt = Simulator->Time();
   transaction_receive_slots.push_back(transaction);
 }
+
+bool TSU_Base::transaction_is_ready(NVM_Transaction_Flash *transaction) const {
+  switch (transaction->Type) {
+  case Transaction_Type::READ:
+    return true;
+  case Transaction_Type::WRITE:
+    return ftl->BlockManager->isBlockFullyErased(transaction->Address) &&
+           (static_cast<NVM_Transaction_Flash_WR *>(transaction)->RelatedRead ==
+            NULL);
+  case Transaction_Type::SHALLOW_ERASE:
+    assert(!ftl->BlockManager->isBlockShallowlyErased(transaction->Address));
+    return static_cast<NVM_Transaction_Flash_ER *>(transaction)
+               ->Page_movement_activities.size() == 0;
+  case Transaction_Type::FULL_ERASE:
+    assert(ftl->BlockManager->isBlockBeingFullyErased(transaction->Address));
+    assert(ftl->BlockManager->isBlockShallowlyErased(transaction->Address));
+    return true;
+  default:
+    return true;
+  }
+}
+
 } // namespace SSD_Components

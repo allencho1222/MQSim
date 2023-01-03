@@ -48,13 +48,16 @@ private:
   Flash_Transaction_Queue **UserWriteTRQueue;
   Flash_Transaction_Queue **GCReadTRQueue;
   Flash_Transaction_Queue **GCWriteTRQueue;
-  Flash_Transaction_Queue **GCEraseTRQueue;
+  Flash_Transaction_Queue **GCFullEraseTRQueue;
+  Flash_Transaction_Queue **GCShallowEraseTRQueue;
+  // Flash_Transaction_Queue **GCEraseRetryTRQueue;
   Flash_Transaction_Queue **MappingReadTRQueue;
   Flash_Transaction_Queue **MappingWriteTRQueue;
 
-  bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip);
-  bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip);
-  bool service_erase_transaction(NVM::FlashMemory::Flash_Chip *chip);
+  bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
+  bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
+  bool service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
+  bool service_shallow_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
 };
 } // namespace SSD_Components
 

@@ -43,7 +43,6 @@ public:
   command_code_type CommandCode;
   std::vector<Physical_Page_Address> Address;
   std::vector<PageMetadata> Meta_data;
-
   inline static std::unordered_map<command_code_type, std::string> cmdToStr = {
       {CMD_READ, "CMD_READ"},
       {CMD_READ_PAGE, "CMD_READ_PAGE"},
@@ -63,6 +62,7 @@ public:
       {CMD_ERASE_BLOCK, "CMD_ERASE_BLOCK"},
       {CMD_ERASE_BLOCK_MULTIPLANE, "CMD_ERASE_BLOCK_MULTIPLANE"},
   };
+  bool isFullErase = false;
 };
 } // namespace FlashMemory
 } // namespace NVM

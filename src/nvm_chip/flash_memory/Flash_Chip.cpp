@@ -13,9 +13,10 @@ Flash_Chip::Flash_Chip(
     unsigned int dieNo, unsigned int PlaneNoPerDie,
     unsigned int Block_no_per_plane, unsigned int Page_no_per_block,
     sim_time_type *readLatency, sim_time_type *programLatency,
-    sim_time_type eraseLatency, sim_time_type suspendProgramLatency,
-    sim_time_type suspendEraseLatency, sim_time_type commProtocolDelayRead,
-    sim_time_type commProtocolDelayWrite, sim_time_type commProtocolDelayErase)
+    sim_time_type shallowEraseLatency, sim_time_type fullEraseLatency,
+    sim_time_type suspendProgramLatency, sim_time_type suspendEraseLatency,
+    sim_time_type commProtocolDelayRead, sim_time_type commProtocolDelayWrite,
+    sim_time_type commProtocolDelayErase)
     : NVM_Chip(id), ChannelID(channelID), ChipID(localChipID),
       flash_technology(flash_technology), status(Internal_Status::IDLE),
       die_no(dieNo), plane_no_in_die(PlaneNoPerDie),
@@ -36,7 +37,8 @@ Flash_Chip::Flash_Chip(
     _readLatency[i] = readLatency[i];
     _programLatency[i] = programLatency[i];
   }
-  _eraseLatency = eraseLatency;
+  _shallowEraseLatency = shallowEraseLatency;
+  _fullEraseLatency = fullEraseLatency;
   _suspendProgramLatency = suspendProgramLatency;
   _suspendEraseLatency = suspendEraseLatency;
   idleDieNo = dieNo;
@@ -164,9 +166,20 @@ void Flash_Chip::start_command_execution(Flash_Command *command) {
                               << ": executing a flash operation on a busy die!")
   }
 
-  targetDie->Expected_finish_time =
-      Simulator->Time() + Get_command_execution_latency(
-                              command->CommandCode, command->Address[0].PageID);
+  auto &cmd = command->CommandCode;
+  if (cmd == CMD_ERASE_BLOCK || cmd == CMD_ERASE_BLOCK_MULTIPLANE) {
+    targetDie->Expected_finish_time =
+        Simulator->Time() + getAdaptiveEraseLatency(command->isFullErase);
+  } else {
+    targetDie->Expected_finish_time =
+        Simulator->Time() +
+        Get_command_execution_latency(command->CommandCode,
+                                      command->Address[0].PageID);
+  }
+  // targetDie->Expected_finish_time =
+  //     Simulator->Time() + Get_command_execution_latency(
+  //                             command->CommandCode,
+  //                             command->Address[0].PageID);
   targetDie->CommandFinishEvent = Simulator->Register_sim_event(
       targetDie->Expected_finish_time, this, command,
       static_cast<int>(Chip_Sim_Event_Type::COMMAND_FINISHED));
@@ -187,8 +200,16 @@ void Flash_Chip::start_command_execution(Flash_Command *command) {
 void Flash_Chip::finish_command_execution(Flash_Command *command) {
   Die *targetDie = Dies[command->Address[0].DieID];
 
-  targetDie->STAT_TotalReadTime += Get_command_execution_latency(
-      command->CommandCode, command->Address[0].PageID);
+  auto &cmd = command->CommandCode;
+  if (cmd == CMD_ERASE_BLOCK || cmd == CMD_ERASE_BLOCK_MULTIPLANE) {
+    targetDie->STAT_TotalReadTime +=
+        getAdaptiveEraseLatency(command->isFullErase);
+  } else {
+    targetDie->STAT_TotalReadTime += Get_command_execution_latency(
+        command->CommandCode, command->Address[0].PageID);
+  }
+  // targetDie->STAT_TotalReadTime += Get_command_execution_latency(
+  //     command->CommandCode, command->Address[0].PageID);
   targetDie->Expected_finish_time = INVALID_TIME;
   targetDie->CommandFinishEvent = NULL;
   targetDie->CurrentCMD = NULL;
@@ -245,8 +266,10 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
     break;
   case CMD_ERASE_BLOCK:
   case CMD_ERASE_BLOCK_MULTIPLANE:
-    SPDLOG_TRACE("Channel {} Chip {} Finished executing erase command",
-                 this->ChannelID, this->ChipID);
+    SPDLOG_TRACE(
+        "Channel {} Chip {} Finished executing {} erase command",
+        this->ChannelID, this->ChipID,
+        command->isFullErase ? "full" : "shallow");
     for (unsigned int planeCntr = 0; planeCntr < command->Address.size();
          planeCntr++) {
       STAT_eraseCount++;

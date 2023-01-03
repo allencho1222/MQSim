@@ -29,7 +29,8 @@ void TSU_Priority_OutOfOrder::initQueue() {
   UserWriteTRQueue = new Flash_Transaction_Queue **[channel_count];
   GCReadTRQueue = new Flash_Transaction_Queue *[channel_count];
   GCWriteTRQueue = new Flash_Transaction_Queue *[channel_count];
-  GCEraseTRQueue = new Flash_Transaction_Queue *[channel_count];
+  GCShallowEraseTRQueue = new Flash_Transaction_Queue *[channel_count];
+  GCFullEraseTRQueue = new Flash_Transaction_Queue *[channel_count];
   MappingReadTRQueue = new Flash_Transaction_Queue *[channel_count];
   MappingWriteTRQueue = new Flash_Transaction_Queue *[channel_count];
   nextPriorityClassRead = new IO_Flow_Priority_Class::Priority *[channel_count];
@@ -45,7 +46,9 @@ void TSU_Priority_OutOfOrder::initQueue() {
     GCReadTRQueue[channelID] = new Flash_Transaction_Queue[chip_no_per_channel];
     GCWriteTRQueue[channelID] =
         new Flash_Transaction_Queue[chip_no_per_channel];
-    GCEraseTRQueue[channelID] =
+    GCShallowEraseTRQueue[channelID] =
+        new Flash_Transaction_Queue[chip_no_per_channel];
+    GCFullEraseTRQueue[channelID] =
         new Flash_Transaction_Queue[chip_no_per_channel];
     MappingReadTRQueue[channelID] =
         new Flash_Transaction_Queue[chip_no_per_channel];
@@ -90,8 +93,10 @@ void TSU_Priority_OutOfOrder::initQueue() {
                                                     channelID, chipId);
       GCWriteTRQueue[channelID][chipId].Set_id("GC_Write_TR_Queue", channelID,
                                                chipId);
-      GCEraseTRQueue[channelID][chipId].Set_id("GC_Erase_TR_Queue", channelID,
-                                               chipId);
+      GCShallowEraseTRQueue[channelID][chipId].Set_id(
+          "GC_Shallow_Erase_TR_Queue", channelID, chipId);
+      GCFullEraseTRQueue[channelID][chipId].Set_id("GC_Full_Erase_TR_Queue",
+                                                   channelID, chipId);
     }
   }
 }
@@ -136,7 +141,8 @@ TSU_Priority_OutOfOrder::~TSU_Priority_OutOfOrder() {
     delete[] currentWeightWrite[channelID];
     delete[] GCReadTRQueue[channelID];
     delete[] GCWriteTRQueue[channelID];
-    delete[] GCEraseTRQueue[channelID];
+    delete[] GCShallowEraseTRQueue[channelID];
+    delete[] GCFullEraseTRQueue[channelID];
     delete[] MappingReadTRQueue[channelID];
     delete[] MappingWriteTRQueue[channelID];
   }
@@ -148,7 +154,8 @@ TSU_Priority_OutOfOrder::~TSU_Priority_OutOfOrder() {
   delete[] currentWeightWrite;
   delete[] GCReadTRQueue;
   delete[] GCWriteTRQueue;
-  delete[] GCEraseTRQueue;
+  delete[] GCFullEraseTRQueue;
+  delete[] GCShallowEraseTRQueue;
   delete[] MappingReadTRQueue;
   delete[] MappingWriteTRQueue;
 }
@@ -302,7 +309,14 @@ void TSU_Priority_OutOfOrder::reportResults(fmt::ostream &output) {
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
          chip_cntr++) {
-      output.print("{}\n", GCEraseTRQueue[channelID][chip_cntr]);
+      output.print("{}\n", GCFullEraseTRQueue[channelID][chip_cntr]);
+    }
+  }
+
+  for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+    for (unsigned int chip_cntr = 0; chip_cntr < chip_no_per_channel;
+         chip_cntr++) {
+      output.print("{}\n", GCShallowEraseTRQueue[channelID][chip_cntr]);
     }
   }
 }
@@ -421,10 +435,15 @@ void TSU_Priority_OutOfOrder::Schedule() {
             "TSU_OutOfOrder: unknown source type for a write transaction!")
       }
       break;
-    case Transaction_Type::ERASE:
-      GCEraseTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID].push_back(
-          (*it));
+    case Transaction_Type::SHALLOW_ERASE:
+      GCShallowEraseTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
+          .push_back((*it));
       break;
+    case Transaction_Type::FULL_ERASE:
+      GCFullEraseTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
+          .push_back((*it));
+      break;
+
     default:
       break;
     }
@@ -441,7 +460,9 @@ void TSU_Priority_OutOfOrder::Schedule() {
         // possible to suspend a busy chip and issue a new command
         if (!service_read_transaction(chip)) {
           if (!service_write_transaction(chip)) {
-            service_erase_transaction(chip);
+            if (!service_full_erase_transaction(chip)) {
+              service_shallow_erase_transaction(chip);
+            }
           }
         }
         Round_robin_turn_of_channel[channelID] =
@@ -524,7 +545,9 @@ bool TSU_Priority_OutOfOrder::service_read_transaction(
       sourceQueue2 = get_next_read_service_queue(chip);
     } else if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
       return false;
-    } else if (GCEraseTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+    } else if (GCFullEraseTRQueue[chip->ChannelID][chip->ChipID].size() > 0 ||
+               GCShallowEraseTRQueue[chip->ChannelID][chip->ChipID].size() >
+                   0) {
       return false;
     } else {
       sourceQueue1 = get_next_read_service_queue(chip);
@@ -577,10 +600,10 @@ bool TSU_Priority_OutOfOrder::service_read_transaction(
     return false;
   }
 
-  issue_command_to_chip(sourceQueue1, sourceQueue2, Transaction_Type::READ,
-                        suspensionRequired);
-
-  return true;
+  return issue_command_to_chip(sourceQueue1, sourceQueue2,
+                               Transaction_Type::READ, suspensionRequired);
+  //
+  // return true;
 }
 
 Flash_Transaction_Queue *TSU_Priority_OutOfOrder::get_next_write_service_queue(
@@ -639,7 +662,9 @@ bool TSU_Priority_OutOfOrder::service_write_transaction(
     if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
       sourceQueue1 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
       sourceQueue2 = get_next_write_service_queue(chip);
-    } else if (GCEraseTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+    } else if (GCFullEraseTRQueue[chip->ChannelID][chip->ChipID].size() > 0 ||
+               GCShallowEraseTRQueue[chip->ChannelID][chip->ChipID].size() >
+                   0) {
       return false;
     } else {
       sourceQueue1 = get_next_write_service_queue(chip);
@@ -678,26 +703,43 @@ bool TSU_Priority_OutOfOrder::service_write_transaction(
     return false;
   }
 
-  issue_command_to_chip(sourceQueue1, sourceQueue2, Transaction_Type::WRITE,
-                        suspensionRequired);
-
-  return true;
+  return issue_command_to_chip(sourceQueue1, sourceQueue2,
+                               Transaction_Type::WRITE, suspensionRequired);
+  //
+  // return true;
 }
 
-bool TSU_Priority_OutOfOrder::service_erase_transaction(
+// TODO: how to utilize NULL source queue
+bool TSU_Priority_OutOfOrder::service_full_erase_transaction(
     NVM::FlashMemory::Flash_Chip *chip) {
   if (_NVMController->GetChipStatus(chip) != ChipStatus::IDLE) {
     return false;
   }
-
-  Flash_Transaction_Queue *source_queue =
-      &GCEraseTRQueue[chip->ChannelID][chip->ChipID];
+  auto source_queue = &GCFullEraseTRQueue[chip->ChannelID][chip->ChipID];
   if (source_queue->size() == 0) {
     return false;
   }
 
-  issue_command_to_chip(source_queue, NULL, Transaction_Type::ERASE, false);
+  return issue_command_to_chip(source_queue, NULL, Transaction_Type::FULL_ERASE,
+                               false);
+  //
+  // return true;
+}
 
-  return true;
+// TODO: how to utilize NULL source queue
+bool TSU_Priority_OutOfOrder::service_shallow_erase_transaction(
+    NVM::FlashMemory::Flash_Chip *chip) {
+  if (_NVMController->GetChipStatus(chip) != ChipStatus::IDLE) {
+    return false;
+  }
+  auto source_queue = &GCShallowEraseTRQueue[chip->ChannelID][chip->ChipID];
+  if (source_queue->size() == 0) {
+    return false;
+  }
+
+  return issue_command_to_chip(source_queue, NULL,
+                               Transaction_Type::SHALLOW_ERASE, false);
+  //
+  // return true;
 }
 } // namespace SSD_Components

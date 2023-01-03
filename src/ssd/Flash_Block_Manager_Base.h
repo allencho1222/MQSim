@@ -6,9 +6,9 @@
 #include "GC_and_WL_Unit_Base.h"
 #include <cstdint>
 #include <list>
+#include <map>
 #include <queue>
 #include <set>
-#include <map>
 
 namespace SSD_Components {
 #define All_VALID_PAGE 0x0000000000000000ULL
@@ -50,6 +50,9 @@ public:
              // amplification in flash-based SSDs", Perf. Eval., 2014.
   int Ongoing_user_read_count;
   int Ongoing_user_program_count;
+  bool isFullyErased;
+  bool isShallowlyErased;
+  bool willBeFullyErased;
   void Erase();
 };
 
@@ -160,6 +163,18 @@ public:
   Is_page_valid(Block_Pool_Slot_Type *block,
                 flash_page_ID_type page_id); // Make the page invalid in the
                                              // block bookkeeping record
+  bool
+  isBlockFullyErased(const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  bool isBlockShallowlyErased(
+      const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  void fullyEraseBlock(const NVM::FlashMemory::Physical_Page_Address &addr);
+  void shallowlyEraseBlock(const NVM::FlashMemory::Physical_Page_Address &addr);
+
+  bool
+  isBlockBeingFullyErased(const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  void
+  scheduleBlockFullErase(const NVM::FlashMemory::Physical_Page_Address &addr);
+
 protected:
   PlaneBookKeepingType ***
       *plane_manager; // Keeps track of plane block usage information

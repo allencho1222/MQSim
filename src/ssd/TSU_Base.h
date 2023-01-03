@@ -7,9 +7,8 @@
 #include "../sim/Sim_Reporter.h"
 #include "Flash_Transaction_Queue.h"
 #include "NVM_PHY_ONFI_NVDDR2.h"
-#include <list>
 #include <fmt/os.h>
-#include <cassert>
+#include <list>
 
 namespace SSD_Components {
 enum class Flash_Scheduling_Type { OUT_OF_ORDER, PRIORITY_OUT_OF_ORDER, FLIN };
@@ -87,7 +86,9 @@ protected:
   virtual bool
   service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual bool
-  service_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
+  service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
+  virtual bool
+  service_shallow_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
   bool issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
                              Flash_Transaction_Queue *sourceQueue2,
                              Transaction_Type transactionType,
@@ -99,8 +100,10 @@ protected:
   int opened_scheduling_reqs;
   void process_chip_requests(NVM::FlashMemory::Flash_Chip *chip) {
     if (!_my_instance->service_read_transaction(chip)) {
-      if (!_my_instance->service_write_transaction(chip)) {
-        _my_instance->service_erase_transaction(chip);
+      if (!_my_instance->service_full_erase_transaction(chip)) {
+        if (!_my_instance->service_write_transaction(chip)) {
+          _my_instance->service_shallow_erase_transaction(chip);
+        }
       }
     }
   }
@@ -108,22 +111,7 @@ protected:
     lockedQueue;
 
 private:
-  virtual void initQueue() = 0;
-  virtual void clearQueue() = 0;
-  bool transaction_is_ready(NVM_Transaction_Flash *transaction) {
-    switch (transaction->Type) {
-    case Transaction_Type::READ:
-      return true;
-    case Transaction_Type::WRITE:
-      return static_cast<NVM_Transaction_Flash_WR *>(transaction)
-                 ->RelatedRead == NULL;
-    case Transaction_Type::ERASE:
-      return static_cast<NVM_Transaction_Flash_ER *>(transaction)
-                 ->Page_movement_activities.size() == 0;
-    default:
-      return true;
-    }
-  }
+  bool transaction_is_ready(NVM_Transaction_Flash *transaction) const;
 };
 } // namespace SSD_Components
 

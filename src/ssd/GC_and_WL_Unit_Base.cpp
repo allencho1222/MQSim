@@ -191,6 +191,17 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         _my_instance->tsu->Prepare_for_transaction_submit();
         _my_instance->tsu->Submit_transaction(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite);
+        auto &writeTransaction =
+            static_cast<NVM_Transaction_Flash_RD *>(transaction)->RelatedWrite;
+        const auto& addr = writeTransaction->Address;
+        if (!_my_instance->block_manager->isBlockBeingFullyErased(addr)) {
+          _my_instance->block_manager->scheduleBlockFullErase(addr);
+          // TODO: check whether addr is correct for erase transaction
+          const auto eraseTR = new NVM_Transaction_Flash_ER(
+              Transaction_Source_Type::GC_WL,
+              transaction->Stream_id, addr, true);
+          _my_instance->tsu->Submit_transaction(eraseTR);
+        }
         _my_instance->tsu->Schedule();
       } else {
         PRINT_ERROR("Inconsistency found when moving a page for GC/WL!")
@@ -216,6 +227,17 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         _my_instance->tsu->Prepare_for_transaction_submit();
         _my_instance->tsu->Submit_transaction(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite);
+        auto &writeTransaction =
+            static_cast<NVM_Transaction_Flash_RD *>(transaction)->RelatedWrite;
+        const auto& addr = writeTransaction->Address;
+        if (!_my_instance->block_manager->isBlockBeingFullyErased(addr)) {
+          _my_instance->block_manager->scheduleBlockFullErase(addr);
+          // TODO: check whether addr is correct for erase transaction
+          const auto eraseTR = new NVM_Transaction_Flash_ER(
+              Transaction_Source_Type::GC_WL,
+              transaction->Stream_id, addr, true);
+          _my_instance->tsu->Submit_transaction(eraseTR);
+        }
         _my_instance->tsu->Schedule();
       } else {
         PRINT_ERROR("Inconsistency found when moving a page for GC/WL!")
@@ -241,7 +263,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
                      ->RelatedErase->Address.BlockID]
         .Erase_transaction->Page_movement_activities.remove(
             (NVM_Transaction_Flash_WR *)transaction);
-  } else if (trType == Transaction_Type::ERASE) {
+    break;
+  case Transaction_Type::SHALLOW_ERASE:
     pbke->Ongoing_erase_operations.erase(
         pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
     _my_instance->block_manager->Add_erased_block_to_pool(transaction->Address);

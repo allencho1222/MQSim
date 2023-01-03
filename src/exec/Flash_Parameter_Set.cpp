@@ -28,8 +28,10 @@ sim_time_type Flash_Parameter_Set::Page_Read_Latency_MSB = 75000;
 sim_time_type Flash_Parameter_Set::Page_Program_Latency_LSB = 750000;
 sim_time_type Flash_Parameter_Set::Page_Program_Latency_CSB = 750000;
 sim_time_type Flash_Parameter_Set::Page_Program_Latency_MSB = 750000;
-sim_time_type Flash_Parameter_Set::Block_Erase_Latency =
+sim_time_type Flash_Parameter_Set::Full_Block_Erase_Latency =
     3800000; // Block erase latency in nano-seconds
+sim_time_type Flash_Parameter_Set::Shallow_Block_Erase_Latency =
+    500000; // Block erase latency in nano-seconds
 unsigned int Flash_Parameter_Set::Block_PE_Cycles_Limit = 10000;
 sim_time_type Flash_Parameter_Set::Suspend_Erase_Time =
     700000; // in nano-seconds
@@ -70,8 +72,10 @@ void Flash_Parameter_Set::parseYAML(const YAML::Node &flashParams) const {
       flashParams["page_program_latency_csb"].as<unsigned long long>();
   Page_Program_Latency_MSB =
       flashParams["page_program_latency_msb"].as<unsigned long long>();
-  Block_Erase_Latency =
-      flashParams["block_erase_latency"].as<unsigned long long>();
+  Full_Block_Erase_Latency =
+      flashParams["full_block_erase_latency"].as<unsigned long long>();
+  Shallow_Block_Erase_Latency =
+      flashParams["shallow_block_erase_latency"].as<unsigned long long>();
   Block_PE_Cycles_Limit =
       flashParams["block_pe_cycles_limit"].as<unsigned long long>();
   Suspend_Erase_Time =
