@@ -2634,12 +2634,13 @@ Address_Mapping_Unit_Page_Level::Set_barrier_for_accessing_physical_block(
         MVPN_type mpvn = (MVPN_type)flash_controller->Get_metadata(
             addr.ChannelID, addr.ChipID, addr.DieID, addr.PlaneID, addr.BlockID,
             addr.PageID);
+        // TODO: sungjun this seems to be wrong
         if (domains[block->Stream_id]->GlobalTranslationDirectory[mpvn].MPPN !=
             Convert_address_to_ppa(addr)) {
           PRINT_ERROR("Inconsistency in the global translation directory when "
                       "locking an MPVN!")
-          Set_barrier_for_accessing_mvpn(block->Stream_id, mpvn);
         }
+        Set_barrier_for_accessing_mvpn(block->Stream_id, mpvn);
       } else {
         LPA_type lpa = flash_controller->Get_metadata(
             addr.ChannelID, addr.ChipID, addr.DieID, addr.PlaneID, addr.BlockID,
