@@ -2,10 +2,10 @@
 #include <cmath>
 #include <stdexcept>
 
-#include "Address_Mapping_Unit_Page_Level.h"
 #include "../ssd/FTL.h"
 #include "../ssd/TSU_Base.h"
 #include "../utils/Logical_Address_Partitioning_Unit.h"
+#include "Address_Mapping_Unit_Page_Level.h"
 #include "Stats.h"
 
 namespace SSD_Components {
@@ -524,9 +524,7 @@ Address_Mapping_Unit_Page_Level::Get_current_cmt_occupancy_for_stream(
 
 void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
     const std::list<NVM_Transaction *> &transactionList) {
-  for (std::list<NVM_Transaction *>::const_iterator it =
-           transactionList.begin();
-       it != transactionList.end();) {
+  for (auto it = transactionList.begin(); it != transactionList.end();) {
     if (is_lpa_locked_for_gc((*it)->Stream_id,
                              ((NVM_Transaction_Flash *)(*it))->LPA)) {
       // iterator should be post-incremented since the iterator may be deleted
@@ -536,7 +534,6 @@ void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
       query_cmt((NVM_Transaction_Flash *)(*it++));
     }
   }
-
   if (transactionList.size() > 0) {
     ftl->TSU->Prepare_for_transaction_submit();
     for (std::list<NVM_Transaction *>::const_iterator it =
@@ -582,14 +579,18 @@ bool Address_Mapping_Unit_Page_Level::query_cmt(
       Stats::writeTR_CMT_hits_per_stream[stream_id]++;
     }
 
+    // This assigns plane ID
+    // WARNING: Block ID is not determined when a translation fails
     if (translate_lpa_to_ppa(stream_id, transaction)) {
       return true;
     } else {
+      // Assigns block ID when write transactions are submitted
       mange_unsuccessful_translation(transaction);
       return false;
     }
   } else { // Limited CMT
     // Maybe we can catch mapping data from an on-the-fly write back request
+    // Returns true if an entry is inserted into CMT
     if (request_mapping_entry(stream_id, transaction->LPA)) {
       Stats::CMT_miss++;
       Stats::CMT_miss_per_stream[stream_id]++;
