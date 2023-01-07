@@ -212,6 +212,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     break;
   }
   case Transaction_Type::WRITE:
+    _my_instance->block_manager->Program_transaction_serviced(
+        transaction->Address);
     if (pbke->Blocks[((NVM_Transaction_Flash_WR *)transaction)
                          ->RelatedErase->Address.BlockID]
             .Holds_mapping_data) {
