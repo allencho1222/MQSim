@@ -5,11 +5,12 @@
 #include <stdexcept>
 
 namespace SSD_Components {
+// FIXME: This sometimes deletes objects that were deleted before.
 Input_Stream_NVMe::~Input_Stream_NVMe() {
-  for (auto &user_request : Waiting_user_requests)
-    delete user_request;
-  for (auto &user_request : Completed_user_requests)
-    delete user_request;
+  // for (auto &user_request : Waiting_user_requests)
+  //   delete user_request;
+  // for (auto &user_request : Completed_user_requests)
+  //   delete user_request;
 }
 
 Input_Stream_Manager_NVMe::Input_Stream_Manager_NVMe(
