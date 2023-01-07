@@ -1,4 +1,5 @@
 #include "Flash_Block_Manager.h"
+#include <cassert>
 
 namespace SSD_Components {
 unsigned int Block_Pool_Slot_Type::Page_vector_size = 0;
@@ -305,6 +306,8 @@ void Flash_Block_Manager_Base::Program_transaction_serviced(
   PlaneBookKeepingType *plane_record =
       &plane_manager[page_address.ChannelID][page_address.ChipID]
                     [page_address.DieID][page_address.PlaneID];
+  assert(plane_record->Blocks[page_address.BlockID].Ongoing_user_program_count >
+         0);
   plane_record->Blocks[page_address.BlockID].Ongoing_user_program_count--;
 }
 
@@ -313,6 +316,7 @@ void Flash_Block_Manager_Base::Read_transaction_serviced(
   PlaneBookKeepingType *plane_record =
       &plane_manager[page_address.ChannelID][page_address.ChipID]
                     [page_address.DieID][page_address.PlaneID];
+  assert(plane_record->Blocks[page_address.BlockID].Ongoing_user_read_count > 0);
   plane_record->Blocks[page_address.BlockID].Ongoing_user_read_count--;
 }
 
