@@ -3,14 +3,16 @@
 
 #include "../sim/Engine.h"
 #include "../sim/Sim_Defs.h"
-#include "User_Request.h"
 #include <list>
+#include <unordered_map>
+#include "Host_Interface_NVMe_Priorities.h"
 
 namespace SSD_Components {
 class User_Request;
 
 enum class Transaction_Type { READ, WRITE, ERASE, UNKOWN };
 enum class Transaction_Source_Type { USERIO, CACHE, GC_WL, MAPPING };
+
 
 class NVM_Transaction {
 public:
@@ -35,6 +37,13 @@ public:
   variables are not important if FlashTransactions is used for garbage
   collection.*/
   sim_time_type STAT_execution_time, STAT_transfer_time;
+
+  inline static std::unordered_map<Transaction_Source_Type, std::string> srcToStr = {
+    {Transaction_Source_Type::USERIO, "USERIO"},
+    {Transaction_Source_Type::CACHE, "CACHE"},
+    {Transaction_Source_Type::GC_WL, "GC_WL"},
+    {Transaction_Source_Type::MAPPING, "MAPPING"}
+  };
 };
 } // namespace SSD_Components
 

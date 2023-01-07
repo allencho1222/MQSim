@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
 
   // Create SSD_Device based on the specified parameters
   SSD_Device ssd(execParams->SSD_Device_Configuration,
+                 *execParams,
                  execParams->Host_Configuration.IO_Flow_Definitions);
   // Create Host_System based on the specified parameters
   execParams->Host_Configuration.Input_file_path =

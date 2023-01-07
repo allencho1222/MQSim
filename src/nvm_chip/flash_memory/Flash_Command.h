@@ -4,6 +4,8 @@
 #include "FlashTypes.h"
 #include "Page.h"
 #include "Physical_Page_Address.h"
+#include <fmt/format.h>
+#include <unordered_map>
 #include <vector>
 
 #define CMD_READ 0x0030
@@ -41,6 +43,26 @@ public:
   command_code_type CommandCode;
   std::vector<Physical_Page_Address> Address;
   std::vector<PageMetadata> Meta_data;
+
+  inline static std::unordered_map<command_code_type, std::string> cmdToStr = {
+      {CMD_READ, "CMD_READ"},
+      {CMD_READ_PAGE, "CMD_READ_PAGE"},
+      {CMD_READ_PAGE_CACHE_SEQ, "CMD_READ_PAGE_CACHE_SEQ"},
+      {CMD_READ_PAGE_CACHE_RANDOM, "CMD_CMD_READ_PAGE_CACHE_RANDOM"},
+      {CMD_READ_PAGE_MULTIPLANE, "CMD_CMD_READ_PAGE_MULTIPLANE"},
+      {CMD_READ_PAGE_COPYBACK, "CMD_CMD_READ_PAGE_COPYBACK"},
+      {CMD_READ_PAGE_COPYBACK_MULTIPLANE,
+       "CMD_CMD_READ_PAGE_COPYBACK_MULTIPLANE"},
+
+      {CMD_PROGRAM, "CMD_PROGRAM"},
+      {CMD_PROGRAM_PAGE, "CMD_PROGRAM_PAGE"},
+      {CMD_PROGRAM_PAGE_MULTIPLANE, "CMD_PROGRAM_PAGE_MULTIPLANE"},
+      {CMD_PROGRAM_PAGE_COPYBACK, "CMD_PROGRAM_PAGE_COPYBACK_MULTIPLANE"},
+
+      {CMD_ERASE, "CMD_ERASE"},
+      {CMD_ERASE_BLOCK, "CMD_ERASE_BLOCK"},
+      {CMD_ERASE_BLOCK_MULTIPLANE, "CMD_ERASE_BLOCK_MULTIPLANE"},
+  };
 };
 } // namespace FlashMemory
 } // namespace NVM

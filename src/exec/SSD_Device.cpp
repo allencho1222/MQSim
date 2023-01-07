@@ -23,6 +23,7 @@ SSD_Device *SSD_Device::my_instance; // Used in static functions
 
 SSD_Device::SSD_Device(
     const Device_Parameter_Set &parameters,
+    const Execution_Parameter_Set &execParams,
     const std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> &io_flows)
     : MQSimEngine::Sim_Object("SSDDevice") {
   SSD_Device *device = this;
@@ -128,7 +129,8 @@ SSD_Device::SSD_Device(
           device->ID() + ".PHY", channels, parameters.Flash_Channel_Count,
           parameters.Chip_No_Per_Channel,
           parameters.Flash_Parameters.Die_No_Per_Chip,
-          parameters.Flash_Parameters.Plane_No_Per_Die);
+          parameters.Flash_Parameters.Plane_No_Per_Die,
+          execParams.transactionHistoryFilePath);
       Simulator->AddObject(device->PHY);
       break;
     }
@@ -559,7 +561,11 @@ void SSD_Device::reportResults(const Execution_Parameter_Set &execParams) {
             ->reportResults(chipOutput);
       }
     }
+    chipOutput.close();
   }
+  hostInterfaceOutput.close();
+  ftlOutput.close();
+  tsuOutput.close();
 }
 
 unsigned int SSD_Device::Get_no_of_LHAs_in_an_NVM_write_unit() {

@@ -45,6 +45,10 @@ public:
                                     // where fairness and QoS is considered in
                                     // scheduling
   bool FLIN_Barrier; // Especially used in queue reordering in FLIN scheduler
+                     //
+  sim_time_type enqueuedAt;
+  sim_time_type scheduledAt;
+  sim_time_type finishedAt;
 private:
 };
 } // namespace SSD_Components

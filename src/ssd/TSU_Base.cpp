@@ -144,6 +144,9 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
     }
 
     if (transaction_dispatch_slots.size() > 0) {
+      for (auto transaction : transaction_dispatch_slots) {
+        transaction->scheduledAt = Simulator->Time();
+      }
       _NVMController->Send_command_to_chip(transaction_dispatch_slots);
       transaction_dispatch_slots.clear();
       dieID = (dieID + 1) % die_no_per_chip;
@@ -156,5 +159,10 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
   }
 
   return false;
+}
+
+void TSU_Base::Submit_transaction(NVM_Transaction_Flash *transaction) {
+  transaction->enqueuedAt = Simulator->Time();
+  transaction_receive_slots.push_back(transaction);
 }
 } // namespace SSD_Components

@@ -31,10 +31,11 @@
 class Execution_Parameter_Set;
 class SSD_Device : public MQSimEngine::Sim_Object {
 public:
-  SSD_Device(Device_Parameter_Set *parameters,
-             std::vector<IO_Flow_Parameter_Set *> *io_flows);
+  // SSD_Device(Device_Parameter_Set *parameters,
+  //            std::vector<IO_Flow_Parameter_Set *> *io_flows);
   SSD_Device(
       const Device_Parameter_Set &parameters,
+      const Execution_Parameter_Set &execParams,
       const std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> &io_flows);
   ~SSD_Device();
   bool Preconditioning_required;

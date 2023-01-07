@@ -47,9 +47,7 @@ public:
     transaction_receive_slots.clear();
   }
 
-  void Submit_transaction(NVM_Transaction_Flash *transaction) {
-    transaction_receive_slots.push_back(transaction);
-  }
+  void Submit_transaction(NVM_Transaction_Flash *transaction);
 
   /* Shedules the transactions currently stored in inputTransactionSlots. The
    * transactions could be mixes of reads, writes, and erases.

@@ -258,6 +258,7 @@ void Host_System::reportResults(const Execution_Parameter_Set &execParams) {
   for (auto &flow : IO_flows) {
     flow->reportResults(output);
   }
+  output.close();
 }
 
 std::vector<Utils::Workload_Statistics *>

@@ -12,10 +12,13 @@ NVM_PHY_ONFI_NVDDR2::NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
                                          unsigned int ChannelCount,
                                          unsigned int chip_no_per_channel,
                                          unsigned int DieNoPerChip,
-                                         unsigned int PlaneNoPerDie)
+                                         unsigned int PlaneNoPerDie,
+                                         std::string transactionHistoryFilePath)
     : NVM_PHY_ONFI(id, ChannelCount, chip_no_per_channel, DieNoPerChip,
                    PlaneNoPerDie),
-      channels(channels) {
+      channels(channels), output(fmt::output_file(transactionHistoryFilePath)) {
+  output.print("{} {} {} {} {}\n", "cmd", "src", "enqueued_at", "scheduled_at",
+               "finished_at");
   WaitingReadTX = new Flash_Transaction_Queue[channel_count];
   WaitingGCRead_TX = new Flash_Transaction_Queue[channel_count];
   WaitingMappingRead_TX = new Flash_Transaction_Queue[channel_count];
@@ -64,6 +67,11 @@ NVM_PHY_ONFI_NVDDR2::NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
     }
   }
   _my_instance = this;
+}
+
+// Must be deleted to flush output data in a buffer
+NVM_PHY_ONFI_NVDDR2::~NVM_PHY_ONFI_NVDDR2() {
+  output.close();
 }
 
 void NVM_PHY_ONFI_NVDDR2::Setup_triggers() {
@@ -680,6 +688,11 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
   DieBookKeepingEntry *dieBKE =
       &(chipBKE->Die_book_keeping_records[command->Address[0].DieID]);
 
+  for (auto transaction : dieBKE->ActiveTransactions) {
+    transaction->finishedAt = Simulator->Time();
+  }
+  _my_instance->recordTransactionHistory(dieBKE->ActiveTransactions, command);
+
   switch (command->CommandCode) {
   case CMD_READ_PAGE:
   case CMD_READ_PAGE_MULTIPLANE:
@@ -928,5 +941,19 @@ inline void NVM_PHY_ONFI_NVDDR2::send_resume_command_to_chip(
       break;
     }
   }
+}
+
+void NVM_PHY_ONFI_NVDDR2::recordTransactionHistory(
+    const std::list<NVM_Transaction_Flash *> &transactions,
+    const NVM::FlashMemory::Flash_Command *cmd) {
+  const auto &cmdCode = cmd->CommandCode;
+  const auto &srcType = transactions.front()->Source;
+  const auto &enqueuedAt = transactions.front()->enqueuedAt;
+  const auto &scheduledAt = transactions.front()->scheduledAt;
+  const auto &finishedAt = transactions.front()->finishedAt;
+
+  output.print(
+      "{} {} {} {} {}\n", NVM::FlashMemory::Flash_Command::cmdToStr[cmdCode],
+      NVM_Transaction::srcToStr[srcType], enqueuedAt, scheduledAt, finishedAt);
 }
 } // namespace SSD_Components

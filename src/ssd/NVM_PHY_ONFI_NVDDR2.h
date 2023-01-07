@@ -9,6 +9,7 @@
 #include "ONFI_Channel_NVDDR2.h"
 #include <list>
 #include <queue>
+#include <fmt/os.h>
 
 namespace SSD_Components {
 enum class NVDDR2_SimEventType {
@@ -95,7 +96,8 @@ public:
   NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
                       ONFI_Channel_NVDDR2 **channels, unsigned int ChannelCount,
                       unsigned int chip_no_per_channel,
-                      unsigned int DieNoPerChip, unsigned int PlaneNoPerDie);
+                      unsigned int DieNoPerChip, unsigned int PlaneNoPerDie,
+                      std::string transactionHistoryFilePath);
   void Setup_triggers();
   void Validate_simulation_config();
   void Start_simulation();
@@ -129,6 +131,8 @@ public:
   Change_memory_status_preconditioning(const NVM::NVM_Memory_Address *address,
                                        const void *status_info);
 
+  ~NVM_PHY_ONFI_NVDDR2();
+
 private:
   void transfer_read_data_from_chip(ChipBookKeepingEntry *chipBKE,
                                     DieBookKeepingEntry *dieBKE,
@@ -148,6 +152,14 @@ private:
   Flash_Transaction_Queue *WaitingReadTX, *WaitingGCRead_TX,
       *WaitingMappingRead_TX;
   std::list<DieBookKeepingEntry *> *WaitingCopybackWrites;
+
+private:
+  fmt::ostream output;
+
+  void recordTransactionHistory(
+      const std::list<NVM_Transaction_Flash *> &transactions,
+      const NVM::FlashMemory::Flash_Command *cmd);
+
 };
 } // namespace SSD_Components
 

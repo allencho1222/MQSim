@@ -9,6 +9,7 @@ std::string Execution_Parameter_Set::hostInterfaceResultFilePath =
 std::string Execution_Parameter_Set::ftlResultFilePath = "ftl.result";
 std::string Execution_Parameter_Set::tsuResultFilePath = "tsu.result";
 std::string Execution_Parameter_Set::chipResultFilePath = "chip.result";
+std::string Execution_Parameter_Set::transactionHistoryFilePath = "transaction_history.result";
 
 void Execution_Parameter_Set::parseYAML(const YAML::Node &ssdConfig) {
   const auto &resultFileYAMLNode = ssdConfig["result_file"];
@@ -18,6 +19,7 @@ void Execution_Parameter_Set::parseYAML(const YAML::Node &ssdConfig) {
   ftlResultFilePath = resultFileYAMLNode["ftl"].as<std::string>();
   tsuResultFilePath = resultFileYAMLNode["tsu"].as<std::string>();
   chipResultFilePath = resultFileYAMLNode["chip"].as<std::string>();
+  transactionHistoryFilePath = resultFileYAMLNode["transaction"].as<std::string>();
   Host_Configuration.parseYAML(ssdConfig["host_parameters"]);
   SSD_Device_Configuration.parseYAML(ssdConfig["device_parameters"]);
 }

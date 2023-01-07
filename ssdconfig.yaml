@@ -215,3 +215,5 @@ result_file:
   ftl: ftl.result
   # a path to an output of chip
   chip: chip.result
+  # a path to an output of a transaction history
+  transaction: transaction_history.result

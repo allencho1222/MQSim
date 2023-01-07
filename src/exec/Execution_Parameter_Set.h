@@ -21,6 +21,7 @@ public:
   static std::string ftlResultFilePath;
   static std::string tsuResultFilePath;
   static std::string chipResultFilePath;
+  static std::string transactionHistoryFilePath;
 };
 
 #endif // !EXECUTION_PARAMETER_SET_H
