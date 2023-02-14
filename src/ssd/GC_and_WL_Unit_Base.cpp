@@ -1,5 +1,4 @@
 #include "GC_and_WL_Unit_Base.h"
-#include "TSU_Base.h"
 #include "Address_Mapping_Unit_Base.h"
 #include "Flash_Block_Manager_Base.h"
 #include "Stats.h"
@@ -104,6 +103,10 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         NVM_Transaction_Flash_ER *gc_wl_erase_tr = new NVM_Transaction_Flash_ER(
             Transaction_Source_Type::GC_WL, block->Stream_id,
             gc_wl_candidate_address);
+        const auto& bm = _my_instance->block_manager;
+        auto eraseLatency = bm->getNextEraseLatency(gc_wl_candidate_address);
+        assert(eraseLatency.has_value());
+        gc_wl_erase_tr->setLatency(eraseLatency.value());
 
         // If there are some valid pages in block, then prepare flash
         // transactions for page movement
@@ -193,14 +196,20 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite);
         auto &writeTransaction =
             static_cast<NVM_Transaction_Flash_RD *>(transaction)->RelatedWrite;
-        const auto& addr = writeTransaction->Address;
-        if (!_my_instance->block_manager->isBlockBeingFullyErased(addr)) {
-          _my_instance->block_manager->scheduleBlockFullErase(addr);
-          // TODO: check whether addr is correct for erase transaction
-          const auto eraseTR = new NVM_Transaction_Flash_ER(
-              Transaction_Source_Type::GC_WL,
-              transaction->Stream_id, addr, true);
-          _my_instance->tsu->Submit_transaction(eraseTR);
+        const auto &eraseAddr = writeTransaction->Address;
+        const auto &bm = _my_instance->block_manager;
+        if (!bm ->isAdaptiveEraseInitiated(eraseAddr)) {
+          bm ->initiateAdaptiveErase(eraseAddr);
+          if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
+            // TODO: check whether addr is correct for erase transaction
+            const auto eraseTR = new NVM_Transaction_Flash_ER(
+                Transaction_Source_Type::GC_WL, transaction->Stream_id,
+                eraseAddr, true);
+            eraseTR->setLatency(eraseLatency.value());
+            _my_instance->tsu->Submit_transaction(eraseTR);
+          } else {
+            bm->eraseBlock(eraseAddr);
+          }
         }
         _my_instance->tsu->Schedule();
       } else {
@@ -229,14 +238,20 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite);
         auto &writeTransaction =
             static_cast<NVM_Transaction_Flash_RD *>(transaction)->RelatedWrite;
-        const auto& addr = writeTransaction->Address;
-        if (!_my_instance->block_manager->isBlockBeingFullyErased(addr)) {
-          _my_instance->block_manager->scheduleBlockFullErase(addr);
-          // TODO: check whether addr is correct for erase transaction
-          const auto eraseTR = new NVM_Transaction_Flash_ER(
-              Transaction_Source_Type::GC_WL,
-              transaction->Stream_id, addr, true);
-          _my_instance->tsu->Submit_transaction(eraseTR);
+        const auto &eraseAddr = writeTransaction->Address;
+        const auto &bm = _my_instance->block_manager;
+        if (!bm ->isAdaptiveEraseInitiated(eraseAddr)) {
+          bm ->initiateAdaptiveErase(eraseAddr);
+          if (auto eraseLatency = bm ->getNextEraseLatency(eraseAddr)) {
+            // TODO: check whether addr is correct for erase transaction
+            const auto eraseTR = new NVM_Transaction_Flash_ER(
+                Transaction_Source_Type::GC_WL, transaction->Stream_id,
+                eraseAddr, true);
+            eraseTR->setLatency(eraseLatency.value());
+            _my_instance->tsu->Submit_transaction(eraseTR);
+          } else {
+            bm->eraseBlock(eraseAddr);
+          }
         }
         _my_instance->tsu->Schedule();
       } else {
@@ -263,11 +278,12 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
                      ->RelatedErase->Address.BlockID]
         .Erase_transaction->Page_movement_activities.remove(
             (NVM_Transaction_Flash_WR *)transaction);
-    break;
-  case Transaction_Type::SHALLOW_ERASE:
+  } else if (trType == Transaction_Type::PROXY_ERASE) {
+    fmt::print("proxy erase\n");
     pbke->Ongoing_erase_operations.erase(
         pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
-    _my_instance->block_manager->Add_erased_block_to_pool(transaction->Address);
+    _my_instance->block_manager->Add_erased_block_to_pool(
+        transaction->Address);
     _my_instance->block_manager->GC_WL_finished(transaction->Address);
     if (_my_instance->check_static_wl_required(transaction->Address)) {
       _my_instance->run_static_wearleveling(transaction->Address);
@@ -407,6 +423,9 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
     NVM_Transaction_Flash_ER *wl_erase_tr = new NVM_Transaction_Flash_ER(
         Transaction_Source_Type::GC_WL,
         pbke->Blocks[wl_candidate_block_id].Stream_id, wl_candidate_address);
+    auto eraseLatency = block_manager->getNextEraseLatency(wl_candidate_address);
+    assert(eraseLatency.has_value());
+    wl_erase_tr->setLatency(eraseLatency.value());
     if (block->Current_page_write_index - block->Invalid_page_count >
         0) { // If there are some valid pages in block, then prepare flash
              // transactions for page movement

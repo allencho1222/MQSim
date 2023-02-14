@@ -1,0 +1,51 @@
+block_0:
+  ratio: 10
+  status:
+    0:
+      - loop: 0
+        latency: 5000
+        num_fail_bits: [10, 20]
+      - loop: 1
+        latency: 1000000
+        num_fail_bits: [0, 0]
+    500:
+      - loop: 0
+        latency: 5000
+        num_fail_bits: [20, 40]
+      - loop: 1
+        latency: 1000000
+        num_fail_bits: [0, 0]
+block_1:
+  ratio: 50
+  status:
+    0:
+      - loop: 0
+        latency: 5000
+        num_fail_bits: [10, 20]
+      - loop: 1
+        latency: 10000
+        num_fail_bits: [0, 0]
+    500:
+      - loop: 0
+        latency: 5000
+        num_fail_bits: [20, 40]
+      - loop: 1
+        latency: 12000
+        num_fail_bits: [0, 0]
+block_2:
+  ratio: 40
+  status:
+    0:
+      - loop: 0
+        latency: 5000
+        num_fail_bits: [10, 20]
+      - loop: 1
+        latency: 10000
+        num_fail_bits: [0, 0]
+    500:
+      - loop: 0
+        latency: 5000
+        num_fail_bits: [20, 40]
+      - loop: 1
+        latency: 12000
+        num_fail_bits: [0, 0]

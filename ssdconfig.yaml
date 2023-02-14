@@ -143,7 +143,7 @@ device_parameters:
   channel:
     # the number of flash channels in the SSD back end. 
     # Range = {all positive integer values}.
-    channel_count: 8
+    channel_count: 1
     # the width of each flash channel in byte. 
     # Range = {all positive integer values}.
     channel_width: 1
@@ -152,7 +152,7 @@ device_parameters:
     transfer_rate: 333
     # the number of flash chips attached to each channel in the SSD back end. 
     # Range = {all positive integer values}.
-    num_chips: 4
+    num_chips: 1
     # the Open NAND Flash Interface (ONFI) protocol used for data transfer 
     # over flash channels in the SSD back end. Range = {NVDDR2}.
     protocol: NVDDR2
@@ -196,9 +196,9 @@ device_parameters:
     suspend_erase_time: 700000
     # the number of dies in each flash chip. 
     # Range = {all positive integer values}.
-    num_dies_per_chip: 2
+    num_dies_per_chip: 1
     # the number of planes in each die. Range = {all positive integer values}.
-    num_planes_per_die: 2
+    num_planes_per_die: 1
     # the number of flash blocks in each plane. 
     # Range = {all positive integer values}.
     num_blocks_per_plane: 512
@@ -222,5 +222,4 @@ result_file:
   ftl: ftl.result
   # a path to an output of chip
   chip: chip.result
-  # a path to an output of a transaction history
-  transaction: transaction_history.result
+  transaction: transaction.result

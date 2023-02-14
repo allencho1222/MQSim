@@ -435,11 +435,11 @@ void TSU_Priority_OutOfOrder::Schedule() {
             "TSU_OutOfOrder: unknown source type for a write transaction!")
       }
       break;
-    case Transaction_Type::SHALLOW_ERASE:
+    case Transaction_Type::PROXY_ERASE:
       GCShallowEraseTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
           .push_back((*it));
       break;
-    case Transaction_Type::FULL_ERASE:
+    case Transaction_Type::ADAPTIVE_ERASE:
       GCFullEraseTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
           .push_back((*it));
       break;
@@ -720,7 +720,7 @@ bool TSU_Priority_OutOfOrder::service_full_erase_transaction(
     return false;
   }
 
-  return issue_command_to_chip(source_queue, NULL, Transaction_Type::FULL_ERASE,
+  return issue_command_to_chip(source_queue, NULL, Transaction_Type::ADAPTIVE_ERASE,
                                false);
   //
   // return true;
@@ -738,7 +738,7 @@ bool TSU_Priority_OutOfOrder::service_shallow_erase_transaction(
   }
 
   return issue_command_to_chip(source_queue, NULL,
-                               Transaction_Type::SHALLOW_ERASE, false);
+                               Transaction_Type::PROXY_ERASE, false);
   //
   // return true;
 }

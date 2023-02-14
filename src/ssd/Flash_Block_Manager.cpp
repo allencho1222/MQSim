@@ -10,12 +10,14 @@ Flash_Block_Manager::Flash_Block_Manager(
     unsigned int total_concurrent_streams_no, unsigned int channel_count,
     unsigned int chip_no_per_channel, unsigned int die_no_per_chip,
     unsigned int plane_no_per_die, unsigned int block_no_per_plane,
-    unsigned int page_no_per_block)
+    unsigned int page_no_per_block,
+    const std::string blockModelFile)
     : Flash_Block_Manager_Base(gc_and_wl_unit, max_allowed_block_erase_count,
                                total_concurrent_streams_no, channel_count,
                                chip_no_per_channel, die_no_per_chip,
                                plane_no_per_die, block_no_per_plane,
-                               page_no_per_block) {}
+                               page_no_per_block,
+                               blockModelFile) {}
 
 Flash_Block_Manager::~Flash_Block_Manager() {}
 

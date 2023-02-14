@@ -63,6 +63,7 @@ public:
       {CMD_ERASE_BLOCK_MULTIPLANE, "CMD_ERASE_BLOCK_MULTIPLANE"},
   };
   bool isFullErase = false;
+  sim_time_type latency = 0;
 };
 } // namespace FlashMemory
 } // namespace NVM

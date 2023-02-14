@@ -71,9 +71,7 @@ NVM_PHY_ONFI_NVDDR2::NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
 }
 
 // Must be deleted to flush output data in a buffer
-NVM_PHY_ONFI_NVDDR2::~NVM_PHY_ONFI_NVDDR2() {
-  output.close();
-}
+NVM_PHY_ONFI_NVDDR2::~NVM_PHY_ONFI_NVDDR2() { output.close(); }
 
 void NVM_PHY_ONFI_NVDDR2::Setup_triggers() {
   Sim_Object::Setup_triggers();
@@ -206,8 +204,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
         suspendTime = target_channel->ProgramSuspendCommandTime +
                       targetChip->GetSuspendProgramTime();
         break;
-      case Transaction_Type::SHALLOW_ERASE:
-      case Transaction_Type::FULL_ERASE:
+      case Transaction_Type::PROXY_ERASE:
+      case Transaction_Type::ADAPTIVE_ERASE:
         Stats::IssuedSuspendEraseCMD++;
         suspendTime = target_channel->EraseSuspendCommandTime +
                       targetChip->GetSuspendEraseTime();
@@ -227,6 +225,11 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
 
   dieBKE->Free = false;
   dieBKE->ActiveCommand = new NVM::FlashMemory::Flash_Command();
+  if (transaction_list.front()->Type == Transaction_Type::ADAPTIVE_ERASE ||
+      transaction_list.front()->Type == Transaction_Type::PROXY_ERASE) {
+    dieBKE->ActiveCommand->latency = transaction_list.front()->getLatency();
+    assert(dieBKE->ActiveCommand->latency != 0);
+  }
   for (std::list<NVM_Transaction_Flash *>::iterator it =
            transaction_list.begin();
        it != transaction_list.end(); it++) {
@@ -407,8 +410,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
       }
     }
     break;
-  case Transaction_Type::SHALLOW_ERASE:
-  case Transaction_Type::FULL_ERASE:
+  case Transaction_Type::PROXY_ERASE:
+  case Transaction_Type::ADAPTIVE_ERASE:
     // DEBUG2("Chip " << targetChip->ChannelID << ", " << targetChip->ChipID <<
     // ", " << transaction_list.front()->Address.DieID << ": Sending erase
     // command to chip")
@@ -420,9 +423,9 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
       dieBKE->ActiveCommand->CommandCode = CMD_ERASE_BLOCK_MULTIPLANE;
     }
 
-    dieBKE->ActiveCommand->isFullErase =
-        transaction_list.front()->Type == Transaction_Type::FULL_ERASE;
-
+    // dieBKE->ActiveCommand->isFullErase =
+    //     transaction_list.front()->Type == Transaction_Type::FULL_ERASE;
+    //
     for (std::list<NVM_Transaction_Flash *>::iterator it =
              transaction_list.begin();
          it != transaction_list.end(); it++) {
@@ -449,10 +452,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
     }
     chipBKE->OngoingDieCMDTransfers.push(dieBKE);
 
-    dieBKE->Expected_finish_time =
-        chipBKE->Last_transfer_finish_time +
-        targetChip->getAdaptiveEraseLatency(transaction_list.front()->Type ==
-                                            Transaction_Type::FULL_ERASE);
+    dieBKE->Expected_finish_time = chipBKE->Last_transfer_finish_time +
+                                   transaction_list.front()->getLatency();
     // targetChip->Get_command_execution_latency(
     //     dieBKE->ActiveCommand->CommandCode,
     //     dieBKE->ActiveCommand->Address[0].PageID);
@@ -906,8 +907,8 @@ void NVM_PHY_ONFI_NVDDR2::perform_interleaved_cmd_data_transfer(
           (int)NVDDR2_SimEventType::READ_CMD_ADDR_TRANSFERRED);
     }
     break;
-  case Transaction_Type::SHALLOW_ERASE:
-  case Transaction_Type::FULL_ERASE:
+  case Transaction_Type::PROXY_ERASE:
+  case Transaction_Type::ADAPTIVE_ERASE:
     chip->StartCMDXfer();
     bookKeepingTable[chip->ChannelID][chip->ChipID].Status = ChipStatus::CMD_IN;
     Simulator->Register_sim_event(

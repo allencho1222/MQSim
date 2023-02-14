@@ -1,5 +1,6 @@
 #include "Flash_Block_Manager.h"
 #include <cassert>
+#include <yaml-cpp/yaml.h>
 
 namespace SSD_Components {
 unsigned int Block_Pool_Slot_Type::Page_vector_size = 0;
@@ -9,7 +10,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     unsigned int total_concurrent_streams_no, unsigned int channel_count,
     unsigned int chip_no_per_channel, unsigned int die_no_per_chip,
     unsigned int plane_no_per_die, unsigned int block_no_per_plane,
-    unsigned int page_no_per_block)
+    unsigned int page_no_per_block, const std::string blockModelFile)
     : gc_and_wl_unit(gc_and_wl_unit),
       max_allowed_block_erase_count(max_allowed_block_erase_count),
       total_concurrent_streams_no(total_concurrent_streams_no),
@@ -17,6 +18,25 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       die_no_per_chip(die_no_per_chip), plane_no_per_die(plane_no_per_die),
       block_no_per_plane(block_no_per_plane),
       pages_no_per_block(page_no_per_block) {
+  const auto yaml = YAML::LoadFile(blockModelFile);
+  for (auto it = std::cbegin(yaml); it != std::cend(yaml); ++it) {
+    auto blockModelID = it->first.as<std::string>();
+    const auto ratio = it->second["ratio"].as<int>();
+    const auto stat = it->second["status"];
+    auto blockModel = BlockModel();
+    for (auto s = std::cbegin(stat); s != std::cend(stat); ++s) {
+      const auto pec = s->first.as<int>();
+      auto blockStats = BlockStats();
+      for (const auto &loop : s->second) {
+        const auto eraseLatency = loop["latency"].as<sim_time_type>();
+        assert(loop["num_fail_bits"].IsSequence());
+        const auto [min, max] = loop["num_fail_bits"].as<std::pair<int, int>>();
+        blockStats.push_back({eraseLatency, {min, max}});
+      }
+      blockModel.insert(std::make_pair(pec, std::move(blockStats)));
+    }
+    blockModels.push_back(std::move(blockModel));
+  }
   plane_manager = new PlaneBookKeepingType ***[channel_count];
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     plane_manager[channelID] = new PlaneBookKeepingType **[chip_no_per_channel];
@@ -45,8 +65,12 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
           // Initialize block pool for plane
           for (unsigned int blockID = 0; blockID < block_no_per_plane;
                blockID++) {
+            Block_Pool_Slot_Type::Page_vector_size =
+                pages_no_per_block / (sizeof(uint64_t) * 8) +
+                (pages_no_per_block % (sizeof(uint64_t) * 8) == 0 ? 0 : 1);
             auto &block = plane_manager[channelID][chipID][dieID][planeID]
                               .Blocks[blockID];
+            // TODO: init values in the constructor
             block.BlockID = blockID;
             block.Current_page_write_index = 0;
             block.Current_status = Block_Service_Status::IDLE;
@@ -57,12 +81,8 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
             block.Erase_transaction = NULL;
             block.Ongoing_user_program_count = 0;
             block.Ongoing_user_read_count = 0;
-            block.isFullyErased = true;
-            block.isShallowlyErased = true;
-            block.willBeFullyErased = true;
-            Block_Pool_Slot_Type::Page_vector_size =
-                pages_no_per_block / (sizeof(uint64_t) * 8) +
-                (pages_no_per_block % (sizeof(uint64_t) * 8) == 0 ? 0 : 1);
+            block.isBlockErased = true;
+            block.willBeAdaptivelyErased = true;
             block.Invalid_page_bitmap =
                 new uint64_t[Block_Pool_Slot_Type::Page_vector_size];
             for (unsigned int i = 0; i < Block_Pool_Slot_Type::Page_vector_size;
@@ -97,6 +117,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       }
     }
   }
+
 }
 
 Flash_Block_Manager_Base::~Flash_Block_Manager_Base() {
@@ -130,6 +151,9 @@ void Flash_Block_Manager_Base::Set_GC_and_WL_Unit(GC_and_WL_Unit_Base *gcwl) {
   this->gc_and_wl_unit = gcwl;
 }
 
+Block_Pool_Slot_Type::Block_Pool_Slot_Type() {
+}
+
 void Block_Pool_Slot_Type::Erase() {
   Current_page_write_index = 0;
   Invalid_page_count = 0;
@@ -141,6 +165,13 @@ void Block_Pool_Slot_Type::Erase() {
   Holds_mapping_data = false;
   Erase_transaction = NULL;
 }
+
+// TODO: how to get num fail bits
+// unsigned int
+// Block_Pool_Slot_Type::getNumFailBits(unsigned int eraseLatency) const {
+//   // TODO:
+//   return numFailBits.at(std::make_pair(Erase_count, eraseLatency));
+// }
 
 Block_Pool_Slot_Type *
 PlaneBookKeepingType::Get_a_free_block(stream_id_type stream_id,
@@ -261,12 +292,12 @@ void Flash_Block_Manager_Base::GC_WL_started(
       &plane_manager[block_address.ChannelID][block_address.ChipID]
                     [block_address.DieID][block_address.PlaneID];
   auto &block = plane_record->Blocks[block_address.BlockID];
-  assert(block.isFullyErased);
-  assert(block.isShallowlyErased);
+  // assert(block.isFullyErased);
+  // assert(block.isShallowlyErased);
   block.Has_ongoing_gc_wl = true;
-  block.isFullyErased = false;
-  block.isShallowlyErased = false;
-  block.willBeFullyErased = false;
+  block.willBeAdaptivelyErased = false;
+  block.isBlockErased = false;
+  block.nextEraseLoopCount = 0;
 }
 
 void Flash_Block_Manager_Base::program_transaction_issued(
@@ -300,7 +331,8 @@ void Flash_Block_Manager_Base::Read_transaction_serviced(
   PlaneBookKeepingType *plane_record =
       &plane_manager[page_address.ChannelID][page_address.ChipID]
                     [page_address.DieID][page_address.PlaneID];
-  assert(plane_record->Blocks[page_address.BlockID].Ongoing_user_read_count > 0);
+  assert(plane_record->Blocks[page_address.BlockID].Ongoing_user_read_count >
+         0);
   plane_record->Blocks[page_address.BlockID].Ongoing_user_read_count--;
 }
 
@@ -330,57 +362,64 @@ bool Flash_Block_Manager_Base::Is_page_valid(Block_Pool_Slot_Type *block,
   return false;
 }
 
-void Flash_Block_Manager_Base::scheduleBlockFullErase(
+void Flash_Block_Manager_Base::finishEraseLoop(
     const NVM::FlashMemory::Physical_Page_Address &addr) {
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
-  assert(block.isShallowlyErased);
-  assert(!block.isFullyErased);
-  block.willBeFullyErased = true;
+  block.nextEraseLoopCount++;
 }
 
-bool Flash_Block_Manager_Base::isBlockBeingFullyErased(
+bool Flash_Block_Manager_Base::isAdaptiveEraseInitiated(
     const NVM::FlashMemory::Physical_Page_Address &addr) const {
   const PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   const auto &block = planeRecord->Blocks[addr.BlockID];
-  return block.willBeFullyErased;
+  return block.willBeAdaptivelyErased;
 }
 
-bool Flash_Block_Manager_Base::isBlockFullyErased(
-    const NVM::FlashMemory::Physical_Page_Address &addr) const {
-  PlaneBookKeepingType *planeRecord =
-      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
-  const auto &block = planeRecord->Blocks[addr.BlockID];
-  return block.isFullyErased;
-}
-
-bool Flash_Block_Manager_Base::isBlockShallowlyErased(
-    const NVM::FlashMemory::Physical_Page_Address &addr) const {
-  PlaneBookKeepingType *planeRecord =
-      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
-  const auto &block = planeRecord->Blocks[addr.BlockID];
-  return block.isShallowlyErased;
-}
-
-void Flash_Block_Manager_Base::fullyEraseBlock(
+void Flash_Block_Manager_Base::initiateAdaptiveErase(
     const NVM::FlashMemory::Physical_Page_Address &addr) {
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
-  assert(!block.isFullyErased);
-  assert(block.willBeFullyErased);
-  planeRecord->Blocks[addr.BlockID].isFullyErased = true;
+  block.willBeAdaptivelyErased = true;
 }
 
-void Flash_Block_Manager_Base::shallowlyEraseBlock(
+void Flash_Block_Manager_Base::eraseBlock(
     const NVM::FlashMemory::Physical_Page_Address &addr) {
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
-  assert(!block.isShallowlyErased);
-  planeRecord->Blocks[addr.BlockID].isShallowlyErased = true;
+  assert(block.nextEraseLoopCount > 0);
+  assert(!block.isBlockErased);
+  assert(block.willBeAdaptivelyErased);
+  block.isBlockErased = true;
+}
+
+bool Flash_Block_Manager_Base::isBlockErased(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  const PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  const auto &block = planeRecord->Blocks[addr.BlockID];
+  return block.isBlockErased;
+}
+
+std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  const PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  const auto &block = planeRecord->Blocks[addr.BlockID];
+  const auto &blockModel = blockModels[block.blockModelID];
+  int PEC = block.Erase_count;
+  const auto blockStatsIter = blockModel.lower_bound(PEC);
+  assert(blockStatsIter != blockModel.end());
+  const auto &blockStats = blockStatsIter->second;
+  if (block.nextEraseLoopCount < blockStats.size()) {
+    return blockStats[block.nextEraseLoopCount].eraseLatency;
+  } else {
+    return std::nullopt;
+  }
 }
 
 } // namespace SSD_Components

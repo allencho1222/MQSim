@@ -42,17 +42,21 @@ int main(int argc, char *argv[]) {
   spdlog::set_level(spdlog::level::trace);
 
   po::options_description desc("Allowed options");
-  desc.add_options()("config,c", po::value<std::string>()->required(),
-                     "path to ssd config file")(
-      "workload,w",
-      po::value<std::vector<std::string>>()->multitoken()->required(),
-      "path to workload config file");
+  desc.add_options()(
+    "config,c", po::value<std::string>()->required(),
+    "path to ssd config file")(
+    "workload,w",
+    po::value<std::vector<std::string>>()->multitoken()->required(),
+    "path to workload config file")(
+    "model,m", po::value<std::string>()->required(),
+    "path to model config file");
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
   auto ssdConfigFilePath = vm["config"].as<std::string>();
   auto workloadDefFilePaths = vm["workload"].as<std::vector<std::string>>();
+  auto blockModelFilePath = vm["model"].as<std::string>();
 
   auto execParams = std::make_unique<Execution_Parameter_Set>();
   read_configuration_parameters(ssdConfigFilePath, *execParams);
@@ -66,7 +70,9 @@ int main(int argc, char *argv[]) {
   execParams->Host_Configuration.IO_Flow_Definitions = std::move(sceneDefs);
 
   // Create SSD_Device based on the specified parameters
-  SSD_Device ssd(execParams->SSD_Device_Configuration, *execParams,
+  SSD_Device ssd(blockModelFilePath, 
+                 execParams->SSD_Device_Configuration,
+                 *execParams,
                  execParams->Host_Configuration.IO_Flow_Definitions);
   // Create Host_System based on the specified parameters
   execParams->Host_Configuration.Input_file_path = "workload";

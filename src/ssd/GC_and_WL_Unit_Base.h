@@ -1,6 +1,7 @@
 #ifndef GC_AND_WL_UNIT_BASE_H
 #define GC_AND_WL_UNIT_BASE_H
 
+#include <optional>
 #include "../nvm_chip/flash_memory/Flash_Chip.h"
 #include "../nvm_chip/flash_memory/Physical_Page_Address.h"
 #include "../sim/Sim_Object.h"
@@ -38,6 +39,8 @@ class Block_Pool_Slot_Type;
  * This class implements thet the Garbage Collection and Wear Leveling module of
  * MQSim.
  */
+struct EraseStatus;
+
 class GC_and_WL_Unit_Base : public MQSimEngine::Sim_Object {
 public:
   GC_and_WL_Unit_Base(
@@ -132,6 +135,8 @@ protected:
   unsigned int block_no_per_plane;
   unsigned int pages_no_per_block;
   unsigned int sector_no_per_page;
+public:
+  std::optional<unsigned int> requireRetry(const EraseStatus& blockStat);
 };
 } // namespace SSD_Components
 

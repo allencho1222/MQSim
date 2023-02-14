@@ -34,6 +34,7 @@ public:
   // SSD_Device(Device_Parameter_Set *parameters,
   //            std::vector<IO_Flow_Parameter_Set *> *io_flows);
   SSD_Device(
+      const std::string blockModelFile,
       const Device_Parameter_Set &parameters,
       const Execution_Parameter_Set &execParams,
       const std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> &io_flows);

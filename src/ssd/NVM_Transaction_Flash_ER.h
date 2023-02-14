@@ -6,12 +6,13 @@
 #include <list>
 
 namespace SSD_Components {
-  class NVM_Transaction_Flash_WR;
+class NVM_Transaction_Flash_WR;
 class NVM_Transaction_Flash_ER : public NVM_Transaction_Flash {
 public:
   NVM_Transaction_Flash_ER(
       Transaction_Source_Type source, stream_id_type streamID,
-      const NVM::FlashMemory::Physical_Page_Address &address, bool isFullErase = false);
+      const NVM::FlashMemory::Physical_Page_Address &address,
+      bool isAdaptiveErase = false);
   std::list<NVM_Transaction_Flash_WR *> Page_movement_activities;
 };
 } // namespace SSD_Components

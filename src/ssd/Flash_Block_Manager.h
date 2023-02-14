@@ -17,7 +17,8 @@ public:
                       unsigned int die_no_per_chip,
                       unsigned int plane_no_per_die,
                       unsigned int block_no_per_plane,
-                      unsigned int page_no_per_block);
+                      unsigned int page_no_per_block,
+                      const std::string blockModelFile);
   ~Flash_Block_Manager();
   void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type stream_id,

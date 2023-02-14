@@ -550,13 +550,20 @@ void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
       if (((NVM_Transaction_Flash *)(*it))->Physical_address_determined) {
         ftl->TSU->Submit_transaction(static_cast<NVM_Transaction_Flash *>(*it));
         if (((NVM_Transaction_Flash *)(*it))->Type == Transaction_Type::WRITE) {
-          const auto &writeTR = static_cast<NVM_Transaction_Flash_WR *>(*it);
-          if (!block_manager->isBlockBeingFullyErased(writeTR->Address)) {
-            block_manager->scheduleBlockFullErase(writeTR->Address);
-            const auto eraseTR = new NVM_Transaction_Flash_ER(
-                Transaction_Source_Type::GC_WL, (*it)->Stream_id,
-                writeTR->Address, true);
-            ftl->TSU->Submit_transaction(eraseTR);
+          const auto &eraseAddr =
+              static_cast<NVM_Transaction_Flash_WR *>(*it)->Address;
+          const auto &bm = _my_instance->block_manager;
+          if (!bm->isAdaptiveEraseInitiated(eraseAddr)) {
+            bm->initiateAdaptiveErase(eraseAddr);
+            if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
+              const auto eraseTR = new NVM_Transaction_Flash_ER(
+                  Transaction_Source_Type::GC_WL, (*it)->Stream_id, eraseAddr,
+                  true);
+              eraseTR->setLatency(eraseLatency.value());
+              ftl->TSU->Submit_transaction(eraseTR);
+            } else {
+              bm->eraseBlock(eraseAddr);
+            }
           }
           if (((NVM_Transaction_Flash_WR *)(*it))->RelatedRead != NULL) {
             ftl->TSU->Submit_transaction(
@@ -2451,12 +2458,19 @@ void Address_Mapping_Unit_Page_Level::
     domains[stream_id]->DepartingMappingEntries.insert(
         get_MVPN(lpn, stream_id));
     ftl->TSU->Submit_transaction(writeTR);
-    if (!block_manager->isBlockBeingFullyErased(writeTR->Address)) {
-      block_manager->scheduleBlockFullErase(writeTR->Address);
-      const auto eraseTR = new NVM_Transaction_Flash_ER(
-          Transaction_Source_Type::GC_WL, writeTR->Stream_id, writeTR->Address,
-          true);
-      ftl->TSU->Submit_transaction(eraseTR);
+    const auto &eraseAddr = writeTR->Address;
+    const auto &bm = ftl->BlockManager;
+    if (!bm->isAdaptiveEraseInitiated(eraseAddr)) {
+      bm->initiateAdaptiveErase(eraseAddr);
+      if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
+        const auto eraseTR =
+            new NVM_Transaction_Flash_ER(Transaction_Source_Type::GC_WL,
+                                         writeTR->Stream_id, eraseAddr, true);
+        eraseTR->setLatency(eraseLatency.value());
+        ftl->TSU->Submit_transaction(eraseTR);
+      } else {
+        bm->eraseBlock(eraseAddr);
+      }
     }
     Stats::Total_flash_reads_for_mapping++;
     Stats::Total_flash_writes_for_mapping++;
@@ -2574,15 +2588,20 @@ Address_Mapping_Unit_Page_Level::handle_transaction_serviced_signal_from_PHY(
               if (_my_instance->translate_lpa_to_ppa(transaction->Stream_id,
                                                      it2->second)) {
                 _my_instance->ftl->TSU->Submit_transaction(it2->second);
-                const auto& addr = it2->second->Address;
-                auto& blockManager = _my_instance->block_manager;
+                const auto &eraseAddr = it2->second->Address;
+                const auto &bm = _my_instance->block_manager;
                 if (it2->second->Type == Transaction_Type::WRITE &&
-                    !blockManager->isBlockBeingFullyErased(addr)) {
-                  blockManager->scheduleBlockFullErase(addr);
-                  const auto eraseTR = new NVM_Transaction_Flash_ER(
-                      Transaction_Source_Type::GC_WL,
-                      transaction->Stream_id, addr, true);
-                  _my_instance->ftl->TSU->Submit_transaction(eraseTR);
+                    !bm->isAdaptiveEraseInitiated(eraseAddr)) {
+                  bm->initiateAdaptiveErase(eraseAddr);
+                  if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
+                    const auto eraseTR = new NVM_Transaction_Flash_ER(
+                        Transaction_Source_Type::GC_WL, transaction->Stream_id,
+                        eraseAddr, true);
+                    eraseTR->setLatency(eraseLatency.value());
+                    _my_instance->ftl->TSU->Submit_transaction(eraseTR);
+                  } else {
+                    bm->eraseBlock(eraseAddr);
+                  }
                 }
               } else {
                 _my_instance->mange_unsuccessful_translation(it2->second);
@@ -2604,15 +2623,20 @@ Address_Mapping_Unit_Page_Level::handle_transaction_serviced_signal_from_PHY(
               if (_my_instance->translate_lpa_to_ppa(transaction->Stream_id,
                                                      it2->second)) {
                 _my_instance->ftl->TSU->Submit_transaction(it2->second);
-                const auto& addr = it2->second->Address;
-                auto& blockManager = _my_instance->block_manager;
+                const auto &eraseAddr = it2->second->Address;
+                auto &bm = _my_instance->block_manager;
                 if (it2->second->Type == Transaction_Type::WRITE &&
-                    !blockManager->isBlockBeingFullyErased(addr)) {
-                  blockManager->scheduleBlockFullErase(addr);
-                  const auto eraseTR = new NVM_Transaction_Flash_ER(
-                      Transaction_Source_Type::GC_WL,
-                      transaction->Stream_id, addr, true);
-                  _my_instance->ftl->TSU->Submit_transaction(eraseTR);
+                    !bm->isAdaptiveEraseInitiated(eraseAddr)) {
+                  bm->initiateAdaptiveErase(eraseAddr);
+                  if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
+                    const auto eraseTR = new NVM_Transaction_Flash_ER(
+                        Transaction_Source_Type::GC_WL, transaction->Stream_id,
+                        eraseAddr, true);
+                    eraseTR->setLatency(eraseLatency.value());
+                    _my_instance->ftl->TSU->Submit_transaction(eraseTR);
+                  } else {
+                    bm->eraseBlock(eraseAddr);
+                  }
                 }
                 if (((NVM_Transaction_Flash_WR *)it2->second)->RelatedRead !=
                     NULL) {

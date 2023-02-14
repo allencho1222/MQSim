@@ -182,20 +182,20 @@ void TSU_Base::Submit_transaction(NVM_Transaction_Flash *transaction) {
 }
 
 bool TSU_Base::transaction_is_ready(NVM_Transaction_Flash *transaction) const {
+  const auto& blockManager = ftl->BlockManager;
   switch (transaction->Type) {
   case Transaction_Type::READ:
     return true;
   case Transaction_Type::WRITE:
-    return ftl->BlockManager->isBlockFullyErased(transaction->Address) &&
+    return blockManager->isBlockErased(transaction->Address) &&
            (static_cast<NVM_Transaction_Flash_WR *>(transaction)->RelatedRead ==
             NULL);
-  case Transaction_Type::SHALLOW_ERASE:
-    assert(!ftl->BlockManager->isBlockShallowlyErased(transaction->Address));
+  case Transaction_Type::PROXY_ERASE:
+    assert(!blockManager->isAdaptiveEraseInitiated(transaction->Address));
     return static_cast<NVM_Transaction_Flash_ER *>(transaction)
                ->Page_movement_activities.size() == 0;
-  case Transaction_Type::FULL_ERASE:
-    assert(ftl->BlockManager->isBlockBeingFullyErased(transaction->Address));
-    assert(ftl->BlockManager->isBlockShallowlyErased(transaction->Address));
+  case Transaction_Type::ADAPTIVE_ERASE:
+    assert(blockManager->isAdaptiveEraseInitiated(transaction->Address));
     return true;
   default:
     return true;

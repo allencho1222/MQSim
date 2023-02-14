@@ -51,6 +51,7 @@ public:
   sim_time_type finishedAt;
   std::vector<NVM_Transaction_Flash*> followingTransactions;
 private:
+  sim_time_type latency;
 };
 } // namespace SSD_Components
 

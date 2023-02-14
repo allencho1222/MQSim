@@ -168,8 +168,8 @@ void Flash_Chip::start_command_execution(Flash_Command *command) {
 
   auto &cmd = command->CommandCode;
   if (cmd == CMD_ERASE_BLOCK || cmd == CMD_ERASE_BLOCK_MULTIPLANE) {
-    targetDie->Expected_finish_time =
-        Simulator->Time() + getAdaptiveEraseLatency(command->isFullErase);
+    assert(command->latency != 0);
+    targetDie->Expected_finish_time = Simulator->Time() + command->latency;
   } else {
     targetDie->Expected_finish_time =
         Simulator->Time() +
@@ -202,8 +202,8 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
 
   auto &cmd = command->CommandCode;
   if (cmd == CMD_ERASE_BLOCK || cmd == CMD_ERASE_BLOCK_MULTIPLANE) {
-    targetDie->STAT_TotalReadTime +=
-        getAdaptiveEraseLatency(command->isFullErase);
+    assert(command->latency != 0);
+    targetDie->STAT_TotalReadTime += command->latency;
   } else {
     targetDie->STAT_TotalReadTime += Get_command_execution_latency(
         command->CommandCode, command->Address[0].PageID);
@@ -266,10 +266,9 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
     break;
   case CMD_ERASE_BLOCK:
   case CMD_ERASE_BLOCK_MULTIPLANE:
-    SPDLOG_TRACE(
-        "Channel {} Chip {} Finished executing {} erase command",
-        this->ChannelID, this->ChipID,
-        command->isFullErase ? "full" : "shallow");
+    SPDLOG_TRACE("Channel {} Chip {} Finished executing {} erase command",
+                 this->ChannelID, this->ChipID,
+                 command->isFullErase ? "full" : "shallow");
     for (unsigned int planeCntr = 0; planeCntr < command->Address.size();
          planeCntr++) {
       STAT_eraseCount++;
@@ -445,7 +444,8 @@ void Flash_Chip::reportResults(fmt::ostream &output) {
 //   xmlwriter.Write_attribute_string_inline(attr, val);
 //
 //   attr = "Fraction_of_Time_Idle";
-//   val = std::to_string((Simulator->Time() - STAT_totalOverlappedXferExecTime -
+//   val = std::to_string((Simulator->Time() - STAT_totalOverlappedXferExecTime
+//   -
 //                         STAT_totalXferTime) /
 //                        double(Simulator->Time()));
 //   xmlwriter.Write_attribute_string_inline(attr, val);

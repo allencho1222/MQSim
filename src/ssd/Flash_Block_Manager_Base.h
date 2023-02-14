@@ -31,6 +31,7 @@ enum class Block_Service_Status {
 
 class Block_Pool_Slot_Type {
 public:
+  Block_Pool_Slot_Type();
   flash_block_ID_type BlockID;
   flash_page_ID_type Current_page_write_index;
   Block_Service_Status Current_status;
@@ -50,10 +51,12 @@ public:
              // amplification in flash-based SSDs", Perf. Eval., 2014.
   int Ongoing_user_read_count;
   int Ongoing_user_program_count;
-  bool isFullyErased;
-  bool isShallowlyErased;
-  bool willBeFullyErased;
+  bool willBeAdaptivelyErased;
+  bool isBlockErased;
   void Erase();
+
+  int nextEraseLoopCount;
+  int blockModelID = 0;
 };
 
 class PlaneBookKeepingType {
@@ -87,6 +90,11 @@ public:
                               bool consider_dynamic_wl);
 };
 
+typedef struct EraseStatus {
+  int PEC;
+  int numFailBits;
+} EraseStatus;
+
 class Flash_Block_Manager_Base {
   friend class Address_Mapping_Unit_Page_Level;
   friend class GC_and_WL_Unit_Page_Level;
@@ -101,7 +109,8 @@ public:
                            unsigned int die_no_per_chip,
                            unsigned int plane_no_per_die,
                            unsigned int block_no_per_plane,
-                           unsigned int page_no_per_block);
+                           unsigned int page_no_per_block,
+                           const std::string blockModelFile);
   virtual ~Flash_Block_Manager_Base();
   virtual void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type streamID,
@@ -163,17 +172,17 @@ public:
   Is_page_valid(Block_Pool_Slot_Type *block,
                 flash_page_ID_type page_id); // Make the page invalid in the
                                              // block bookkeeping record
-  bool
-  isBlockFullyErased(const NVM::FlashMemory::Physical_Page_Address &addr) const;
-  bool isBlockShallowlyErased(
+  // bool
+  // isBlockFullyErased(const NVM::FlashMemory::Physical_Page_Address &addr)
+  void finishEraseLoop(const NVM::FlashMemory::Physical_Page_Address &addr);
+  void eraseBlock(const NVM::FlashMemory::Physical_Page_Address &addr);
+  bool isAdaptiveEraseInitiated(
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
-  void fullyEraseBlock(const NVM::FlashMemory::Physical_Page_Address &addr);
-  void shallowlyEraseBlock(const NVM::FlashMemory::Physical_Page_Address &addr);
-
-  bool
-  isBlockBeingFullyErased(const NVM::FlashMemory::Physical_Page_Address &addr) const;
   void
-  scheduleBlockFullErase(const NVM::FlashMemory::Physical_Page_Address &addr);
+  initiateAdaptiveErase(const NVM::FlashMemory::Physical_Page_Address &addr);
+  bool isBlockErased(const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  std::optional<sim_time_type> getNextEraseLatency(
+      const NVM::FlashMemory::Physical_Page_Address &addr) const;
 
 protected:
   PlaneBookKeepingType ***
@@ -190,6 +199,15 @@ protected:
   void program_transaction_issued(
       const NVM::FlashMemory::Physical_Page_Address
           &page_address); // Updates the block bookkeeping record
+private:
+  typedef struct BlockStat {
+    sim_time_type eraseLatency;
+    std::pair<int, int> failBitRange;
+  } BlockStat;
+  using BlockStats = std::vector<BlockStat>;
+  using BlockModel = std::map<int, BlockStats, std::greater<int>>;
+  using BlockModels = std::vector<BlockModel>;
+  BlockModels blockModels;
 };
 } // namespace SSD_Components
 

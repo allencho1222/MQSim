@@ -22,6 +22,7 @@
 SSD_Device *SSD_Device::my_instance; // Used in static functions
 
 SSD_Device::SSD_Device(
+    const std::string blockModelFile,
     const Device_Parameter_Set &parameters,
     const Execution_Parameter_Set &execParams,
     const std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> &io_flows)
@@ -243,7 +244,8 @@ SSD_Device::SSD_Device(
         parameters.Flash_Parameters.Die_No_Per_Chip,
         parameters.Flash_Parameters.Plane_No_Per_Die,
         parameters.Flash_Parameters.Block_No_Per_Plane,
-        parameters.Flash_Parameters.Page_No_Per_Block);
+        parameters.Flash_Parameters.Page_No_Per_Block,
+        blockModelFile);
     ftl->BlockManager = fbm;
 
     // Step 7: create Address_Mapping_Unit
