@@ -115,7 +115,7 @@ void IO_Flow_Parameter_Set_Trace_Based::parseYAML(const YAML::Node &ioParams) {
   try {
     Relay_Count = ioParams["relay_count"].as<int>();
     Percentage_To_Be_Executed = ioParams["percentage_to_be_executed"].as<int>();
-    File_Path = ioParams["file_path"].as<int>();
+    File_Path = ioParams["file_path"].as<std::string>();
     const auto &timeUnit = ioParams["time_unit"].as<std::string>();
     if (timeUnit == "PICOSECOND") {
       Time_Unit = Trace_Time_Unit::PICOSECOND;
