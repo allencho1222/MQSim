@@ -22,7 +22,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
   for (auto it = std::cbegin(yaml); it != std::cend(yaml); ++it) {
     auto blockModelID = it->first.as<std::string>();
     const auto ratio = it->second["ratio"].as<int>();
-    const auto stat = it->second["status"];
+    const auto stat = it->second["erase_status"];
     auto blockModel = BlockModel();
     for (auto s = std::cbegin(stat); s != std::cend(stat); ++s) {
       const auto pec = s->first.as<int>();
