@@ -1,0 +1,48 @@
+type: TRACE
+# the priority class of the I/O queue associated with this I/O request. 
+# Range = {URGENT, HIGH, MEDIUM, LOW}.
+priority_class: HIGH
+# the type of on-device data caching for this flow.
+# Range={WRITE_CACHE, READ_CACHE, WRITE_READ_CACHE, TURNED_OFF}. 
+# If the caching mechanism mentioned above is set to SIMPLE, 
+# then only WRITE_CACHE and TURNED_OFF modes could be used.
+device_level_data_caching_mode: WRITE_CACHE
+# a comma-separated list of channel IDs that are allocated to this workload. 
+# This list is used for resource partitioning. If there are C channels in 
+# the SSD (defined in the SSD configuration file), then the channel ID list 
+# should include values in the range 0 to C-1. If no resource partitioning 
+# is required, then all workloads should have channel IDs 0 to C-1.
+channel_ids: [0, 1, 2, 3, 4, 5, 6, 7]
+# a comma-separated list of chip IDs that are allocated to this workload. 
+# This list is used for resource partitioning. If there are W chips in each 
+# channel (defined in the SSD configuration file), then the chip ID list 
+# should include values in the range 0 to W-1. If no resource partitioning 
+# is required, then all workloads should have chip IDs 0 to W-1.
+chip_ids: [0, 1, 2, 3]
+# a comma-separated list of chip IDs that are allocated to this workload. 
+# This list is used for resource partitioning. If there are D dies in each 
+# flash chip (defined in the SSD configuration file), then the die ID list 
+# should include values in the range 0 to D-1. If no resource partitioning 
+# is required, then all workloads should have die IDs 0 to D-1.
+die_ids: [0, 1]
+# a comma-separated list of plane IDs that are allocated to this workload. 
+# This list is used for resource partitioning. If there are P planes in 
+# each die (defined in the SSD configuration file), then the plane ID list 
+# should include values in the range 0 to P-1. If no resource partitioning 
+# is required, then all workloads should have plane IDs 0 to P-1.
+plane_ids: [0, 1]
+# the percentage of the storage space (i.e., logical pages) that is filled 
+# during preconditioning. 
+# Range = {all integer values in the range 1 to 100}.
+initial_occupancy_percentage: 70
+# the relative/absolute path to the input trace file.
+file_path: /path/to/trace/file
+# the percentage of requests in the input trace file that should be executed. 
+# Range = {all integer values in the range 1 to 100}.
+percentage_to_be_executed: 100
+# the number of times that the trace execution should be repeated. 
+# Range = {all positive integer values}.
+relay_count: 1
+# the unit of arrival times in the input trace file. 
+# Range = {PICOSECOND, NANOSECOND, MICROSECOND}
+time_unit: NANOSECOND

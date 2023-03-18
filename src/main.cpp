@@ -20,11 +20,11 @@ void read_configuration_parameters(const std::string &ssdConfigFilePath,
 }
 
 void read_workload_definitions(
-    const std::string workloadDefsFilePath,
+    const std::vector<std::string> workloadDefsFilePaths,
     std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> &sceneDefs) {
-  const auto workloadDefs = YAML::LoadFile(workloadDefsFilePath);
-  for (const auto &sceneDef : workloadDefs["io_scenario"]) {
-    const auto &ioFlowType = sceneDef["type"].as<std::string>();
+  for (const auto &workloadDefsFilePath : workloadDefsFilePaths) {
+    const auto workloadDef = YAML::LoadFile(workloadDefsFilePath);
+    const auto &ioFlowType = workloadDef["type"].as<std::string>();
     std::unique_ptr<IO_Flow_Parameter_Set> ioFlow;
     if (ioFlowType == "SYNTHETIC") {
       ioFlow = std::make_unique<IO_Flow_Parameter_Set_Synthetic>();
@@ -33,7 +33,7 @@ void read_workload_definitions(
     } else {
       assert(false);
     }
-    ioFlow->parseYAML(sceneDef["setup"]);
+    ioFlow->parseYAML(workloadDef);
     sceneDefs.push_back(std::move(ioFlow));
   }
 }
@@ -44,19 +44,20 @@ int main(int argc, char *argv[]) {
   po::options_description desc("Allowed options");
   desc.add_options()("config,c", po::value<std::string>()->required(),
                      "path to ssd config file")(
-      "workload,w", po::value<std::string>()->required(),
+      "workload,w",
+      po::value<std::vector<std::string>>()->multitoken()->required(),
       "path to workload config file");
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
   po::notify(vm);
 
   auto ssdConfigFilePath = vm["config"].as<std::string>();
-  auto workloadDefFilePath = vm["workload"].as<std::string>();
+  auto workloadDefFilePaths = vm["workload"].as<std::vector<std::string>>();
 
   auto execParams = std::make_unique<Execution_Parameter_Set>();
   read_configuration_parameters(ssdConfigFilePath, *execParams);
   std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> sceneDefs;
-  read_workload_definitions(workloadDefFilePath, sceneDefs);
+  read_workload_definitions(workloadDefFilePaths, sceneDefs);
 
   // The simulator should always be reset, before starting the actual
   // simulation
@@ -65,18 +66,17 @@ int main(int argc, char *argv[]) {
   execParams->Host_Configuration.IO_Flow_Definitions = std::move(sceneDefs);
 
   // Create SSD_Device based on the specified parameters
-  SSD_Device ssd(execParams->SSD_Device_Configuration,
-                 *execParams,
+  SSD_Device ssd(execParams->SSD_Device_Configuration, *execParams,
                  execParams->Host_Configuration.IO_Flow_Definitions);
   // Create Host_System based on the specified parameters
-  execParams->Host_Configuration.Input_file_path =
-      workloadDefFilePath.substr(0, workloadDefFilePath.find_last_of("."));
+  execParams->Host_Configuration.Input_file_path = "workload";
   Host_System host(&execParams->Host_Configuration,
                    execParams->SSD_Device_Configuration.Enabled_Preconditioning,
                    ssd.Host_interface);
   host.Attach_ssd_device(&ssd);
 
-  fmt::print("simulation start\n");
+  fmt::print("simulation start (num workloads: {})\n",
+             workloadDefFilePaths.size());
   auto startTime = std::chrono::high_resolution_clock::now();
   Simulator->Start_simulation();
   auto endTime = std::chrono::high_resolution_clock::now();
