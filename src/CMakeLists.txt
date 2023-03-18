@@ -13,7 +13,7 @@ target_include_directories(mqsim
   PRIVATE utils)
 target_link_libraries(mqsim 
   Boost::program_options 
-  fmt::fmt 
+  fmt
   spdlog::spdlog
   yaml-cpp
 )

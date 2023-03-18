@@ -205,7 +205,7 @@ private:
     std::pair<int, int> failBitRange;
   } BlockStat;
   using BlockStats = std::vector<BlockStat>;
-  using BlockModel = std::map<int, BlockStats, std::greater<int>>;
+  using BlockModel = std::map<int, BlockStats>;
   using BlockModels = std::vector<BlockModel>;
   BlockModels blockModels;
 };

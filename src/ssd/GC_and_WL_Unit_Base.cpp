@@ -280,6 +280,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             (NVM_Transaction_Flash_WR *)transaction);
   } else if (trType == Transaction_Type::PROXY_ERASE) {
     fmt::print("proxy erase\n");
+    // WARNING: `Add_erased_block_to_pool` do not increase `Erase_count`
     pbke->Ongoing_erase_operations.erase(
         pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
     _my_instance->block_manager->Add_erased_block_to_pool(

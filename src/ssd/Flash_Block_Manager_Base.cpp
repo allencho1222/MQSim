@@ -37,6 +37,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     }
     blockModels.push_back(std::move(blockModel));
   }
+
   plane_manager = new PlaneBookKeepingType ***[channel_count];
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     plane_manager[channelID] = new PlaneBookKeepingType **[chip_no_per_channel];
@@ -157,7 +158,7 @@ Block_Pool_Slot_Type::Block_Pool_Slot_Type() {
 void Block_Pool_Slot_Type::Erase() {
   Current_page_write_index = 0;
   Invalid_page_count = 0;
-  Erase_count++;
+  //Erase_count++;
   for (unsigned int i = 0; i < Block_Pool_Slot_Type::Page_vector_size; i++) {
     Invalid_page_bitmap[i] = All_VALID_PAGE;
   }
@@ -294,10 +295,12 @@ void Flash_Block_Manager_Base::GC_WL_started(
   auto &block = plane_record->Blocks[block_address.BlockID];
   // assert(block.isFullyErased);
   // assert(block.isShallowlyErased);
+  assert(block.nextEraseLoopCount == 0);
+  assert(block.willBeAdaptivelyErased);
+  assert(block.isBlockErased);
   block.Has_ongoing_gc_wl = true;
   block.willBeAdaptivelyErased = false;
   block.isBlockErased = false;
-  block.nextEraseLoopCount = 0;
 }
 
 void Flash_Block_Manager_Base::program_transaction_issued(
@@ -391,10 +394,20 @@ void Flash_Block_Manager_Base::eraseBlock(
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
-  assert(block.nextEraseLoopCount > 0);
+  const auto &blockModel = blockModels[block.blockModelID];
+  int PEC = block.Erase_count;
+  const auto blockStatsIter = blockModel.upper_bound(PEC);
+  assert(blockStatsIter != blockModel.end());
+  const auto &blockStats = blockStatsIter->second;
+  assert(block.nextEraseLoopCount == blockStats.size());
   assert(!block.isBlockErased);
   assert(block.willBeAdaptivelyErased);
   block.isBlockErased = true;
+  // TODO (sungjun): need to separate logical and physical erase count.
+  // physical erase count: # of erase operation.
+  // logical erase count: # of ISPEs
+  block.Erase_count++;
+  block.nextEraseLoopCount = 0;
 }
 
 bool Flash_Block_Manager_Base::isBlockErased(
@@ -412,7 +425,7 @@ std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
   const auto &block = planeRecord->Blocks[addr.BlockID];
   const auto &blockModel = blockModels[block.blockModelID];
   int PEC = block.Erase_count;
-  const auto blockStatsIter = blockModel.lower_bound(PEC);
+  const auto blockStatsIter = blockModel.upper_bound(PEC);
   assert(blockStatsIter != blockModel.end());
   const auto &blockStats = blockStatsIter->second;
   if (block.nextEraseLoopCount < blockStats.size()) {
