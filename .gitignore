@@ -8,3 +8,4 @@ latex/
 Doxyfile
 *.xml
 *.txt
+*.json

@@ -6,7 +6,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # print SPDLOG_TRACE
 add_definitions(-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
 
-include(build/conanbuildinfo.cmake)
-conan_basic_setup()
+find_package(Boost REQUIRED)
+find_package(fmt REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)

@@ -11,5 +11,10 @@ target_include_directories(mqsim
   PRIVATE sim
   PRIVATE ssd
   PRIVATE utils)
-target_link_libraries(mqsim ${CONAN_LIBS})
+target_link_libraries(mqsim 
+  Boost::program_options 
+  fmt::fmt 
+  spdlog::spdlog
+  yaml-cpp
+)
 target_compile_options(mqsim PRIVATE -Wall -O3 -g)
