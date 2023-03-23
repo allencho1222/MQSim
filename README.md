@@ -1,3 +1,54 @@
+## Requirements
+- cmake 3.25.0 or later
+- gcc 11.0 or later
+- conan 2.0 or later
+  installed by `conan`
+
+## Prerequisites
+1. If this is the first time to use `conan`, you need to generate a conan profile.
+```
+$ conan profile detect --force
+```
+2. Make sure the conan profile file (`~/.conan2/profiles/default`) is correctly set.
+- `os` must be `Linux`
+- `compiler.version` is `gcc`
+- `compiler.version` can be `11` or `12`
+- `compiler.cppstd` can be `gnu11`, `gnu14`, `gnu17`, or `gnu20`.
+- `compiler.libcxx` must be `libstdc++11`
+
+
+
+
+## Build
+1. Build MQSim in `Debug` or `Release` mode. Dependencies (fmt, spdlog, boost, and yaml-cpp) will be automatically installed by `conan`.
+```
+# build MQSim (MODE: Debug or Release).
+$ conan install . -s "&:build_type=${MODE}" -s "build_type=Release"
+```
+
+2. Configure cmake
+```
+# configure cmake (mode: debug or release). 
+# Choose mode based on your choice in (1)
+$ cmake --preset conan-${mode}
+```
+
+3. Make MQSim binary. `DIR` varies depending on your choice in (1).
+```
+$ make -j -C build/${DIR}/src
+```
+
+## Usage in Linux
+To run MQSim, do the following:
+```
+$ ./build/${DIR}/src/mqsim -c ssd_config.yaml -w synthetic.yaml
+```
+If you want to run multiple io scenarios (e.g., mutliple traces), 
+place multiple trace config files after `-w`:
+```
+$ ./build/${DIR}/src/mqsim -c ssd_config.yaml -w trace_0.yaml trace_1.yaml ...
+```
+
 # MQSim: A Simulator for Modern NVMe and SATA SSDs
 
 MQSim is a simulator that accurately captures the behavior of both modern multi-queue SSDs and conventional SATA-based SSDs. MQSim faithfully models a number of critical features absent in existing state-of-the-art simulators, including (1) modern multi-queue-based host–interface protocols (e.g., NVMe), (2) the steady-state behavior of SSDs, and (3) the end-to-end latency of I/O requests. MQSim can be run as a standalone tool, or integrated with a full-system simulator.
