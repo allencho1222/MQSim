@@ -7,6 +7,7 @@ sim_time_type Host_Parameter_Set::
     SATA_Processing_Delay; // The overall hardware and software processing delay
                            // to send/receive a SATA message in nanoseconds
 bool Host_Parameter_Set::Enable_ResponseTime_Logging = false;
+std::string Host_Parameter_Set::Latency_Log_File_Path = "";
 sim_time_type Host_Parameter_Set::ResponseTime_Logging_Period_Length =
     400000; // nanoseconds
 std::string Host_Parameter_Set::Input_file_path;
@@ -20,6 +21,7 @@ void Host_Parameter_Set::parseYAML(const YAML::Node &hostParams) const {
         hostParams["sata_processing_delay"].as<sim_time_type>();
     Enable_ResponseTime_Logging =
         hostParams["enable_responsetime_logging"].as<bool>();
+    Latency_Log_File_Path = hostParams["latency_log_file_path"].as<std::string>();
     ResponseTime_Logging_Period_Length =
         hostParams["responsetime_logging_period_length"].as<sim_time_type>();
   } catch (...) {

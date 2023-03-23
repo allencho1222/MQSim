@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <vector>
 #include <fmt/os.h>
+#include <cstdio>
 
 namespace Host_Components {
 struct NVMe_Queue_Pair {
@@ -54,7 +55,8 @@ public:
                HostInterface_Types SSD_device_type,
                PCIe_Root_Complex *pcie_root_complex, SATA_HBA *sata_hba,
                bool enabled_logging, sim_time_type logging_period,
-               std::string logging_file_path);
+               std::string logging_file_path,
+               std::string latency_file_path);
   ~IO_Flow_Base();
   void Start_simulation();
   IO_Flow_Priority_Class::Priority Priority_class() { return priority_class; }
@@ -144,6 +146,10 @@ protected:
   sim_time_type next_logging_milestone;
   std::string logging_file_path;
   std::ofstream log_file;
+
+  std::string latency_file_path;
+  FILE* latency_file;
+  
   uint32_t Get_device_response_time_short_term();     // in microseconds
   uint32_t Get_end_to_end_request_delay_short_term(); // in microseconds
   sim_time_type STAT_sum_device_response_time_short_term,

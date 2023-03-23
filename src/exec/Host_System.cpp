@@ -100,7 +100,8 @@ Host_System::Host_System(
           parameters->Enable_ResponseTime_Logging,
           parameters->ResponseTime_Logging_Period_Length,
           parameters->Input_file_path + ".IO_Flow.No_" +
-              std::to_string(flow_id) + ".log");
+              std::to_string(flow_id) + ".log",
+          parameters->Latency_Log_File_Path);
       this->IO_flows.push_back(io_flow);
       break;
     }
@@ -123,7 +124,8 @@ Host_System::Host_System(
           parameters->Enable_ResponseTime_Logging,
           parameters->ResponseTime_Logging_Period_Length,
           parameters->Input_file_path + ".IO_Flow.No_" +
-              std::to_string(flow_id) + ".log");
+              std::to_string(flow_id) + ".log",
+          parameters->Latency_Log_File_Path);
 
       this->IO_flows.push_back(io_flow);
       break;

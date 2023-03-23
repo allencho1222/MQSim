@@ -13,6 +13,10 @@ host_parameters:
   # defines the epoch length for response time logging in nanoseconds. 
   # Range = {all positive integer values}.
   responsetime_logging_period_length: 1000000
+  # log end-to-end request latency for each request
+  # Use "" if you do not want log latencies
+  latency_log_file_path: ""
+
 device_parameters:
   # the seed value that is used for random number generation. 
   # Range = {all positive integer values}.

@@ -16,7 +16,8 @@ IO_Flow_Base::IO_Flow_Base(
     double initial_occupancy_ratio, unsigned int total_requets_to_be_generated,
     HostInterface_Types SSD_device_type, PCIe_Root_Complex *pcie_root_complex,
     SATA_HBA *sata_hba, bool enabled_logging, sim_time_type logging_period,
-    std::string logging_file_path)
+    std::string logging_file_path,
+    std::string latency_file_path)
     : MQSimEngine::Sim_Object(name), flow_id(flow_id),
       start_lsa_on_device(start_lsa_on_device),
       end_lsa_on_device(end_lsa_on_device), io_queue_id(io_queue_id),
@@ -44,7 +45,9 @@ IO_Flow_Base::IO_Flow_Base(
       STAT_transferred_bytes_total(0), STAT_transferred_bytes_read(0),
       STAT_transferred_bytes_write(0), progress(0), next_progress_step(0),
       enabled_logging(enabled_logging), logging_period(logging_period),
-      logging_file_path(logging_file_path) {
+      logging_file_path(logging_file_path),
+      latency_file_path(latency_file_path),
+      latency_file(nullptr) {
   Host_IO_Request *t = NULL;
 
   switch (SSD_device_type) {
@@ -167,6 +170,7 @@ IO_Flow_Base::IO_Flow_Base(
 
 IO_Flow_Base::~IO_Flow_Base() {
   log_file.close();
+  std::fclose(latency_file);
   for (auto &req : waiting_requests) {
     if (req) {
       delete req;
@@ -193,6 +197,14 @@ void IO_Flow_Base::Start_simulation() {
   if (enabled_logging) {
     log_file.open(logging_file_path, std::ofstream::out);
   }
+  if (!latency_file_path.empty()) {
+    latency_file = std::fopen(latency_file_path.c_str(), "w");
+    if(!latency_file) {
+        std::perror("Latency file open failed");
+        exit(-1);
+    }
+  }
+
   log_file << "SimulationTime(us)\t"
            << "ReponseTime(us)\t"
            << "EndToEndDelay(us)" << std::endl;
@@ -309,6 +321,11 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
   available_command_ids.insert(cqe->Command_Identifier);
   sim_time_type device_response_time =
       Simulator->Time() - request->Enqueue_time;
+  // Log end-to-end request latency for each request
+  // TODO (sungjun): make sure that it only reports read request latency
+  if (latency_file) {
+    fmt::print(latency_file, "{}\n", Simulator->Time() - request->Enqueue_time);
+  }
   sim_time_type request_delay = Simulator->Time() - request->Arrival_time;
   STAT_serviced_request_count++;
   STAT_serviced_request_count_short_term++;
