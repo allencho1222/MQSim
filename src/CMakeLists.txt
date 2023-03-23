@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.25)
 
 file(GLOB_RECURSE SIM_SRCS CONFIGURE_DEPENDS *.cpp)
 add_executable(mqsim ${SIM_SRCS})
