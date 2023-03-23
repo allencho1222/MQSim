@@ -41,12 +41,12 @@ $ make -j -C build/${DIR}/src
 ## Usage in Linux
 To run MQSim, do the following:
 ```
-$ ./build/${DIR}/src/mqsim -c ssd_config.yaml -w synthetic.yaml
+$ ./build/${DIR}/src/mqsim -c ssd_config.yaml -m model.yaml -w synthetic.yaml
 ```
 If you want to run multiple io scenarios (e.g., mutliple traces), 
 place multiple trace config files after `-w`:
 ```
-$ ./build/${DIR}/src/mqsim -c ssd_config.yaml -w trace_0.yaml trace_1.yaml ...
+$ ./build/${DIR}/src/mqsim -c ssd_config.yaml -m model.yaml -w trace_0.yaml trace_1.yaml ...
 ```
 
 # MQSim: A Simulator for Modern NVMe and SATA SSDs
