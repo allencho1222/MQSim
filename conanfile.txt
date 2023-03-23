@@ -1,9 +1,0 @@
-[requires]
-fmt/9.1.0
-spdlog/1.11.0
-boost/1.81.0
-yaml-cpp/0.7.0
-
-[generators]
-CMakeDeps
-CMakeToolchain
