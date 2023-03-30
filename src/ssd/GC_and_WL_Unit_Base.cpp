@@ -380,7 +380,14 @@ bool GC_and_WL_Unit_Base::is_safe_gc_wl_candidate(
     return false;
   }
 
+  // This condition can be released when a block is shallowly erased.
   if (plane_record->Blocks[gc_wl_candidate_block_id].Has_ongoing_gc_wl) {
+    return false;
+  }
+
+  // Check whether a block is still being erased.
+  // This condition can be released if the block is fully erased.
+  if (!plane_record->Blocks[gc_wl_candidate_block_id].isBlockErased) {
     return false;
   }
 
