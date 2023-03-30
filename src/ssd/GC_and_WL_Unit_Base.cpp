@@ -354,7 +354,7 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
   Block_Pool_Slot_Type *block = &pbke->Blocks[wl_candidate_block_id];
 
   // Run the state machine to protect against race condition
-  block_manager->GC_WL_started(wl_candidate_block_id);
+  block_manager->GC_WL_started(wl_candidate_address);
   pbke->Ongoing_erase_operations.insert(wl_candidate_block_id);
   address_mapping_unit->Set_barrier_for_accessing_physical_block(
       wl_candidate_address); // Lock the block, so no user request can intervene
