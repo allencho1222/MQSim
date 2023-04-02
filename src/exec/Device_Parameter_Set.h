@@ -17,6 +17,7 @@
 
 class Device_Parameter_Set {
 public:
+  static unsigned int Initial_Erase_Count;
   static int Seed; // Seed for random number generation (used in device's random
                    // number generators)
   static bool Enabled_Preconditioning;

@@ -326,7 +326,12 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
   }
 }
 
-void GC_and_WL_Unit_Base::Start_simulation(bool isPreconditioning) {}
+void GC_and_WL_Unit_Base::Start_simulation(bool isPreconditioning) {
+  if (!isPreconditioning) {
+    auto &blockManager = _my_instance->block_manager;
+    blockManager->resetEraseCount();
+  }
+}
 
 void GC_and_WL_Unit_Base::Validate_simulation_config() {}
 

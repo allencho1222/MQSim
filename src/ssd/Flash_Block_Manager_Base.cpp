@@ -10,14 +10,16 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     unsigned int total_concurrent_streams_no, unsigned int channel_count,
     unsigned int chip_no_per_channel, unsigned int die_no_per_chip,
     unsigned int plane_no_per_die, unsigned int block_no_per_plane,
-    unsigned int page_no_per_block, const std::string blockModelFile)
+    unsigned int page_no_per_block, const std::string blockModelFile,
+    unsigned int initialEraseCount)
     : gc_and_wl_unit(gc_and_wl_unit),
       max_allowed_block_erase_count(max_allowed_block_erase_count),
       total_concurrent_streams_no(total_concurrent_streams_no),
       channel_count(channel_count), chip_no_per_channel(chip_no_per_channel),
       die_no_per_chip(die_no_per_chip), plane_no_per_die(plane_no_per_die),
       block_no_per_plane(block_no_per_plane),
-      pages_no_per_block(page_no_per_block) {
+      pages_no_per_block(page_no_per_block),
+      initialEraseCount(initialEraseCount) {
   const auto yaml = YAML::LoadFile(blockModelFile);
   for (auto it = std::cbegin(yaml); it != std::cend(yaml); ++it) {
     auto blockModelID = it->first.as<std::string>();
@@ -146,6 +148,24 @@ Flash_Block_Manager_Base::~Flash_Block_Manager_Base() {
     delete[] plane_manager[channel_id];
   }
   delete[] plane_manager;
+}
+
+void Flash_Block_Manager_Base::resetEraseCount() {
+  for (unsigned int channel_id = 0; channel_id < channel_count; channel_id++) {
+    for (unsigned int chip_id = 0; chip_id < chip_no_per_channel; chip_id++) {
+      for (unsigned int die_id = 0; die_id < die_no_per_chip; die_id++) {
+        for (unsigned int plane_id = 0; plane_id < plane_no_per_die;
+             plane_id++) {
+          for (unsigned int blockID = 0; blockID < block_no_per_plane;
+               blockID++) {
+            auto &block = plane_manager[channel_id][chip_id][die_id][plane_id]
+                              .Blocks[blockID];
+            block.Erase_count = initialEraseCount;
+          }
+        }
+      }
+    }
+  }
 }
 
 void Flash_Block_Manager_Base::Set_GC_and_WL_Unit(GC_and_WL_Unit_Base *gcwl) {

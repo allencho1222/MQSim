@@ -110,7 +110,8 @@ public:
                            unsigned int plane_no_per_die,
                            unsigned int block_no_per_plane,
                            unsigned int page_no_per_block,
-                           const std::string blockModelFile);
+                           const std::string blockModelFile,
+                           unsigned int initialEraseCount);
   virtual ~Flash_Block_Manager_Base();
   virtual void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type streamID,
@@ -183,6 +184,7 @@ public:
   bool isBlockErased(const NVM::FlashMemory::Physical_Page_Address &addr) const;
   std::optional<sim_time_type> getNextEraseLatency(
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  void resetEraseCount();
 
 protected:
   PlaneBookKeepingType ***
@@ -208,6 +210,7 @@ private:
   using BlockModel = std::map<int, BlockStats>;
   using BlockModels = std::vector<BlockModel>;
   BlockModels blockModels;
+  unsigned int initialEraseCount;
 };
 } // namespace SSD_Components
 

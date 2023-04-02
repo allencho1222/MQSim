@@ -18,6 +18,7 @@ host_parameters:
   record_latency: false
 
 device_parameters:
+  initial_erase_count: 500
   # the seed value that is used for random number generation. 
   # Range = {all positive integer values}.
   seed: 321

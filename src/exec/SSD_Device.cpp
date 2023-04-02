@@ -245,7 +245,8 @@ SSD_Device::SSD_Device(
         parameters.Flash_Parameters.Plane_No_Per_Die,
         parameters.Flash_Parameters.Block_No_Per_Plane,
         parameters.Flash_Parameters.Page_No_Per_Block,
-        blockModelFile);
+        blockModelFile,
+        parameters.Initial_Erase_Count);
     ftl->BlockManager = fbm;
 
     // Step 7: create Address_Mapping_Unit

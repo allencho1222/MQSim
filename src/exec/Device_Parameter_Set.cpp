@@ -73,6 +73,7 @@ std::unordered_map<std::string, SSD_Components::ONFI_Protocol>
     Device_Parameter_Set::protocolMap = {
         {"NVDDR2", SSD_Components::ONFI_Protocol::NVDDR2}};
 
+unsigned int Device_Parameter_Set::Initial_Erase_Count = 0;
 int Device_Parameter_Set::Seed = 123; // Seed for random number generation (used
                                       // in device's random number generators)
 bool Device_Parameter_Set::Enabled_Preconditioning = true;
@@ -161,6 +162,8 @@ Flash_Parameter_Set Device_Parameter_Set::Flash_Parameters;
 
 void Device_Parameter_Set::parseYAML(const YAML::Node &deviceParams) {
   try {
+    Initial_Erase_Count = 
+      deviceParams["initial_erase_count"].as<unsigned int>();
     Seed = deviceParams["seed"].as<int>();
     Enabled_Preconditioning = deviceParams["enable_preconditioning"].as<bool>();
     const auto memType = deviceParams["memory_type"].as<std::string>();

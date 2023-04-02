@@ -18,7 +18,8 @@ public:
                       unsigned int plane_no_per_die,
                       unsigned int block_no_per_plane,
                       unsigned int page_no_per_block,
-                      const std::string blockModelFile);
+                      const std::string blockModelFile,
+                      unsigned int initialEraseCount);
   ~Flash_Block_Manager();
   void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type stream_id,
