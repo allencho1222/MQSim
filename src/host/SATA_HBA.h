@@ -48,7 +48,7 @@ public:
            PCIe_Root_Complex *pcie_root_complex,
            std::vector<Host_Components::IO_Flow_Base *> *IO_flows);
   ~SATA_HBA();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   void Submit_io_request(Host_IO_Request *request);

@@ -29,10 +29,12 @@ public:
   void AddObject(Sim_Object *obj);
   Sim_Object *GetObject(sim_object_id_type object_id);
   void RemoveObject(Sim_Object *obj);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Stop_simulation();
   bool Has_started();
   bool Is_integrated_execution_mode();
+  void initSim();
+  void finishPreconditioning();
 
 private:
   sim_time_type _sim_time;

@@ -86,7 +86,7 @@ void NVM_PHY_ONFI_NVDDR2::Setup_triggers() {
 
 void NVM_PHY_ONFI_NVDDR2::Validate_simulation_config() {}
 
-void NVM_PHY_ONFI_NVDDR2::Start_simulation() {}
+void NVM_PHY_ONFI_NVDDR2::Start_simulation(bool isPreconditioning) {}
 
 inline BusChannelStatus
 NVM_PHY_ONFI_NVDDR2::Get_channel_status(flash_channel_ID_type channelID) {

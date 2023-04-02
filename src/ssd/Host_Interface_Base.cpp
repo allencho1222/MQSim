@@ -12,9 +12,28 @@ Input_Stream_Base::Input_Stream_Base()
       STAT_sum_of_write_transactions_transfer_time(0),
       STAT_sum_of_write_transactions_waiting_time(0) {}
 
+void Input_Stream_Base::init() {
+  STAT_number_of_read_requests = 0;
+  STAT_number_of_write_requests = 0;
+  STAT_number_of_read_transactions = 0;
+  STAT_number_of_write_transactions = 0;
+  STAT_sum_of_read_transactions_execution_time = 0;
+  STAT_sum_of_read_transactions_transfer_time  = 0;
+  STAT_sum_of_read_transactions_waiting_time = 0;
+  STAT_sum_of_write_transactions_execution_time = 0;
+  STAT_sum_of_write_transactions_transfer_time = 0;
+  STAT_sum_of_write_transactions_waiting_time = 0;
+}
+
 Input_Stream_Manager_Base::~Input_Stream_Manager_Base() {
   for (auto &stream : input_streams) {
     delete stream;
+  }
+}
+
+void Input_Stream_Manager_Base::init() {
+  for (auto &stream : input_streams) {
+    stream->init();
   }
 }
 

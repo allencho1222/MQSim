@@ -22,7 +22,7 @@ public:
   Host_System(Host_Parameter_Set *parameters, bool preconditioning_required,
               SSD_Components::Host_Interface_Base *ssd_host_interface);
   ~Host_System();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *event);
   // void Report_results_in_XML(std::string name_prefix,
@@ -41,6 +41,7 @@ private:
   SSD_Device *ssd_device;
   std::vector<Utils::Workload_Statistics *> get_workloads_statistics();
   bool preconditioning_required;
+  bool isStreamInitialized;
 };
 
 #endif // !HOST_SYSTEM_H

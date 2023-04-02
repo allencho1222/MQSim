@@ -58,7 +58,8 @@ public:
                std::string logging_file_path,
                std::string latency_file_path);
   ~IO_Flow_Base();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
+  void initStat();
   IO_Flow_Priority_Class::Priority Priority_class() { return priority_class; }
   virtual Host_IO_Request *Generate_next_request() = 0;
   virtual void NVMe_consume_io_request(Completion_Queue_Entry *);

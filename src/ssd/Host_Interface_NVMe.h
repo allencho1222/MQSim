@@ -123,7 +123,7 @@ public:
                     LHA_type end_logical_sector_address,
                     uint64_t submission_queue_base_address,
                     uint64_t completion_queue_base_address);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   uint16_t Get_submission_queue_depth();

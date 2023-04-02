@@ -20,6 +20,10 @@ TSU_Priority_OutOfOrder::TSU_Priority_OutOfOrder(
                EraseReasonableSuspensionTimeForRead,
                EraseReasonableSuspensionTimeForWrite, EraseSuspensionEnabled,
                ProgramSuspensionEnabled) {
+  initQueue();
+}
+
+void TSU_Priority_OutOfOrder::initQueue() {
   UserReadTRQueue = new Flash_Transaction_Queue **[channel_count];
   UserWriteTRQueue = new Flash_Transaction_Queue **[channel_count];
   GCReadTRQueue = new Flash_Transaction_Queue *[channel_count];
@@ -90,6 +94,34 @@ TSU_Priority_OutOfOrder::TSU_Priority_OutOfOrder(
     }
   }
 }
+void TSU_Priority_OutOfOrder::clearQueue() {
+  for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
+    for (unsigned int chipId = 0; chipId < chip_no_per_channel; chipId++) {
+      delete[] UserReadTRQueue[channelID][chipId];
+      delete[] UserWriteTRQueue[channelID][chipId];
+    }
+    delete[] nextPriorityClassRead[channelID];
+    delete[] nextPriorityClassWrite[channelID];
+    delete[] currentWeightRead[channelID];
+    delete[] currentWeightWrite[channelID];
+    delete[] GCReadTRQueue[channelID];
+    delete[] GCWriteTRQueue[channelID];
+    delete[] GCEraseTRQueue[channelID];
+    delete[] MappingReadTRQueue[channelID];
+    delete[] MappingWriteTRQueue[channelID];
+  }
+  delete[] UserReadTRQueue;
+  delete[] UserWriteTRQueue;
+  delete[] nextPriorityClassRead;
+  delete[] nextPriorityClassWrite;
+  delete[] currentWeightRead;
+  delete[] currentWeightWrite;
+  delete[] GCReadTRQueue;
+  delete[] GCWriteTRQueue;
+  delete[] GCEraseTRQueue;
+  delete[] MappingReadTRQueue;
+  delete[] MappingWriteTRQueue;
+}
 
 TSU_Priority_OutOfOrder::~TSU_Priority_OutOfOrder() {
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
@@ -120,7 +152,10 @@ TSU_Priority_OutOfOrder::~TSU_Priority_OutOfOrder() {
   delete[] MappingWriteTRQueue;
 }
 
-void TSU_Priority_OutOfOrder::Start_simulation() {}
+void TSU_Priority_OutOfOrder::Start_simulation(bool isPreconditioning) {
+  clearQueue();
+  initQueue();
+}
 
 void TSU_Priority_OutOfOrder::Validate_simulation_config() {}
 

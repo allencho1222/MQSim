@@ -51,6 +51,7 @@ public:
   sim_time_type STAT_sum_of_write_transactions_execution_time,
       STAT_sum_of_write_transactions_transfer_time,
       STAT_sum_of_write_transactions_waiting_time;
+  void init();
 };
 
 class Input_Stream_Manager_Base {
@@ -81,6 +82,7 @@ public:
       stream_id_type stream_id); // in microseconds
   uint32_t Get_average_write_transaction_waiting_time(
       stream_id_type stream_id); // in microseconds
+  void init();
 protected:
   Host_Interface_Base *host_interface;
   virtual void segment_user_request(User_Request *user_request) = 0;

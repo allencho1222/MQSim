@@ -1,3 +1,4 @@
+#include <cassert>
 #include "IO_Flow_Synthetic.h"
 #include "Host_IO_Request.h"
 #include "../sim/Engine.h"
@@ -235,9 +236,11 @@ void IO_Flow_Synthetic::SATA_consume_io_request(Host_IO_Request *io_request) {
   }
 }
 
-void IO_Flow_Synthetic::Start_simulation() {
-  IO_Flow_Base::Start_simulation();
-
+void IO_Flow_Synthetic::Start_simulation(bool isPreconditioning) {
+  IO_Flow_Base::Start_simulation(isPreconditioning);
+  if (isPreconditioning) {
+    assert(false);
+  }
   if (address_distribution == Utils::Address_Distribution_Type::STREAMING) {
     streaming_next_address = random_address_generator->Uniform_ulong(
         start_lsa_on_device, end_lsa_on_device);

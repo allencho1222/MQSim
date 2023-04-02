@@ -18,6 +18,14 @@ TSU_OutOfOrder::TSU_OutOfOrder(
                EraseReasonableSuspensionTimeForRead,
                EraseReasonableSuspensionTimeForWrite, EraseSuspensionEnabled,
                ProgramSuspensionEnabled) {
+  initQueue();
+}
+
+TSU_OutOfOrder::~TSU_OutOfOrder() {
+  clearQueue();
+}
+
+void TSU_OutOfOrder::initQueue() {
   UserReadTRQueue = new Flash_Transaction_Queue *[channel_count];
   UserWriteTRQueue = new Flash_Transaction_Queue *[channel_count];
   GCReadTRQueue = new Flash_Transaction_Queue *[channel_count];
@@ -58,8 +66,7 @@ TSU_OutOfOrder::TSU_OutOfOrder(
     }
   }
 }
-
-TSU_OutOfOrder::~TSU_OutOfOrder() {
+void TSU_OutOfOrder::clearQueue() {
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     delete[] UserReadTRQueue[channelID];
     delete[] UserWriteTRQueue[channelID];
@@ -78,7 +85,10 @@ TSU_OutOfOrder::~TSU_OutOfOrder() {
   delete[] MappingWriteTRQueue;
 }
 
-void TSU_OutOfOrder::Start_simulation() {}
+void TSU_OutOfOrder::Start_simulation(bool isPreconditioning) {
+  clearQueue();
+  initQueue();
+}
 
 void TSU_OutOfOrder::Validate_simulation_config() {}
 

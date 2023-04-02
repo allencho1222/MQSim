@@ -192,24 +192,59 @@ IO_Flow_Base::~IO_Flow_Base() {
   }
 }
 
-void IO_Flow_Base::Start_simulation() {
-  next_logging_milestone = logging_period;
-  if (enabled_logging) {
-    log_file.open(logging_file_path, std::ofstream::out);
-  }
-  if (!latency_file_path.empty()) {
-    latency_file = std::fopen(latency_file_path.c_str(), "w");
-    if(!latency_file) {
-        std::perror("Latency file open failed");
-        exit(-1);
-    }
-  }
-
-  log_file << "SimulationTime(us)\t"
-           << "ReponseTime(us)\t"
-           << "EndToEndDelay(us)" << std::endl;
+void IO_Flow_Base::initStat() {
+  STAT_generated_request_count = 0;
+  STAT_generated_read_request_count = 0;
+  STAT_generated_write_request_count = 0;
+  STAT_ignored_request_count = 0;
+  STAT_serviced_request_count = 0;
+  STAT_serviced_read_request_count = 0;
+  STAT_serviced_write_request_count = 0;
+  STAT_sum_device_response_time = 0;
+  STAT_sum_device_response_time_read = 0;
+  STAT_sum_device_response_time_write = 0;
+  STAT_min_device_response_time = MAXIMUM_TIME;
+  STAT_min_device_response_time_read = MAXIMUM_TIME;
+  STAT_min_device_response_time_write = MAXIMUM_TIME;
+  STAT_max_device_response_time = 0;
+  STAT_max_device_response_time_read = 0;
+  STAT_max_device_response_time_write = 0;
+  STAT_sum_request_delay = 0;
+  STAT_sum_request_delay_read = 0;
+  STAT_sum_request_delay_write = 0;
+  STAT_min_request_delay = MAXIMUM_TIME;
+  STAT_min_request_delay_read = MAXIMUM_TIME;
+  STAT_min_request_delay_write = MAXIMUM_TIME;
+  STAT_max_request_delay = 0;
+  STAT_max_request_delay_read = 0;
+  STAT_max_request_delay_write = 0;
+  STAT_transferred_bytes_total = 0;
+  STAT_transferred_bytes_read = 0;
+  STAT_transferred_bytes_write = 0;
   STAT_sum_device_response_time_short_term = 0;
   STAT_serviced_request_count_short_term = 0;
+  progress = 0;
+  next_progress_step = 0;
+}
+
+void IO_Flow_Base::Start_simulation(bool isPreconditioning) {
+  initStat();
+  if (!isPreconditioning) {
+    next_logging_milestone = logging_period;
+    if (enabled_logging) {
+      log_file.open(logging_file_path, std::ofstream::out);
+      log_file << "SimulationTime(us)\t"
+               << "ReponseTime(us)\t"
+               << "EndToEndDelay(us)" << std::endl;
+    }
+    if (!latency_file_path.empty()) {
+      latency_file = std::fopen(latency_file_path.c_str(), "w");
+      if(!latency_file) {
+          std::perror("Latency file open failed");
+          exit(-1);
+      }
+    }
+  }
 }
 
 void IO_Flow_Base::SATA_consume_io_request(Host_IO_Request *request) {
@@ -302,7 +337,8 @@ void IO_Flow_Base::SATA_consume_io_request(Host_IO_Request *request) {
     next_progress_step += 5;
   }
 
-  if (Simulator->Time() > next_logging_milestone) {
+  if (Simulator->Time() > next_logging_milestone &&
+      log_file.is_open()) {
     log_file << Simulator->Time() / SIM_TIME_TO_MICROSECONDS_COEFF << "\t"
              << Get_device_response_time_short_term() << "\t"
              << Get_end_to_end_request_delay_short_term() << std::endl;
@@ -449,7 +485,8 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
     next_progress_step += 5;
   }
 
-  if (Simulator->Time() > next_logging_milestone) {
+  if (Simulator->Time() > next_logging_milestone && 
+      log_file.is_open()) {
     log_file << Simulator->Time() / SIM_TIME_TO_MICROSECONDS_COEFF << "\t"
              << Get_device_response_time_short_term() << "\t"
              << Get_end_to_end_request_delay_short_term() << std::endl;

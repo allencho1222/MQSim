@@ -508,7 +508,7 @@ void SSD_Device::Perform_preconditioning(
   }
 }
 
-void SSD_Device::Start_simulation() {}
+void SSD_Device::Start_simulation(bool isPreconditioning) {}
 
 void SSD_Device::Validate_simulation_config() {}
 

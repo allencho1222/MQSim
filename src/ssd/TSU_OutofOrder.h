@@ -32,7 +32,7 @@ public:
 
   void Schedule();
 
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   // void Report_results_in_XML(std::string name_prefix,
@@ -40,6 +40,8 @@ public:
   void reportResults(fmt::ostream &output);
 
 private:
+  void clearQueue() override;
+  void initQueue() override;
   Flash_Transaction_Queue **UserReadTRQueue;
   Flash_Transaction_Queue **UserWriteTRQueue;
   Flash_Transaction_Queue **GCReadTRQueue;

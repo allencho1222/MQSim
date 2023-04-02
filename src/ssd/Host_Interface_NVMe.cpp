@@ -511,7 +511,11 @@ void Host_Interface_NVMe::Validate_simulation_config() {
   }
 }
 
-void Host_Interface_NVMe::Start_simulation() {}
+void Host_Interface_NVMe::Start_simulation(bool isPreconditioning) {
+  if (!isPreconditioning) {
+    input_stream_manager->init();
+  }
+}
 
 void Host_Interface_NVMe::Execute_simulator_event(
     MQSimEngine::Sim_Event *event) {}

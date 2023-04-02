@@ -59,7 +59,19 @@ void Flash_Chip::Connect_to_chip_ready_signal(
   connectedReadyHandlers.push_back(function);
 }
 
-void Flash_Chip::Start_simulation() {}
+void Flash_Chip::Start_simulation(bool isPreconditionig) {
+  lastTransferStart = INVALID_TIME;
+  executionStartTime = INVALID_TIME;
+  expectedFinishTime = INVALID_TIME;
+  STAT_readCount = 0;
+  STAT_progamCount = 0;
+  STAT_eraseCount = 0;
+  STAT_totalSuspensionCount = 0;
+  STAT_totalResumeCount = 0;
+  STAT_totalExecTime = 0;
+  STAT_totalXferTime = 0;
+  STAT_totalOverlappedXferExecTime = 0;
+}
 
 void Flash_Chip::Validate_simulation_config() {
   if (Dies == NULL || die_no == 0) {

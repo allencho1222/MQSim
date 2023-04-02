@@ -74,17 +74,35 @@ int main(int argc, char *argv[]) {
                    execParams->SSD_Device_Configuration.Enabled_Preconditioning,
                    ssd.Host_interface);
   host.Attach_ssd_device(&ssd);
+  Simulator->initSim();
 
+  // WARNING (sungjun): Currently, preconditinoing is only supported for
+  // the TRACE-based simulation.
+  auto flow_type = 
+    (execParams->Host_Configuration).IO_Flow_Definitions[0]->Type;
+  if (flow_type == Flow_Type::TRACE) {
+    IO_Flow_Parameter_Set_Trace_Based *flow_param =
+        static_cast<IO_Flow_Parameter_Set_Trace_Based *>(
+            (execParams->Host_Configuration).IO_Flow_Definitions[0].get());
+    // Run preconditioning only if the preconditionin trace file is provided.
+    if (flow_param->Preconditioning_File_Path != "") {
+      fmt::print("preconditioning start (num workloads: {})\n",
+                 workloadDefFilePaths.size());
+      auto startTime = std::chrono::high_resolution_clock::now();
+      Simulator->Start_simulation(true);
+      auto endTime = std::chrono::high_resolution_clock::now();
+      fmt::print("preconditioning complete ({:%T})\n",
+           std::chrono::floor<std::chrono::milliseconds>(endTime - startTime));
+      Simulator->finishPreconditioning();
+    }
+  }
   fmt::print("simulation start (num workloads: {})\n",
              workloadDefFilePaths.size());
   auto startTime = std::chrono::high_resolution_clock::now();
-  Simulator->Start_simulation();
+  Simulator->Start_simulation(false);
   auto endTime = std::chrono::high_resolution_clock::now();
-  fmt::print("simulation complete\n");
-
-  auto simTime = endTime - startTime;
-  fmt::print("Total simulation time: {:%T}\n",
-             std::chrono::floor<std::chrono::milliseconds>(simTime));
+  fmt::print("simulation complete ({:%T})\n",
+       std::chrono::floor<std::chrono::milliseconds>(endTime - startTime));
 
   host.reportResults(*execParams);
   ssd.reportResults(*execParams);

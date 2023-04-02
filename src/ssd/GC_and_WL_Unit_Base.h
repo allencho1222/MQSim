@@ -55,7 +55,7 @@ public:
       bool dynamic_wearleveling_enabled, bool static_wearleveling_enabled,
       unsigned int static_wearleveling_threshold, int seed);
   void Setup_triggers();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
 

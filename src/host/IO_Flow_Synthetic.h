@@ -33,7 +33,7 @@ public:
   Host_IO_Request *Generate_next_request();
   void NVMe_consume_io_request(Completion_Queue_Entry *);
   void SATA_consume_io_request(Host_IO_Request *);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   void Get_statistics(

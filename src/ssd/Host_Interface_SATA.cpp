@@ -406,7 +406,7 @@ void Host_Interface_SATA::Validate_simulation_config() {
   }
 }
 
-void Host_Interface_SATA::Start_simulation() {}
+void Host_Interface_SATA::Start_simulation(bool isPreconditioning) {}
 
 void Host_Interface_SATA::Execute_simulator_event(
     MQSimEngine::Sim_Event *event) {}

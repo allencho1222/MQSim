@@ -29,7 +29,7 @@ public:
   void Perform_precondition(
       std::vector<Utils::Workload_Statistics *> workload_stats);
   void Validate_simulation_config();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   LPA_type Convert_host_logical_address_to_device_address(LHA_type lha);
   page_status_type Find_NVM_subunit_access_bitmap(LHA_type lha);

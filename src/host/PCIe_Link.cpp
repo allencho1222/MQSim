@@ -53,7 +53,7 @@ void PCIe_Link::Deliver(PCIe_Message *message) {
   }
 }
 
-void PCIe_Link::Start_simulation() {}
+void PCIe_Link::Start_simulation(bool isPreconditioining) {}
 
 void PCIe_Link::Validate_simulation_config() {}
 

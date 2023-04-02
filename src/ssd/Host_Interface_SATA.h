@@ -101,7 +101,7 @@ public:
   void Set_ncq_address(const uint64_t submission_queue_base_address,
                        const uint64_t completion_queue_base_address);
   uint16_t Get_ncq_depth();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   // void Report_results_in_XML(std::string name_prefix,

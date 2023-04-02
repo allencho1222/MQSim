@@ -17,7 +17,7 @@ public:
       CMT_Sharing_Mode sharing_mode = CMT_Sharing_Mode::SHARED,
       bool fold_large_addresses = true);
   void Setup_triggers();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
 

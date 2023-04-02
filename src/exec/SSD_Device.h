@@ -53,7 +53,7 @@ public:
   void Attach_to_host(Host_Components::PCIe_Switch *pcie_switch);
   void Perform_preconditioning(
       std::vector<Utils::Workload_Statistics *> workload_stats);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *event);
   static LPA_type Convert_host_logical_address_to_device_address(LHA_type lha);

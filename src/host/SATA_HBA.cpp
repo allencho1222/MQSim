@@ -45,7 +45,7 @@ SATA_HBA::~SATA_HBA() {
   }
 }
 
-void SATA_HBA::Start_simulation() {}
+void SATA_HBA::Start_simulation(bool isPreconditioning) {}
 
 void SATA_HBA::Validate_simulation_config() {}
 

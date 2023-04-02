@@ -39,7 +39,7 @@ public:
       Cache_Sharing_Mode sharing_mode, unsigned int stream_count);
   virtual ~Data_Cache_Manager_Base();
   void Setup_triggers();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   virtual void release_from_barrier(NVM_Transaction_Flash* transaction) = 0;
 

@@ -1,3 +1,4 @@
+#include <cassert>
 #include "Engine.h"
 #include "../utils/Logical_Address_Partitioning_Unit.h"
 #include <stdexcept>
@@ -48,10 +49,7 @@ void Engine::RemoveObject(Sim_Object *obj) {
   _ObjectList.erase(it);
 }
 
-/// This is the main method of simulator which starts simulation process.
-void Engine::Start_simulation() {
-  started = true;
-
+void Engine::initSim() {
   for (std::unordered_map<sim_object_id_type, Sim_Object *>::iterator obj =
            _ObjectList.begin();
        obj != _ObjectList.end(); ++obj) {
@@ -65,11 +63,22 @@ void Engine::Start_simulation() {
        obj != _ObjectList.end(); ++obj) {
     obj->second->Validate_simulation_config();
   }
+}
 
+void Engine::finishPreconditioning() {
+  assert(_EventList->Count == 0);
+  _sim_time = 0;
+  stop = false;
+  started = false;
+}
+
+/// This is the main method of simulator which starts simulation process.
+void Engine::Start_simulation(bool isPreconditioning) {
+  started = true;
   for (std::unordered_map<sim_object_id_type, Sim_Object *>::iterator obj =
            _ObjectList.begin();
        obj != _ObjectList.end(); ++obj) {
-    obj->second->Start_simulation();
+    obj->second->Start_simulation(isPreconditioning);
   }
 
   Sim_Event *ev = NULL;

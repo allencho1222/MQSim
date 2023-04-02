@@ -19,7 +19,7 @@ public:
 
   // The Start function is invoked at the start phase of simulation to perform
   // initialization
-  virtual void Start_simulation() = 0;
+  virtual void Start_simulation(bool isPreconditioning) = 0;
 
   // The Validate_simulation_config function is invoked to check if the objected
   // is correctly configured or not.

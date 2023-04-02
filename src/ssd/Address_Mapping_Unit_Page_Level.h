@@ -179,7 +179,7 @@ public:
       bool fold_large_addresses = true);
   ~Address_Mapping_Unit_Page_Level();
   void Setup_triggers();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
 
@@ -269,6 +269,7 @@ private:
                                                  MVPN_type mvpn, bool read);
   bool is_lpa_locked_for_gc(stream_id_type stream_id, LPA_type lpa);
   bool is_mvpn_locked_for_gc(stream_id_type stream_id, MVPN_type mvpn);
+  bool isPageWrittenByPreconditioning;
 };
 
 } // namespace SSD_Components

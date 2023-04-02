@@ -12,7 +12,9 @@ IO_Flow_Trace_Based::IO_Flow_Trace_Based(
     uint16_t io_queue_id, uint16_t nvme_submission_queue_size,
     uint16_t nvme_completion_queue_size,
     IO_Flow_Priority_Class::Priority priority_class,
-    double initial_occupancy_ratio, std::string trace_file_path,
+    double initial_occupancy_ratio, 
+    std::string preconditioning_trace_file_path,
+    std::string trace_file_path,
     Trace_Time_Unit time_unit, unsigned int total_replay_count,
     unsigned int percentage_to_be_simulated,
     HostInterface_Types SSD_device_type, PCIe_Root_Complex *pcie_root_complex,
@@ -25,6 +27,8 @@ IO_Flow_Trace_Based::IO_Flow_Trace_Based(
                    initial_occupancy_ratio, 0, SSD_device_type,
                    pcie_root_complex, sata_hba, enabled_logging, logging_period,
                    logging_file_path, latency_file_path),
+      current_trace_file_path(""),
+      preconditioning_trace_file_path(preconditioning_trace_file_path),
       trace_file_path(trace_file_path), time_unit(time_unit),
       total_replay_no(total_replay_count),
       percentage_to_be_simulated(percentage_to_be_simulated),
@@ -84,16 +88,21 @@ void IO_Flow_Trace_Based::SATA_consume_io_request(Host_IO_Request *io_request) {
   IO_Flow_Base::SATA_consume_io_request(io_request);
 }
 
-void IO_Flow_Trace_Based::Start_simulation() {
-  IO_Flow_Base::Start_simulation();
+void IO_Flow_Trace_Based::Start_simulation(bool isPreconditioning) {
+  IO_Flow_Base::Start_simulation(isPreconditioning);
+  total_requests_to_be_generated = 0;
+  total_requests_in_file = 0;
   std::string trace_line;
   char *pEnd;
 
-  trace_file.open(trace_file_path, std::ios::in);
+  current_trace_file_path = isPreconditioning? 
+    preconditioning_trace_file_path : trace_file_path;
+  fmt::print("current file path: {}\n", current_trace_file_path);
+  trace_file.open(current_trace_file_path, std::ios::in);
   if (!trace_file.is_open()) {
-    PRINT_ERROR("Error while opening input trace file: " << trace_file_path)
+    PRINT_ERROR("Error while opening input trace file: " << current_trace_file_path)
   }
-  PRINT_MESSAGE("Investigating input trace file: " << trace_file_path);
+  PRINT_MESSAGE("Investigating input trace file: " << current_trace_file_path);
 
   sim_time_type last_request_arrival_time = 0;
   while (std::getline(trace_file, trace_line)) {
@@ -117,8 +126,7 @@ void IO_Flow_Trace_Based::Start_simulation() {
   }
 
   trace_file.close();
-  PRINT_MESSAGE("Trace file: " << trace_file_path << " seems healthy");
-
+  PRINT_MESSAGE("Trace file: " << current_trace_file_path << " seems healthy");
   if (total_replay_no == 1) {
     total_requests_to_be_generated =
         (int)(((double)percentage_to_be_simulated / 100) *
@@ -126,8 +134,13 @@ void IO_Flow_Trace_Based::Start_simulation() {
   } else {
     total_requests_to_be_generated = total_requests_in_file * total_replay_no;
   }
+  fmt::print("total_requests_to_be_generated {}, total_requests_in_file {}\n",
+      total_requests_to_be_generated, total_requests_in_file);
 
-  trace_file.open(trace_file_path);
+  trace_file.open(current_trace_file_path);
+  if (!trace_file.is_open()) {
+    PRINT_ERROR("Error while opening input trace file: " << current_trace_file_path)
+  }
   current_trace_line.clear();
   std::getline(trace_file, trace_line);
   Utils::Helper_Functions::Remove_cr(trace_line);
@@ -155,7 +168,7 @@ void IO_Flow_Trace_Based::Execute_simulator_event(MQSimEngine::Sim_Event *) {
                                         current_trace_line);
     } else {
       trace_file.close();
-      trace_file.open(trace_file_path);
+      trace_file.open(current_trace_file_path);
       replay_counter++;
       time_offset = Simulator->Time();
       std::getline(trace_file, trace_line);
@@ -173,6 +186,8 @@ void IO_Flow_Trace_Based::Execute_simulator_event(MQSimEngine::Sim_Event *) {
             std::strtoll(current_trace_line[ASCIITraceTimeColumn].c_str(),
                          &pEnd, 10),
         this);
+  } else {
+    trace_file.close();
   }
 }
 
@@ -198,7 +213,7 @@ void IO_Flow_Trace_Based::Get_statistics(
   stats.Total_accessed_lbas = 0;
 
   std::ifstream trace_file_temp;
-  trace_file_temp.open(trace_file_path, std::ios::in);
+  trace_file_temp.open(current_trace_file_path, std::ios::in);
   if (!trace_file_temp.is_open()) {
     PRINT_ERROR("Error while opening the input trace file!")
   }

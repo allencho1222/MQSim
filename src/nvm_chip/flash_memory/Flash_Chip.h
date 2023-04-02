@@ -79,7 +79,7 @@ public:
   }
   void Change_memory_status_preconditioning(const NVM_Memory_Address *address,
                                             const void *status_info);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Setup_triggers();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);

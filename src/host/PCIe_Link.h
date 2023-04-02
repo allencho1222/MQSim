@@ -23,7 +23,7 @@ public:
             int tlp_max_payload_size = 128, int dllp_ovehread = 6,
             int ph_overhead = 2);
   void Deliver(PCIe_Message *);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioining);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   void Set_root_complex(PCIe_Root_Complex *);

@@ -13,7 +13,8 @@ Host_System::Host_System(
     Host_Parameter_Set *parameters, bool preconditioning_required,
     SSD_Components::Host_Interface_Base *ssd_host_interface)
     : MQSimEngine::Sim_Object("Host"),
-      preconditioning_required(preconditioning_required) {
+      preconditioning_required(preconditioning_required),
+      isStreamInitialized(false) {
   Simulator->AddObject(this);
 
   // Create the main components of the host system
@@ -118,6 +119,7 @@ Host_System::Host_System(
           FLOW_ID_TO_Q_ID(flow_id), nvme_sq_size, nvme_cq_size,
           flow_param->Priority_Class,
           flow_param->Initial_Occupancy_Percentage / double(100.0),
+          flow_param->Preconditioning_File_Path,
           flow_param->File_Path, flow_param->Time_Unit, flow_param->Relay_Count,
           flow_param->Percentage_To_Be_Executed, ssd_host_interface->GetType(),
           this->PCIe_root_complex, this->SATA_hba,
@@ -165,41 +167,44 @@ const std::vector<Host_Components::IO_Flow_Base *> Host_System::Get_io_flows() {
   return IO_flows;
 }
 
-void Host_System::Start_simulation() {
-  switch (ssd_device->Host_interface->GetType()) {
-  case HostInterface_Types::NVME:
-    for (uint16_t flow_cntr = 0; flow_cntr < IO_flows.size(); flow_cntr++) {
-      ((SSD_Components::Host_Interface_NVMe *)ssd_device->Host_interface)
-          ->Create_new_stream(
-              IO_flows[flow_cntr]->Priority_class(),
-              IO_flows[flow_cntr]->Get_start_lsa_on_device(),
-              IO_flows[flow_cntr]->Get_end_lsa_address_on_device(),
-              IO_flows[flow_cntr]
-                  ->Get_nvme_queue_pair_info()
-                  ->Submission_queue_memory_base_address,
-              IO_flows[flow_cntr]
-                  ->Get_nvme_queue_pair_info()
+void Host_System::Start_simulation(bool isPreconditioning) {
+  if (!isStreamInitialized) {
+    switch (ssd_device->Host_interface->GetType()) {
+    case HostInterface_Types::NVME:
+      for (uint16_t flow_cntr = 0; flow_cntr < IO_flows.size(); flow_cntr++) {
+        ((SSD_Components::Host_Interface_NVMe *)ssd_device->Host_interface)
+            ->Create_new_stream(
+                IO_flows[flow_cntr]->Priority_class(),
+                IO_flows[flow_cntr]->Get_start_lsa_on_device(),
+                IO_flows[flow_cntr]->Get_end_lsa_address_on_device(),
+                IO_flows[flow_cntr]
+                    ->Get_nvme_queue_pair_info()
+                    ->Submission_queue_memory_base_address,
+                IO_flows[flow_cntr]
+                    ->Get_nvme_queue_pair_info()
+                    ->Completion_queue_memory_base_address);
+      }
+      break;
+    case HostInterface_Types::SATA:
+      ((SSD_Components::Host_Interface_SATA *)ssd_device->Host_interface)
+          ->Set_ncq_address(
+              SATA_hba->Get_sata_ncq_info()->Submission_queue_memory_base_address,
+              SATA_hba->Get_sata_ncq_info()
                   ->Completion_queue_memory_base_address);
+    default:
+      break;
     }
-    break;
-  case HostInterface_Types::SATA:
-    ((SSD_Components::Host_Interface_SATA *)ssd_device->Host_interface)
-        ->Set_ncq_address(
-            SATA_hba->Get_sata_ncq_info()->Submission_queue_memory_base_address,
-            SATA_hba->Get_sata_ncq_info()
-                ->Completion_queue_memory_base_address);
-  default:
-    break;
+    isStreamInitialized = true;
   }
-
-  if (preconditioning_required) {
-    std::vector<Utils::Workload_Statistics *> workload_stats =
-        get_workloads_statistics();
-    ssd_device->Perform_preconditioning(workload_stats);
-    for (auto &stat : workload_stats) {
-      delete stat;
-    }
-  }
+  //
+  // if (preconditioning_required) {
+  //   std::vector<Utils::Workload_Statistics *> workload_stats =
+  //       get_workloads_statistics();
+  //   ssd_device->Perform_preconditioning(workload_stats);
+  //   for (auto &stat : workload_stats) {
+  //     delete stat;
+  //   }
+  // }
 }
 
 void Host_System::Validate_simulation_config() {

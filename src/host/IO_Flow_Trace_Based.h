@@ -16,6 +16,7 @@ public:
                       uint16_t nvme_completion_queue_size,
                       IO_Flow_Priority_Class::Priority priority_class,
                       double initial_occupancy_ratio,
+                      std::string preconditioning_trace_file_path,
                       std::string trace_file_path, Trace_Time_Unit time_unit,
                       unsigned int total_replay_count,
                       unsigned int percentage_to_be_simulated,
@@ -28,7 +29,7 @@ public:
   Host_IO_Request *Generate_next_request();
   void NVMe_consume_io_request(Completion_Queue_Entry *);
   void SATA_consume_io_request(Host_IO_Request *);
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
   void Get_statistics(
@@ -39,7 +40,9 @@ public:
 private:
   Trace_Time_Unit time_unit;
   unsigned int percentage_to_be_simulated;
+  std::string current_trace_file_path;
   std::string trace_file_path;
+  std::string preconditioning_trace_file_path;
   std::ifstream trace_file;
   unsigned int total_replay_no, replay_counter;
   unsigned int total_requests_in_file;

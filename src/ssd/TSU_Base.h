@@ -103,6 +103,8 @@ protected:
   }
 
 private:
+  virtual void clearQueue() = 0;
+  virtual void initQueue() = 0;
   bool transaction_is_ready(NVM_Transaction_Flash *transaction) {
     switch (transaction->Type) {
     case Transaction_Type::READ:

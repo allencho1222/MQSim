@@ -1173,7 +1173,18 @@ void FTL::reportResults(fmt::ostream &output) {
   output.print("{}\n", *this);
 }
 
-void FTL::Start_simulation() {}
+void FTL::Start_simulation(bool isPreconditioning) {
+  Stats::Clear_stats(
+      channel_no, chip_no_per_channel, die_no_per_chip,
+      plane_no_per_die, block_no_per_plane, page_no_per_block,
+      max_allowed_block_erase_count
+  );
+  Stats::Init_stats(
+      channel_no, chip_no_per_channel, die_no_per_chip,
+      plane_no_per_die, block_no_per_plane, page_no_per_block,
+      max_allowed_block_erase_count
+  );
+}
 
 void FTL::Execute_simulator_event(MQSimEngine::Sim_Event *) {}
 

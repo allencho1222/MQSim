@@ -17,7 +17,7 @@ Address_Mapping_Unit_Hybrid::Address_Mapping_Unit_Hybrid(
           page_no_per_block, sectors_per_page, page_size_in_byte,
           overprovisioning_ratio, sharing_mode, fold_out_of_range_addresses) {}
 void Address_Mapping_Unit_Hybrid::Setup_triggers() {}
-void Address_Mapping_Unit_Hybrid::Start_simulation() {}
+void Address_Mapping_Unit_Hybrid::Start_simulation(bool isPreconditioning) {}
 void Address_Mapping_Unit_Hybrid::Validate_simulation_config() {}
 void Address_Mapping_Unit_Hybrid::Execute_simulator_event(
     MQSimEngine::Sim_Event *event) {}

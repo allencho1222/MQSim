@@ -451,7 +451,10 @@ void Address_Mapping_Unit_Page_Level::Setup_triggers() {
       handle_transaction_serviced_signal_from_PHY);
 }
 
-void Address_Mapping_Unit_Page_Level::Start_simulation() {
+void Address_Mapping_Unit_Page_Level::Start_simulation(bool isPreconditioning) {
+  if (isPreconditioning) {
+    isPageWrittenByPreconditioning = true;
+  }
   Store_mapping_table_on_flash_at_start();
 }
 
@@ -653,6 +656,12 @@ bool Address_Mapping_Unit_Page_Level::translate_lpa_to_ppa(
 
   if (transaction->Type == Transaction_Type::READ) {
     if (ppa == NO_PPA) {
+      // If the preconditioning happens, pages are always written before read.
+      if (isPageWrittenByPreconditioning) {
+        assert(false);
+      }
+      // This only happens when the pages are read before write.
+      // For example, trace files can include reads that occur before writes.
       ppa = online_create_entry_for_reads(
           transaction->LPA, streamID, transaction->Address,
           ((NVM_Transaction_Flash_RD *)transaction)->read_sectors_bitmap);

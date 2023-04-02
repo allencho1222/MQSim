@@ -34,7 +34,7 @@ void Data_Cache_Manager_Base::Setup_triggers() {
       handle_user_request_arrived_signal);
 }
 
-void Data_Cache_Manager_Base::Start_simulation() {}
+void Data_Cache_Manager_Base::Start_simulation(bool isPreconditioning) {}
 
 void Data_Cache_Manager_Base::Validate_simulation_config() {}
 

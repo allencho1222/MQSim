@@ -100,7 +100,7 @@ public:
                       std::string transactionHistoryFilePath);
   void Setup_triggers();
   void Validate_simulation_config();
-  void Start_simulation();
+  void Start_simulation(bool isPreconditioning);
 
   void
   Send_command_to_chip(std::list<NVM_Transaction_Flash *> &transactionList);
