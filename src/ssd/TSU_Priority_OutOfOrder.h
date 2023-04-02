@@ -35,7 +35,7 @@ public:
 
   void Schedule() override;
 
-  void Start_simulation() override;
+  void Start_simulation(bool isPreconditioning) override;
   void Validate_simulation_config() override;
   void Execute_simulator_event(MQSimEngine::Sim_Event *) override;
   // void Report_results_in_XML(std::string name_prefix,

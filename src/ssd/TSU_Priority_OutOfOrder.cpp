@@ -112,7 +112,8 @@ void TSU_Priority_OutOfOrder::clearQueue() {
     delete[] currentWeightWrite[channelID];
     delete[] GCReadTRQueue[channelID];
     delete[] GCWriteTRQueue[channelID];
-    delete[] GCEraseTRQueue[channelID];
+    delete[] GCShallowEraseTRQueue[channelID];
+    delete[] GCFullEraseTRQueue[channelID];
     delete[] MappingReadTRQueue[channelID];
     delete[] MappingWriteTRQueue[channelID];
   }
@@ -124,7 +125,8 @@ void TSU_Priority_OutOfOrder::clearQueue() {
   delete[] currentWeightWrite;
   delete[] GCReadTRQueue;
   delete[] GCWriteTRQueue;
-  delete[] GCEraseTRQueue;
+  delete[] GCShallowEraseTRQueue;
+  delete[] GCFullEraseTRQueue;
   delete[] MappingReadTRQueue;
   delete[] MappingWriteTRQueue;
 }

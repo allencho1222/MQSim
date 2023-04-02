@@ -111,6 +111,8 @@ protected:
     lockedQueue;
 
 private:
+  virtual void initQueue() = 0;
+  virtual void clearQueue() = 0;
   bool transaction_is_ready(NVM_Transaction_Flash *transaction) const;
 };
 } // namespace SSD_Components
