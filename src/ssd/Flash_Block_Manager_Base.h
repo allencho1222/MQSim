@@ -56,7 +56,7 @@ public:
   void Erase();
 
   int nextEraseLoopCount;
-  int blockModelID = 0;
+  int categoryID = 0;
 };
 
 class PlaneBookKeepingType {
