@@ -4,6 +4,7 @@
 #include "FTL.h"
 #include "NVM_Transaction_Flash_RD.h"
 #include "NVM_Transaction_Flash_WR.h"
+#include <cassert>
 #include <stdexcept>
 
 namespace SSD_Components {
@@ -346,7 +347,7 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
               evicted_slot.LPA, NULL, IO_Flow_Priority_Class::URGENT,
               evicted_slot.Content,
               evicted_slot.State_bitmap_of_existing_sectors,
-              evicted_slot.Timestamp));
+              evicted_slot.Timestamp, true));
           cache_eviction_read_size_in_sectors +=
               count_sector_no_from_status_bitmap(
                   evicted_slot.State_bitmap_of_existing_sectors);
@@ -368,6 +369,7 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
       flash_written_back_write_size_in_sectors +=
           count_sector_no_from_status_bitmap(tr->write_sectors_bitmap);
       bloom_filter[user_request->Stream_id].insert(tr->LPA);
+      tr->is_from_cache = true;
       writeback_transactions.push_back(tr);
     }
     user_request->Transaction_list.erase(it++);
@@ -403,6 +405,10 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
         Data_Cache_Simulation_Event_Type::MEMORY_WRITE_FOR_USERIO_FINISHED;
     write_transfer_info->Stream_id = user_request->Stream_id;
     service_dram_access_request(write_transfer_info);
+  } else {
+    if (is_user_request_finished(user_request)) {
+      broadcast_user_request_serviced_signal(user_request);
+    }
   }
 
   // If any writeback should be performed, then issue flash write transactions
@@ -501,7 +507,7 @@ void Data_Cache_Manager_Flash_Advanced::
                 transfer_info->Size_in_bytes, evicted_slot.LPA, NULL,
                 IO_Flow_Priority_Class::UNDEFINED, evicted_slot.Content,
                 evicted_slot.State_bitmap_of_existing_sectors,
-                evicted_slot.Timestamp));
+                evicted_slot.Timestamp, true));
             transfer_info->Related_request = evicted_cache_slots;
             transfer_info->next_event_type = Data_Cache_Simulation_Event_Type::
                 MEMORY_READ_FOR_CACHE_EVICTION_FINISHED;
@@ -568,13 +574,15 @@ void Data_Cache_Manager_Flash_Advanced::
               ->shared_dram_request_queue) {
         sharing_id = 0;
       }
-      ((Data_Cache_Manager_Flash_Advanced *)_my_instance)
-          ->back_pressure_buffer_depth[sharing_id] -=
-          transaction->Data_and_metadata_size_in_byte / SECTOR_SIZE_IN_BYTE +
+      assert(transaction->is_from_cache);
+      auto back_pressure =
+          (transaction->Data_and_metadata_size_in_byte / SECTOR_SIZE_IN_BYTE) +
           (transaction->Data_and_metadata_size_in_byte % SECTOR_SIZE_IN_BYTE ==
                    0
                ? 0
                : 1);
+      ((Data_Cache_Manager_Flash_Advanced *)_my_instance)
+          ->back_pressure_buffer_depth[sharing_id] -= back_pressure;
 
       if (((Data_Cache_Manager_Flash_Advanced *)_my_instance)
               ->per_stream_cache[transaction->Stream_id]
@@ -616,7 +624,7 @@ void Data_Cache_Manager_Flash_Advanced::
         // The traffic load on the backend is high and the waiting requests
         // cannot be serviced
         if (((Data_Cache_Manager_Flash_Advanced *)_my_instance)
-                ->back_pressure_buffer_depth[sharing_id] >
+                ->back_pressure_buffer_depth[sharing_id] >=
             ((Data_Cache_Manager_Flash_Advanced *)_my_instance)
                 ->back_pressure_buffer_max_depth) {
           break;
@@ -670,6 +678,11 @@ void Data_Cache_Manager_Flash_Advanced::
     }
     }
   }
+}
+
+void Data_Cache_Manager_Flash_Advanced::release_from_barrier(
+    NVM_Transaction_Flash* transaction) {
+  handle_transaction_serviced_signal_from_PHY(transaction);
 }
 
 void Data_Cache_Manager_Flash_Advanced::service_dram_access_request(

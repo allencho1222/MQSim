@@ -6,6 +6,7 @@
 #include "../ssd/TSU_Base.h"
 #include "../utils/Logical_Address_Partitioning_Unit.h"
 #include "Address_Mapping_Unit_Page_Level.h"
+#include "Data_Cache_Manager_Base.h"
 #include "Stats.h"
 
 namespace SSD_Components {
@@ -581,6 +582,12 @@ bool Address_Mapping_Unit_Page_Level::query_cmt(
 
     // This assigns plane ID
     // WARNING: Block ID is not determined when a translation fails
+    // FIXME (sungjun): It is possible for a transaction from data cache manager
+    // not to be translated due to a small number of free pages.
+    // Thus, the transaction is handled later when the erase transaction completes
+    // (`mange_unsuccessful_translation`).
+    // However, current MQSim implementation fails to handle some requests in
+    // overfull requests.
     if (translate_lpa_to_ppa(stream_id, transaction)) {
       return true;
     } else {
@@ -2692,8 +2699,17 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
       domains[stream_id]->Write_transactions_behind_LPA_barrier.find(lpa);
   while (write_tr !=
          domains[stream_id]->Write_transactions_behind_LPA_barrier.end()) {
-    handle_transaction_serviced_signal_from_PHY((*write_tr).second);
-    delete (*write_tr).second;
+    // WARNING (sungjun): Transactions from data cache manager sometimes fail to
+    // be dispatched in `Translate_lpa_to_ppa_and_dispatch` because of a lock
+    // applied to target LPA. As a result, the transactions are pushed into
+    // queue waiting lock release. After lock release, data cache manager does
+    // not receive signals. Following codes act as these signals.
+    auto& tr = (*write_tr).second;
+    if (tr->is_from_cache) {
+      ftl->Data_cache_manager->release_from_barrier(tr);
+    }
+    handle_transaction_serviced_signal_from_PHY(tr);
+    delete tr;
     domains[stream_id]->Write_transactions_behind_LPA_barrier.erase(write_tr);
     write_tr =
         domains[stream_id]->Write_transactions_behind_LPA_barrier.find(lpa);
@@ -2824,6 +2840,8 @@ void Address_Mapping_Unit_Page_Level::mange_unsuccessful_translation(
           .insert((NVM_Transaction_Flash_WR *)transaction);
 }
 
+// FIXME (sungjun): Write transaction from data cache also comes here.
+// Current implementation of MQSim does not consider this behavior.
 void Address_Mapping_Unit_Page_Level::Start_servicing_writes_for_overfull_plane(
     const NVM::FlashMemory::Physical_Page_Address plane_address) {
   std::set<NVM_Transaction_Flash_WR *> &waiting_write_list =

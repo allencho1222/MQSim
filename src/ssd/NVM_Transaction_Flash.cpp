@@ -9,7 +9,7 @@ NVM_Transaction_Flash::NVM_Transaction_Flash(
     : NVM_Transaction(stream_id, source, type, user_request, priority_class),
       Data_and_metadata_size_in_byte(data_size_in_byte), LPA(lpa), PPA(ppa),
       Physical_address_determined(false), FLIN_Barrier(false), enqueuedAt(0),
-      scheduledAt(0), finishedAt(0) {}
+      scheduledAt(0), finishedAt(0), is_from_cache(false) {}
 
 NVM_Transaction_Flash::NVM_Transaction_Flash(
     Transaction_Source_Type source, Transaction_Type type,
@@ -19,5 +19,5 @@ NVM_Transaction_Flash::NVM_Transaction_Flash(
     : NVM_Transaction(stream_id, source, type, user_request, priority_class),
       Data_and_metadata_size_in_byte(data_size_in_byte), LPA(lpa), PPA(ppa),
       Address(address), Physical_address_determined(false), enqueuedAt(0),
-      scheduledAt(0), finishedAt(0) {}
+      scheduledAt(0), finishedAt(0), is_from_cache(false) {}
 } // namespace SSD_Components

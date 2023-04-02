@@ -41,6 +41,7 @@ public:
   void Setup_triggers();
   void Start_simulation();
   void Validate_simulation_config();
+  virtual void release_from_barrier(NVM_Transaction_Flash* transaction) = 0;
 
   typedef void (*UserRequestServicedSignalHanderType)(User_Request *);
   void Connect_to_user_request_serviced_signal(

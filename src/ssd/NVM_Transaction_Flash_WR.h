@@ -21,7 +21,8 @@ public:
                            NVM::memory_content_type content,
                            NVM_Transaction_Flash_RD *related_read,
                            page_status_type write_sectors_bitmap,
-                           data_timestamp_type data_timestamp);
+                           data_timestamp_type data_timestamp,
+                           bool is_from_cache = false);
   NVM_Transaction_Flash_WR(
       Transaction_Source_Type source, stream_id_type stream_id,
       unsigned int data_size_in_byte, LPA_type lpa, PPA_type ppa,
@@ -29,7 +30,7 @@ public:
       SSD_Components::User_Request *user_io_request,
       NVM::memory_content_type content, NVM_Transaction_Flash_RD *related_read,
       page_status_type write_sectors_bitmap,
-      data_timestamp_type data_timestamp);
+      data_timestamp_type data_timestamp, bool is_from_cache = false);
   NVM_Transaction_Flash_WR(Transaction_Source_Type source,
                            stream_id_type stream_id,
                            unsigned int data_size_in_byte, LPA_type lpa,
@@ -37,14 +38,16 @@ public:
                            IO_Flow_Priority_Class::Priority priority_class,
                            NVM::memory_content_type content,
                            page_status_type write_sectors_bitmap,
-                           data_timestamp_type data_timestamp);
+                           data_timestamp_type data_timestamp,
+                           bool is_from_cache = false);
   NVM_Transaction_Flash_WR(Transaction_Source_Type source,
                            stream_id_type stream_id,
                            unsigned int data_size_in_byte, LPA_type lpa,
                            SSD_Components::User_Request *user_io_request,
                            NVM::memory_content_type content,
                            page_status_type write_sectors_bitmap,
-                           data_timestamp_type data_timestamp);
+                           data_timestamp_type data_timestamp, 
+                           bool is_from_cache = false);
   NVM::memory_content_type Content; // The content of this transaction
   NVM_Transaction_Flash_RD
       *RelatedRead; // If this write request must be preceded by a read (for

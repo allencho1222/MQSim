@@ -198,7 +198,7 @@ device_parameters:
     num_planes_per_die: 2
     # the number of flash blocks in each plane. 
     # Range = {all positive integer values}.
-    num_blocks_per_plane: 256
+    num_blocks_per_plane: 512
     # the number of physical pages in each flash block. 
     # Range = {all positive integer values}.
     num_pages_per_block: 256

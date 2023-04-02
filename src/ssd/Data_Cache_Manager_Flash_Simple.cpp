@@ -56,6 +56,10 @@ void Data_Cache_Manager_Flash_Simple::Setup_triggers() {
   flash_controller->ConnectToTransactionServicedSignal(
       handle_transaction_serviced_signal_from_PHY);
 }
+void Data_Cache_Manager_Flash_Simple::release_from_barrier(
+    NVM_Transaction_Flash* transaction) {
+  handle_transaction_serviced_signal_from_PHY(transaction);
+}
 
 void Data_Cache_Manager_Flash_Simple::Do_warmup(
     std::vector<Utils::Workload_Statistics *> workload_stats) {}

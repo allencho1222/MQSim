@@ -49,6 +49,7 @@ public:
   sim_time_type enqueuedAt;
   sim_time_type scheduledAt;
   sim_time_type finishedAt;
+  bool is_from_cache;
 private:
 };
 } // namespace SSD_Components

@@ -45,6 +45,7 @@ public:
   void Execute_simulator_event(MQSimEngine::Sim_Event *ev);
   void Setup_triggers();
   void Do_warmup(std::vector<Utils::Workload_Statistics *> workload_stats);
+  void release_from_barrier(NVM_Transaction_Flash* transaction);
 
 private:
   NVM_PHY_ONFI *flash_controller;
