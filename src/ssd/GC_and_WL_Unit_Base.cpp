@@ -279,7 +279,6 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         .Erase_transaction->Page_movement_activities.remove(
             (NVM_Transaction_Flash_WR *)transaction);
   } else if (trType == Transaction_Type::PROXY_ERASE) {
-    fmt::print("proxy erase\n");
     // WARNING: `Add_erased_block_to_pool` do not increase `Erase_count`
     pbke->Ongoing_erase_operations.erase(
         pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
@@ -299,6 +298,23 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     if (_my_instance->Stop_servicing_writes(transaction->Address)) {
       _my_instance->Check_gc_required(pbke->Get_free_block_pool_size(),
                                       transaction->Address);
+    }
+    const auto &blockManager = _my_instance->block_manager;
+    blockManager->finishEraseLoop(transaction->Address);
+  } else if (trType == Transaction_Type::ADAPTIVE_ERASE) {
+    const auto &blockManager = _my_instance->block_manager;
+    const auto &eraseAddr = transaction->Address;
+    blockManager->finishEraseLoop(eraseAddr);
+    if (auto eraseLatency = blockManager->getNextEraseLatency(eraseAddr)) {
+      _my_instance->tsu->Prepare_for_transaction_submit();
+      auto eraseTR = new NVM_Transaction_Flash_ER(
+          Transaction_Source_Type::GC_WL, transaction->Stream_id,
+          eraseAddr, true);
+      eraseTR->setLatency(eraseLatency.value());
+      _my_instance->tsu->Submit_transaction(eraseTR);
+    } else {
+      // Fully erase block
+      _my_instance->block_manager->eraseBlock(eraseAddr);
     }
   } else {
     assert(false);
