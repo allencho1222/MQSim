@@ -691,7 +691,7 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
   for (auto transaction : dieBKE->ActiveTransactions) {
     transaction->finishedAt = Simulator->Time();
   }
-  _my_instance->recordTransactionHistory(dieBKE->ActiveTransactions, command);
+  //_my_instance->recordTransactionHistory(dieBKE->ActiveTransactions, command);
 
   switch (command->CommandCode) {
   case CMD_READ_PAGE:

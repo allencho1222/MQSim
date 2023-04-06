@@ -21,7 +21,7 @@ class MQSim(ConanFile):
     def requirements(self):
         self.requires("fmt/9.1.0")
         self.requires("spdlog/1.11.0")
-        self.requires("boost/1.81.0")
+        self.requires("boost/1.80.0")
         self.requires("yaml-cpp/0.7.0")
 
     def configure(self):

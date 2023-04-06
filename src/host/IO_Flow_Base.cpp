@@ -170,7 +170,9 @@ IO_Flow_Base::IO_Flow_Base(
 
 IO_Flow_Base::~IO_Flow_Base() {
   log_file.close();
-  std::fclose(latency_file);
+  if (latency_file) {
+    std::fclose(latency_file);
+  }
   for (auto &req : waiting_requests) {
     if (req) {
       delete req;
