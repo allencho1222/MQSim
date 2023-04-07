@@ -5,7 +5,8 @@
 
 namespace NVM {
 namespace FlashMemory {
-bool Flash_Chip::isHeaderPrinted = false;
+bool Flash_Chip::isReportHeaderPrinted = false;
+bool Flash_Chip::isStatHeaderPrinted = false;
 Flash_Chip::Flash_Chip(
     const sim_object_id_type &id, flash_channel_ID_type channelID,
     flash_chip_ID_type localChipID, Flash_Technology_Type flash_technology,
@@ -43,6 +44,22 @@ Flash_Chip::Flash_Chip(
   for (unsigned int dieID = 0; dieID < dieNo; dieID++) {
     Dies[dieID] = new Die(PlaneNoPerDie, Block_no_per_plane, Page_no_per_block);
   }
+
+  for (int d = 0; d < dieNo; ++d) {
+    numErases.push_back(std::vector<std::vector<unsigned int>>());
+    numReads.push_back(std::vector<std::vector<unsigned int>>());
+    numWrites.push_back(std::vector<std::vector<unsigned int>>());
+    for (int p = 0; p < PlaneNoPerDie; ++p) {
+    numErases[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
+    numReads[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
+    numWrites[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
+      for (int b = 0; b < Block_no_per_plane; ++b) {
+        numErases[d][p][b] = 0;
+        numReads[d][p][b] = 0;
+        numWrites[d][p][b] = 0;
+      }
+    }
+  }
 }
 
 Flash_Chip::~Flash_Chip() {
@@ -71,6 +88,15 @@ void Flash_Chip::Start_simulation(bool isPreconditionig) {
   STAT_totalExecTime = 0;
   STAT_totalXferTime = 0;
   STAT_totalOverlappedXferExecTime = 0;
+  for (int d = 0; d < die_no; ++d) {
+    for (int p = 0; p < plane_no_in_die; ++p) {
+      for (int b = 0; b < block_no_in_plane; ++b) {
+        numErases[d][p][b] = 0;
+        numReads[d][p][b] = 0;
+        numWrites[d][p][b] = 0;
+      }
+    }
+  }
 }
 
 void Flash_Chip::Validate_simulation_config() {
@@ -191,6 +217,10 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
           ->Blocks[command->Address[planeCntr].BlockID]
           ->Pages[command->Address[planeCntr].PageID]
           .Read_metadata(command->Meta_data[planeCntr]);
+      auto dieId = command->Address[planeCntr].DieID;
+      auto planeId = command->Address[planeCntr].PlaneID;
+      auto blockId = command->Address[planeCntr].BlockID;
+      numReads[dieId][planeId][blockId]++;
     }
     break;
   case CMD_PROGRAM_PAGE:
@@ -207,6 +237,10 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
           ->Blocks[command->Address[planeCntr].BlockID]
           ->Pages[command->Address[planeCntr].PageID]
           .Write_metadata(command->Meta_data[planeCntr]);
+      auto dieId = command->Address[planeCntr].DieID;
+      auto planeId = command->Address[planeCntr].PlaneID;
+      auto blockId = command->Address[planeCntr].BlockID;
+      numWrites[dieId][planeId][blockId]++;
     }
     break;
   case CMD_ERASE_BLOCK:
@@ -225,6 +259,10 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
         // targetBlock->Pages[i].Metadata.Status = FREE_PAGE;
         targetBlock->Pages[i].Metadata.LPA = NO_LPA;
       }
+      auto dieId = command->Address[planeCntr].DieID;
+      auto planeId = command->Address[planeCntr].PlaneID;
+      auto blockId = command->Address[planeCntr].BlockID;
+      numErases[dieId][planeId][blockId]++;
     }
     break;
   default:
@@ -315,8 +353,33 @@ sim_time_type Flash_Chip::GetSuspendProgramTime() {
 
 sim_time_type Flash_Chip::GetSuspendEraseTime() { return _suspendEraseLatency; }
 
+void Flash_Chip::reportStat(fmt::ostream &output) {
+  if (!isStatHeaderPrinted) {
+    constexpr auto header = "channel "
+                            "chip "
+                            "die "
+                            "plane "
+                            "block "
+                            "reads "
+                            "writes "
+                            "erases ";
+    output.print("{}\n", header);
+    isStatHeaderPrinted = true;
+  }
+
+  for (unsigned int d = 0; d < die_no; ++d) {
+    for (unsigned int p = 0; p < plane_no_in_die; ++p) {
+      for (unsigned int b = 0; b < block_no_in_plane; ++b) {
+        output.print("{} {} {} {} {} {} {} {}\n",
+            ChannelID, ChipID, d, p, b, 
+            numReads[d][p][b], numWrites[d][p][b], numErases[d][p][b]);
+      }
+    }
+  }
+}
+
 void Flash_Chip::reportResults(fmt::ostream &output) {
-  if (!isHeaderPrinted) {
+  if (!isReportHeaderPrinted) {
     constexpr auto header = "channel "
                             "chip "
                             "frac_exec "
@@ -324,7 +387,7 @@ void Flash_Chip::reportResults(fmt::ostream &output) {
                             "frac_data_transfer_and_exec "
                             "frac_idle";
     output.print("{}\n", header);
-    isHeaderPrinted = true;
+    isReportHeaderPrinted = true;
   }
   output.print("{} {} {} {} {} {}\n", ChannelID, ChipID,
                STAT_totalExecTime / double(Simulator->Time()),

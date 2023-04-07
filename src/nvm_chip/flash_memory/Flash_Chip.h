@@ -133,8 +133,10 @@ public:
           page_id); // A simplification to decrease the complexity of GC
                     // execution! The GC unit may need to know the metadata of a
                     // page to decide if a page is valid or invalid.
+  void reportStat(fmt::ostream& output);
 private:
-  static bool isHeaderPrinted;
+  static bool isReportHeaderPrinted;
+  static bool isStatHeaderPrinted;
   Flash_Technology_Type flash_technology;
   Internal_Status status;
   unsigned int idleDieNo;
@@ -158,6 +160,9 @@ private:
   void finish_command_execution(Flash_Command *command);
   void broadcast_ready_signal(Flash_Command *command);
   std::vector<ChipReadySignalHandlerType> connectedReadyHandlers;
+  std::vector<std::vector<std::vector<unsigned int>>> numErases;
+  std::vector<std::vector<std::vector<unsigned int>>> numWrites;
+  std::vector<std::vector<std::vector<unsigned int>>> numReads;
 };
 } // namespace FlashMemory
 } // namespace NVM
