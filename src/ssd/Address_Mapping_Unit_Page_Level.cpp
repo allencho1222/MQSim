@@ -2693,8 +2693,14 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
       domains[stream_id]->Read_transactions_behind_LPA_barrier.find(lpa);
   while (read_tr !=
          domains[stream_id]->Read_transactions_behind_LPA_barrier.end()) {
+    auto& tr = (*read_tr).second;
+    if (tr->is_from_cache) {
+      ftl->Data_cache_manager->release_from_barrier(tr);
+    }
     handle_transaction_serviced_signal_from_PHY((*read_tr).second);
-    delete (*read_tr).second;
+    if (!tr->is_from_cache) {
+      delete (*read_tr).second;
+    }
     domains[stream_id]->Read_transactions_behind_LPA_barrier.erase(read_tr);
     read_tr =
         domains[stream_id]->Read_transactions_behind_LPA_barrier.find(lpa);
@@ -2718,7 +2724,9 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
       ftl->Data_cache_manager->release_from_barrier(tr);
     }
     handle_transaction_serviced_signal_from_PHY(tr);
-    delete tr;
+    if (!tr->is_from_cache) {
+      delete tr;
+    }
     domains[stream_id]->Write_transactions_behind_LPA_barrier.erase(write_tr);
     write_tr =
         domains[stream_id]->Write_transactions_behind_LPA_barrier.find(lpa);
