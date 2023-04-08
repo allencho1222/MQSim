@@ -6,6 +6,7 @@
 #include <math.h>
 #include <set>
 #include <vector>
+#include <cassert>
 
 namespace SSD_Components {
 
@@ -59,16 +60,14 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
     const unsigned int free_block_pool_size,
     const NVM::FlashMemory::Physical_Page_Address &plane_address) {
   if (free_block_pool_size < block_pool_gc_threshold) {
-    flash_block_ID_type gc_candidate_block_id =
-        block_manager->Get_coldest_block_id(plane_address);
     PlaneBookKeepingType *pbke =
         block_manager->Get_plane_bookkeeping_entry(plane_address);
-
     if (pbke->Ongoing_erase_operations.size() >=
         max_ongoing_gc_reqs_per_plane) {
       return;
     }
-
+    flash_block_ID_type gc_candidate_block_id =
+        block_manager->Get_coldest_block_id(plane_address);
     switch (block_selection_policy) {
     case SSD_Components::GC_Block_Selection_Policy_Type::
         GREEDY: // Find the set of blocks with maximum number of invalid pages
@@ -160,29 +159,55 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
       break;
     }
     case SSD_Components::GC_Block_Selection_Policy_Type::FIFO:
-      gc_candidate_block_id = pbke->Block_usage_history.front();
-      pbke->Block_usage_history.pop();
+      // WARNING (sungjun): previous implementation does not check whether the
+      // candidate block id is safe to be erased or not.
+      for (auto it = std::begin(pbke->Block_usage_history);
+          it != std::end(pbke->Block_usage_history); ++it) {
+        if (is_safe_gc_wl_candidate(pbke, *it)) {
+          gc_candidate_block_id = *it;
+          pbke->Block_usage_history.erase(it);
+          break;
+        }
+      }
       break;
     default:
       break;
     }
 
-    // This should never happen, but we check it here for safty
-    if (pbke->Ongoing_erase_operations.find(gc_candidate_block_id) !=
-        pbke->Ongoing_erase_operations.end()) {
+    if (block_selection_policy !=
+        SSD_Components::GC_Block_Selection_Policy_Type::FIFO) {
+      // WARNING (sungjun): If invalid page count is zero, select candidate by 
+      // FIFO policy.
+      // Must check whether the block is safe to be erased.
+      const auto *temp_block = &pbke->Blocks[gc_candidate_block_id];
+      if (temp_block->Invalid_page_count == 0) {
+        for (auto it = std::begin(pbke->Block_usage_history);
+            it != std::end(pbke->Block_usage_history); ++it) {
+          if (is_safe_gc_wl_candidate(pbke, *it)) {
+            gc_candidate_block_id = *it;
+            pbke->Block_usage_history.erase(it);
+            break;
+          }
+        }
+      }
+    }
+    if (!is_safe_gc_wl_candidate(pbke, gc_candidate_block_id)) {
       return;
     }
+    // This should never happen, but we check it here for safty
+    assert(!pbke->Ongoing_erase_operations.contains(gc_candidate_block_id));
 
     NVM::FlashMemory::Physical_Page_Address gc_candidate_address(plane_address);
     gc_candidate_address.BlockID = gc_candidate_block_id;
     Block_Pool_Slot_Type *block = &pbke->Blocks[gc_candidate_block_id];
 
-    // No invalid page to erase
-    if (block->Current_page_write_index == 0 ||
-        block->Invalid_page_count == 0) {
+    // WARNING (sungjun): In the previous implementation, if invalidage page 
+    // count is zero, garbage collection did not ouccr. 
+    // This prevents requests in the waiting list in Address_Mapping_Unit
+    // from being scheduled.
+    if (block->Current_page_write_index == 0) {
       return;
     }
-
     // Run the state machine to protect against race condition
     block_manager->GC_WL_started(gc_candidate_address);
     pbke->Ongoing_erase_operations.insert(gc_candidate_block_id);

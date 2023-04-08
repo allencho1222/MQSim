@@ -69,7 +69,9 @@ public:
                // amplification in flash - based SSDs", Perf. Eval., 2014
   Block_Pool_Slot_Type *
       *Translation_wf; // The write frontier blocks for translation GC pages
-  std::queue<flash_block_ID_type>
+  // Use std::list instead of std::queue to erase the element in the middle of
+  // the list.
+  std::list<flash_block_ID_type>
       Block_usage_history; // A fifo queue that keeps track of flash blocks
                            // based on their usage history
   std::set<flash_block_ID_type> Ongoing_erase_operations;

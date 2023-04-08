@@ -3,6 +3,7 @@
 #include "Address_Mapping_Unit_Base.h"
 #include "Flash_Block_Manager_Base.h"
 #include "Stats.h"
+#include <cassert>
 
 namespace SSD_Components {
 GC_and_WL_Unit_Base *GC_and_WL_Unit_Base::_my_instance;
@@ -150,6 +151,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
           }
         }
         block->Erase_transaction = gc_wl_erase_tr;
+        _my_instance->tsu->Submit_transaction(gc_wl_erase_tr);
         _my_instance->tsu->Schedule();
       }
     }
@@ -179,6 +181,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         _my_instance->address_mapping_unit->Allocate_new_page_for_gc(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite,
             pbke->Blocks[transaction->Address.BlockID].Holds_mapping_data);
+        _my_instance->tsu->Prepare_for_transaction_submit();
         _my_instance->tsu->Submit_transaction(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite);
         _my_instance->tsu->Schedule();
@@ -192,7 +195,6 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       // There has been no write on the page since GC start, and it is still
       // valid
       if (ppa == transaction->PPA) {
-        _my_instance->tsu->Prepare_for_transaction_submit();
         ((NVM_Transaction_Flash_RD *)transaction)
             ->RelatedWrite->write_sectors_bitmap = page_status_bitmap;
         ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite->LPA =
@@ -202,6 +204,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         _my_instance->address_mapping_unit->Allocate_new_page_for_gc(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite,
             pbke->Blocks[transaction->Address.BlockID].Holds_mapping_data);
+        _my_instance->tsu->Prepare_for_transaction_submit();
         _my_instance->tsu->Submit_transaction(
             ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite);
         _my_instance->tsu->Schedule();

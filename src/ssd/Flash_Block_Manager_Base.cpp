@@ -176,7 +176,7 @@ PlaneBookKeepingType::Get_a_free_block(stream_id_type stream_id,
   Free_block_pool.erase(Free_block_pool.begin());
   new_block->Stream_id = stream_id;
   new_block->Holds_mapping_data = for_mapping_data;
-  Block_usage_history.push(new_block->BlockID);
+  Block_usage_history.push_back(new_block->BlockID);
 
   return new_block;
 }

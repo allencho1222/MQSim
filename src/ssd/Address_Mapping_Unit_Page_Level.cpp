@@ -2862,14 +2862,20 @@ void Address_Mapping_Unit_Page_Level::Start_servicing_writes_for_overfull_plane(
   ftl->TSU->Prepare_for_transaction_submit();
   auto program = waiting_write_list.begin();
   while (program != waiting_write_list.end()) {
-    if (translate_lpa_to_ppa((*program)->Stream_id, *program)) {
-      ftl->TSU->Submit_transaction(*program);
-      if ((*program)->RelatedRead != NULL) {
-        ftl->TSU->Submit_transaction((*program)->RelatedRead);
-      }
-      waiting_write_list.erase(program++);
+    // WARNING (sungjun): need to check whether LPA is locked or not.
+    // A block containing LPA can be being erased.
+    if (is_lpa_locked_for_gc((*program)->Stream_id, (*program)->LPA)) {
+      program++;
     } else {
-      break;
+      if (translate_lpa_to_ppa((*program)->Stream_id, *program)) {
+        ftl->TSU->Submit_transaction(*program);
+        if ((*program)->RelatedRead != NULL) {
+          ftl->TSU->Submit_transaction((*program)->RelatedRead);
+        }
+        waiting_write_list.erase(program++);
+      } else {
+        break;
+      }
     }
   }
   ftl->TSU->Schedule();
