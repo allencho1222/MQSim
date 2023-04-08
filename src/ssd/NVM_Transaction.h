@@ -22,7 +22,7 @@ public:
       : Stream_id(stream_id), Source(source), Type(type),
         UserIORequest(user_request), Priority_class(priority_class),
         Issue_time(Simulator->Time()), STAT_execution_time(INVALID_TIME),
-        STAT_transfer_time(INVALID_TIME) {}
+        STAT_transfer_time(INVALID_TIME), is_from_cache(false) {}
   stream_id_type Stream_id;
   Transaction_Source_Type Source;
   Transaction_Type Type;
@@ -44,6 +44,7 @@ public:
     {Transaction_Source_Type::GC_WL, "GC_WL"},
     {Transaction_Source_Type::MAPPING, "MAPPING"}
   };
+  bool is_from_cache;
 };
 } // namespace SSD_Components
 
