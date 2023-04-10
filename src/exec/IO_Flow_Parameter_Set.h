@@ -67,6 +67,7 @@ public:
                           // should be a multiplication of sector size)
 
   sim_time_type Stop_Time; // Defines when to stop generating I/O requests
+  std::string Synthetic_Trace_File_Path;
   unsigned int
       Total_Requests_To_Generate; // If Stop_Time is equal to zero, then requst
                                   // generator considers

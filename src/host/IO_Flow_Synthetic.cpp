@@ -4,6 +4,7 @@
 #include "../sim/Engine.h"
 #include <math.h>
 #include <stdexcept>
+#include <fmt/format.h>
 
 namespace Host_Components {
 IO_Flow_Synthetic::IO_Flow_Synthetic(
@@ -25,7 +26,8 @@ IO_Flow_Synthetic::IO_Flow_Synthetic(
     PCIe_Root_Complex *pcie_root_complex, SATA_HBA *sata_hba,
     bool enabled_logging, sim_time_type logging_period,
     std::string logging_file_path,
-    std::string latency_file_path)
+    std::string latency_file_path,
+    std::string synthetic_trace_file_path)
     : IO_Flow_Base(name, flow_id, start_lsa_on_device,
                    LHA_type(start_lsa_on_device +
                             (end_lsa_on_device - start_lsa_on_device) *
@@ -45,6 +47,14 @@ IO_Flow_Synthetic::IO_Flow_Synthetic(
       average_number_of_enqueued_requests(average_number_of_enqueued_requests),
       seed(seed), generate_aligned_addresses(generate_aligned_addresses),
       alignment_value(alignment_value) {
+  if (!synthetic_trace_file_path.empty()) {
+    synthetic_trace_file = std::fopen(synthetic_trace_file_path.c_str(), "w");
+      if(!synthetic_trace_file) {
+          std::perror("Latency file open failed");
+          exit(-1);
+      }
+  }
+
   // If read ratio is 0, then we change its value to a negative one so that in
   // request generation we never generate a read request
   if (read_ratio == 0.0) {
@@ -94,6 +104,9 @@ IO_Flow_Synthetic::IO_Flow_Synthetic(
 }
 
 IO_Flow_Synthetic::~IO_Flow_Synthetic() {
+  if (synthetic_trace_file) {
+    std::fclose(synthetic_trace_file);
+  }
   delete random_request_type_generator;
   delete random_address_generator;
   delete random_hot_cold_generator;
@@ -203,7 +216,16 @@ Host_IO_Request *IO_Flow_Synthetic::Generate_next_request() {
         << (request->Type == Host_IO_Request_Type::READ ? "Read, " : "Write, ")
         << "LBA:" << request->Start_LBA
         << ", Size_in_bytes:" << request->LBA_count << "")
-
+  if (synthetic_trace_file) {
+    fmt::print(synthetic_trace_file,
+        "{} {} {} {} {}\n", 
+        request->Arrival_time, 
+        0,
+        request->Start_LBA,
+        request->LBA_count,
+        int(request->Type == Host_IO_Request_Type::READ)
+    );
+  }
   return request;
 }
 

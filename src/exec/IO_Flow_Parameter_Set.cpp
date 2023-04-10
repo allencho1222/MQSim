@@ -74,6 +74,8 @@ void IO_Flow_Parameter_Set_Synthetic::parseYAML(const YAML::Node &ioParams) {
     Bandwidth = ioParams["bandwidth"].as<int>();
     Stop_Time = ioParams["stop_time"].as<unsigned long>();
     Total_Requests_To_Generate = ioParams["total_reqs_to_generate"].as<int>();
+    Synthetic_Trace_File_Path = 
+      ioParams["synthetic_trace_file_path"].as<std::string>();
 
     const auto &generatorType =
         ioParams["synthetic_generator_type"].as<std::string>();
