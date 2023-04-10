@@ -1,3 +1,4 @@
+#include <cassert>
 #include "IO_Flow_Trace_Based.h"
 #include "../utils/DistributionTypes.h"
 #include "../utils/StringTools.h"
@@ -13,7 +14,7 @@ IO_Flow_Trace_Based::IO_Flow_Trace_Based(
     uint16_t nvme_completion_queue_size,
     IO_Flow_Priority_Class::Priority priority_class,
     double initial_occupancy_ratio, 
-    std::string preconditioning_trace_file_path,
+    std::vector<std::string> preconditioning_trace_file_paths,
     std::string trace_file_path,
     Trace_Time_Unit time_unit, unsigned int total_replay_count,
     unsigned int percentage_to_be_simulated,
@@ -28,10 +29,10 @@ IO_Flow_Trace_Based::IO_Flow_Trace_Based(
                    pcie_root_complex, sata_hba, enabled_logging, logging_period,
                    logging_file_path, latency_file_path),
       current_trace_file_path(""),
-      preconditioning_trace_file_path(preconditioning_trace_file_path),
       trace_file_path(trace_file_path), time_unit(time_unit),
       total_replay_no(total_replay_count),
       percentage_to_be_simulated(percentage_to_be_simulated),
+      preconditioning_trace_file_paths(preconditioning_trace_file_paths),
       total_requests_in_file(0), time_offset(0) {
   if (percentage_to_be_simulated > 100) {
     percentage_to_be_simulated = 100;
@@ -95,8 +96,14 @@ void IO_Flow_Trace_Based::Start_simulation(bool isPreconditioning) {
   std::string trace_line;
   char *pEnd;
 
-  current_trace_file_path = isPreconditioning? 
-    preconditioning_trace_file_path : trace_file_path;
+  if (isPreconditioning) {
+    // Start preconditioning trace in the reverse order.
+    current_trace_file_path = preconditioning_trace_file_paths.back();
+    preconditioning_trace_file_paths.pop_back();
+  } else {
+    assert(preconditioning_trace_file_paths.empty());
+    current_trace_file_path = trace_file_path;
+  }
   fmt::print("current file path: {}\n", current_trace_file_path);
   trace_file.open(current_trace_file_path, std::ios::in);
   if (!trace_file.is_open()) {

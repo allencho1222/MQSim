@@ -89,3 +89,4 @@ total_reqs_to_generate: 0
 # BANDWIDTH mode of request generation.
 # is 0 correct?
 bandwidth: 0
+synthetic_trace_file_path: ''

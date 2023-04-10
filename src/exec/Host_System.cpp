@@ -120,7 +120,7 @@ Host_System::Host_System(
           FLOW_ID_TO_Q_ID(flow_id), nvme_sq_size, nvme_cq_size,
           flow_param->Priority_Class,
           flow_param->Initial_Occupancy_Percentage / double(100.0),
-          flow_param->Preconditioning_File_Path,
+          flow_param->Preconditioning_File_Paths,
           flow_param->File_Path, flow_param->Time_Unit, flow_param->Relay_Count,
           flow_param->Percentage_To_Be_Executed, ssd_host_interface->GetType(),
           this->PCIe_root_complex, this->SATA_hba,

@@ -85,7 +85,8 @@ int main(int argc, char *argv[]) {
         static_cast<IO_Flow_Parameter_Set_Trace_Based *>(
             (execParams->Host_Configuration).IO_Flow_Definitions[0].get());
     // Run preconditioning only if the preconditionin trace file is provided.
-    if (flow_param->Preconditioning_File_Path != "") {
+    for (const auto& preTraceFilePath : 
+        flow_param->Preconditioning_File_Paths) {
       fmt::print("preconditioning start (num workloads: {})\n",
                  workloadDefFilePaths.size());
       auto startTime = std::chrono::high_resolution_clock::now();

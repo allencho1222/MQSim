@@ -551,14 +551,17 @@ void SSD_Device::reportResults(const Execution_Parameter_Set &execParams) {
     ((SSD_Components::FTL *)this->Firmware)->TSU->reportResults(tsuOutput);
 
     auto chipOutput = fmt::output_file(execParams.chipResultFilePath);
+    auto statOutput = fmt::output_file("chip_stat.result");
     for (unsigned int channel_cntr = 0; channel_cntr < Channel_count;
          channel_cntr++) {
       for (unsigned int chip_cntr = 0; chip_cntr < Chip_no_per_channel;
            chip_cntr++) {
         ((SSD_Components::ONFI_Channel_NVDDR2 *)Channels[channel_cntr])
             ->Chips[chip_cntr]
-            // ->Report_results_in_XML(ID(), xmlwriter);
             ->reportResults(chipOutput);
+        ((SSD_Components::ONFI_Channel_NVDDR2 *)Channels[channel_cntr])
+            ->Chips[chip_cntr]
+            ->reportStat(statOutput);
       }
     }
     chipOutput.close();

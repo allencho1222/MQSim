@@ -16,7 +16,7 @@ public:
                       uint16_t nvme_completion_queue_size,
                       IO_Flow_Priority_Class::Priority priority_class,
                       double initial_occupancy_ratio,
-                      std::string preconditioning_trace_file_path,
+                      std::vector<std::string> preconditioning_trace_file_paths,
                       std::string trace_file_path, Trace_Time_Unit time_unit,
                       unsigned int total_replay_count,
                       unsigned int percentage_to_be_simulated,
@@ -42,7 +42,7 @@ private:
   unsigned int percentage_to_be_simulated;
   std::string current_trace_file_path;
   std::string trace_file_path;
-  std::string preconditioning_trace_file_path;
+  std::vector<std::string> preconditioning_trace_file_paths;
   std::ifstream trace_file;
   unsigned int total_replay_no, replay_counter;
   unsigned int total_requests_in_file;

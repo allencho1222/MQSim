@@ -82,7 +82,7 @@ public:
 class IO_Flow_Parameter_Set_Trace_Based : public IO_Flow_Parameter_Set {
 public:
   IO_Flow_Parameter_Set_Trace_Based() { this->Type = Flow_Type::TRACE; }
-  std::string Preconditioning_File_Path;
+  std::vector<std::string> Preconditioning_File_Paths;
   std::string File_Path;
   int Percentage_To_Be_Executed;
   int Relay_Count;
