@@ -35,6 +35,13 @@ public:
                                                // the request: bytes in the real
                                                // page + bytes of metadata
 
+  void setLatency(sim_time_type lat) {
+    latency = lat;
+  }
+  sim_time_type getLatency() {
+    return latency;
+  }
+
   LPA_type LPA;
   PPA_type PPA;
 

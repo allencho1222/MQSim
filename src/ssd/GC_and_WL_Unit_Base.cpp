@@ -3,6 +3,7 @@
 #include "Flash_Block_Manager_Base.h"
 #include "Stats.h"
 #include <cassert>
+#include "TSU_Base.h"
 
 namespace SSD_Components {
 GC_and_WL_Unit_Base *GC_and_WL_Unit_Base::_my_instance;
