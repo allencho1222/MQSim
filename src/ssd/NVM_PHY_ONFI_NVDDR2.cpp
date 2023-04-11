@@ -423,8 +423,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
       dieBKE->ActiveCommand->CommandCode = CMD_ERASE_BLOCK_MULTIPLANE;
     }
 
-    // dieBKE->ActiveCommand->isFullErase =
-    //     transaction_list.front()->Type == Transaction_Type::FULL_ERASE;
+    dieBKE->ActiveCommand->isShallowErase =
+        transaction_list.front()->Type == Transaction_Type::PROXY_ERASE;
     //
     for (std::list<NVM_Transaction_Flash *>::iterator it =
              transaction_list.begin();

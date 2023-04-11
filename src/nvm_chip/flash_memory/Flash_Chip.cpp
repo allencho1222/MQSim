@@ -48,15 +48,18 @@ Flash_Chip::Flash_Chip(
   }
 
   for (int d = 0; d < dieNo; ++d) {
-    numErases.push_back(std::vector<std::vector<unsigned int>>());
+    numAdaptiveErases.push_back(std::vector<std::vector<unsigned int>>());
+    numShallowErases.push_back(std::vector<std::vector<unsigned int>>());
     numReads.push_back(std::vector<std::vector<unsigned int>>());
     numWrites.push_back(std::vector<std::vector<unsigned int>>());
     for (int p = 0; p < PlaneNoPerDie; ++p) {
-    numErases[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
+    numAdaptiveErases[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
+    numShallowErases[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
     numReads[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
     numWrites[d].push_back(std::vector<unsigned int>(Block_no_per_plane));
       for (int b = 0; b < Block_no_per_plane; ++b) {
-        numErases[d][p][b] = 0;
+        numAdaptiveErases[d][p][b] = 0;
+        numShallowErases[d][p][b] = 0;
         numReads[d][p][b] = 0;
         numWrites[d][p][b] = 0;
       }
@@ -93,7 +96,8 @@ void Flash_Chip::Start_simulation(bool isPreconditionig) {
   for (int d = 0; d < die_no; ++d) {
     for (int p = 0; p < plane_no_in_die; ++p) {
       for (int b = 0; b < block_no_in_plane; ++b) {
-        numErases[d][p][b] = 0;
+        numAdaptiveErases[d][p][b] = 0;
+        numShallowErases[d][p][b] = 0;
         numReads[d][p][b] = 0;
         numWrites[d][p][b] = 0;
       }
@@ -284,7 +288,11 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
       auto dieId = command->Address[planeCntr].DieID;
       auto planeId = command->Address[planeCntr].PlaneID;
       auto blockId = command->Address[planeCntr].BlockID;
-      numErases[dieId][planeId][blockId]++;
+      if (command->isShallowErase) {
+        numShallowErases[dieId][planeId][blockId]++;
+      } else {
+        numAdaptiveErases[dieId][planeId][blockId]++;
+      }
     }
     break;
   default:
@@ -384,7 +392,8 @@ void Flash_Chip::reportStat(fmt::ostream &output) {
                             "block "
                             "reads "
                             "writes "
-                            "erases ";
+                            "shallow_erases "
+                            "adaptive_erases";
     output.print("{}\n", header);
     isStatHeaderPrinted = true;
   }
@@ -392,9 +401,10 @@ void Flash_Chip::reportStat(fmt::ostream &output) {
   for (unsigned int d = 0; d < die_no; ++d) {
     for (unsigned int p = 0; p < plane_no_in_die; ++p) {
       for (unsigned int b = 0; b < block_no_in_plane; ++b) {
-        output.print("{} {} {} {} {} {} {} {}\n",
+        output.print("{} {} {} {} {} {} {} {} {}\n",
             ChannelID, ChipID, d, p, b, 
-            numReads[d][p][b], numWrites[d][p][b], numErases[d][p][b]);
+            numReads[d][p][b], numWrites[d][p][b], 
+            numShallowErases[d][p][b], numAdaptiveErases[d][p][b]);
       }
     }
   }

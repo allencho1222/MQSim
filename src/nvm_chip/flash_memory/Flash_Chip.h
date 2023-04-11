@@ -170,7 +170,8 @@ private:
   void finish_command_execution(Flash_Command *command);
   void broadcast_ready_signal(Flash_Command *command);
   std::vector<ChipReadySignalHandlerType> connectedReadyHandlers;
-  std::vector<std::vector<std::vector<unsigned int>>> numErases;
+  std::vector<std::vector<std::vector<unsigned int>>> numAdaptiveErases;
+  std::vector<std::vector<std::vector<unsigned int>>> numShallowErases;
   std::vector<std::vector<std::vector<unsigned int>>> numWrites;
   std::vector<std::vector<std::vector<unsigned int>>> numReads;
 };
