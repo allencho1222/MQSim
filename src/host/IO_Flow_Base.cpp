@@ -362,7 +362,8 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
   // Log end-to-end request latency for each request
   // TODO (sungjun): make sure that it only reports read request latency
   if (latency_file) {
-    fmt::print(latency_file, "{}\n", Simulator->Time() - request->Enqueue_time);
+    fmt::print(latency_file, "{} {}\n", Simulator->Time() - request->Enqueue_time,
+        static_cast<int>(request->Type == Host_IO_Request_Type::READ));
   }
   sim_time_type request_delay = Simulator->Time() - request->Arrival_time;
   STAT_serviced_request_count++;
