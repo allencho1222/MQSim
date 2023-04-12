@@ -3,6 +3,8 @@
 #include <yaml-cpp/yaml.h>
 #include <map>
 #include <numeric>
+#include <random>
+#include <algorithm>
 
 namespace SSD_Components {
 unsigned int Block_Pool_Slot_Type::Page_vector_size = 0;
@@ -24,7 +26,8 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       initialEraseCount(initialEraseCount) {
   unsigned int lastCategoryID = 0;
   unsigned int accBlockNum = 0;
-  std::unordered_map<unsigned int, unsigned int> blockCategory;
+  //std::unordered_map<unsigned int, unsigned int> blockCategory;
+  std::vector<unsigned int> blockCategories;
   // parse model file
   const auto yaml = YAML::LoadFile(blockModelFile);
   for (auto it = std::cbegin(yaml); it != std::cend(yaml); ++it) {
@@ -32,8 +35,11 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     const auto ratio = it->second["ratio"].as<double>();
     unsigned int numBlocksInCategory = 
       block_no_per_plane * (ratio / static_cast<double>(100.0));
-    accBlockNum = numBlocksInCategory;
-    blockCategory.insert_or_assign(lastCategoryID, numBlocksInCategory);
+    accBlockNum += numBlocksInCategory;
+    for (int i = 0; i < numBlocksInCategory; ++i) {
+      blockCategories.push_back(lastCategoryID);
+    }
+    //blockCategory.insert_or_assign(lastCategoryID, numBlocksInCategory);
     const auto stat = it->second["erase_status"];
     auto blockModel = BlockModel();
     for (auto s = std::cbegin(stat); s != std::cend(stat); ++s) {
@@ -49,28 +55,12 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     }
     blockModels.push_back(std::move(blockModel));
   }
-  // Adjust the number of blocks in the last category.
-  int total = std::accumulate(
-      std::begin(blockCategory), 
-      std::end(blockCategory),
-      0,
-      [](unsigned int val, auto &c) {
-        return val + c.second;
-      });
-  assert(total <= block_no_per_plane);
-  unsigned int remains = block_no_per_plane - total;
-  blockCategory.insert_or_assign(
-      lastCategoryID, blockCategory.at(lastCategoryID) + remains);
-
-  // check correctness
-  total = std::accumulate(
-      std::begin(blockCategory), 
-      std::end(blockCategory),
-      0,
-      [](unsigned int val, auto &c) {
-        return val + c.second;
-      });
-  assert(total == block_no_per_plane);
+  for (int i = accBlockNum; i < block_no_per_plane; ++i) {
+    blockCategories.push_back(lastCategoryID);
+  }
+  // shuffle block category
+  std::mt19937 seed(327);
+  std::shuffle(std::begin(blockCategories), std::end(blockCategories), seed);
 
   plane_manager = new PlaneBookKeepingType ***[channel_count];
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
@@ -97,27 +87,17 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
               new Block_Pool_Slot_Type[block_no_per_plane];
 
           // For each block in the plane, assign block category
-          unsigned int curCategoryID = 0;
-          unsigned int numAllocated = 0;
+          std::vector<unsigned int> categories = blockCategories;
           // Initialize block pool for plane
           for (unsigned int blockID = 0; blockID < block_no_per_plane;
                blockID++) {
             Block_Pool_Slot_Type::Page_vector_size =
                 pages_no_per_block / (sizeof(uint64_t) * 8) +
                 (pages_no_per_block % (sizeof(uint64_t) * 8) == 0 ? 0 : 1);
-            auto &block = plane_manager[channelID][chipID][dieID][planeID]
-                              .Blocks[blockID];
-            auto it = blockCategory.find(curCategoryID);
-            assert(it != blockCategory.end());
-            if (numAllocated < it->second) {
-              numAllocated++;
-            } else {
-              curCategoryID++;
-              numAllocated = 1;
-            }
-            // If curCategory is not found, just use it.
-            // This happens because of `ratio`.
-            block.categoryID = curCategoryID;
+            auto& block = 
+              plane_manager[channelID][chipID][dieID][planeID].Blocks[blockID];
+            block.categoryID = categories.back();
+            categories.pop_back();
             // TODO: init values in the constructor
             block.BlockID = blockID;
             block.Current_page_write_index = 0;
@@ -140,8 +120,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
             plane_manager[channelID][chipID][dieID][planeID]
                 .Add_to_free_block_pool(&block, false);
           }
-          assert(blockCategory.size() == curCategoryID + 1);
-          assert(blockCategory.at(curCategoryID) == numAllocated);
+          assert(categories.empty());
           plane_manager[channelID][chipID][dieID][planeID].Data_wf =
               new Block_Pool_Slot_Type *[total_concurrent_streams_no];
           plane_manager[channelID][chipID][dieID][planeID].Translation_wf =
