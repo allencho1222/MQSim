@@ -223,6 +223,7 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
       NVM_Transaction_Flash_ER *gc_erase_tr = new NVM_Transaction_Flash_ER(
           Transaction_Source_Type::GC_WL,
           pbke->Blocks[gc_candidate_block_id].Stream_id, gc_candidate_address);
+      block_manager->initEraseLatency(gc_candidate_address);
       auto eraseLatency = block_manager->getNextEraseLatency(gc_candidate_address);
       assert(eraseLatency.has_value());
       gc_erase_tr->setLatency(eraseLatency.value());

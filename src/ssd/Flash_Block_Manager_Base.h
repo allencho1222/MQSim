@@ -57,6 +57,7 @@ public:
 
   int nextEraseLoopCount;
   int categoryID = 0;
+  uint32_t remainingEraseLatency;
 };
 
 class PlaneBookKeepingType {
@@ -185,6 +186,8 @@ public:
   std::optional<sim_time_type> getNextEraseLatency(
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
   void resetEraseCount();
+  void initEraseLatency(const NVM::FlashMemory::Physical_Page_Address &addr);
+
 
 protected:
   PlaneBookKeepingType ***
@@ -202,15 +205,10 @@ protected:
       const NVM::FlashMemory::Physical_Page_Address
           &page_address); // Updates the block bookkeeping record
 private:
-  typedef struct BlockStat {
-    sim_time_type eraseLatency;
-    std::pair<int, int> failBitRange;
-  } BlockStat;
-  using BlockStats = std::vector<BlockStat>;
-  using BlockModel = std::map<int, BlockStats>;
-  using BlockModels = std::vector<BlockModel>;
-  BlockModels blockModels;
+  std::vector<uint32_t> eraseLatency;
+  std::vector<uint32_t> maxEraseLatency;
   unsigned int initialEraseCount;
+
 };
 } // namespace SSD_Components
 

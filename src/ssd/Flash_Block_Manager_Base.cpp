@@ -24,37 +24,47 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       block_no_per_plane(block_no_per_plane),
       pages_no_per_block(page_no_per_block),
       initialEraseCount(initialEraseCount) {
-  unsigned int lastCategoryID = 0;
-  unsigned int accBlockNum = 0;
+  uint32_t lastCategoryID = 0;
+  uint32_t accBlockNum = 0;
   //std::unordered_map<unsigned int, unsigned int> blockCategory;
   std::vector<unsigned int> blockCategories;
   // parse model file
   const auto yaml = YAML::LoadFile(blockModelFile);
-  for (auto it = std::cbegin(yaml); it != std::cend(yaml); ++it) {
-    lastCategoryID = std::stoi(&((it->first.as<std::string>()).back()));
+  maxEraseLatency = yaml["max_erase_latency"].as<std::vector<uint32_t>>();
+  auto targetPEC = yaml["target_pec"].as<uint32_t>();
+  const auto categories = yaml["category"];
+  double totalRatio = 0;
+  eraseLatency.reserve(categories.size());
+  std::set<uint32_t> dupIDs;
+  for (auto it = std::cbegin(categories); it != std::cend(categories); ++it) {
+    lastCategoryID = it->first.as<uint32_t>();
+    assert(!dupIDs.contains(lastCategoryID));
+    dupIDs.insert(lastCategoryID);
     const auto ratio = it->second["ratio"].as<double>();
     unsigned int numBlocksInCategory = 
       block_no_per_plane * (ratio / static_cast<double>(100.0));
+    totalRatio += ratio;
     accBlockNum += numBlocksInCategory;
     for (int i = 0; i < numBlocksInCategory; ++i) {
       blockCategories.push_back(lastCategoryID);
     }
     //blockCategory.insert_or_assign(lastCategoryID, numBlocksInCategory);
-    const auto stat = it->second["erase_status"];
-    auto blockModel = BlockModel();
-    for (auto s = std::cbegin(stat); s != std::cend(stat); ++s) {
-      const auto pec = s->first.as<int>();
-      auto blockStats = BlockStats();
-      for (const auto &loop : s->second) {
-        const auto eraseLatency = loop["latency"].as<sim_time_type>();
-        assert(loop["num_fail_bits"].IsSequence());
-        const auto [min, max] = loop["num_fail_bits"].as<std::pair<int, int>>();
-        blockStats.push_back({eraseLatency, {min, max}});
+    const auto latency = it->second["latency"];
+    bool isSelected = false;
+    std::set<uint32_t> dupPECs;
+    for (auto l = std::cbegin(latency); l != std::cend(latency); ++l) {
+      const auto pec = l->first.as<uint32_t>();
+      assert(!dupPECs.contains(pec));
+      dupPECs.insert(pec);
+      if (pec == targetPEC) {
+        const auto lat = l->second.as<uint32_t>();
+        eraseLatency[lastCategoryID] = lat;
+        isSelected = true;
       }
-      blockModel.insert(std::make_pair(pec, std::move(blockStats)));
     }
-    blockModels.push_back(std::move(blockModel));
+    assert(isSelected);
   }
+  assert(static_cast<int>(totalRatio) == 100);
   for (int i = accBlockNum; i < block_no_per_plane; ++i) {
     blockCategories.push_back(lastCategoryID);
   }
@@ -110,6 +120,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
             block.Ongoing_user_program_count = 0;
             block.Ongoing_user_read_count = 0;
             block.isBlockErased = true;
+            block.remainingEraseLatency = 0;
             block.willBeAdaptivelyErased = true;
             block.Invalid_page_bitmap =
                 new uint64_t[Block_Pool_Slot_Type::Page_vector_size];
@@ -416,6 +427,12 @@ void Flash_Block_Manager_Base::finishEraseLoop(
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
+  uint32_t _maxEraseLatency = maxEraseLatency[block.nextEraseLoopCount];
+  if (block.remainingEraseLatency < _maxEraseLatency) {
+    block.remainingEraseLatency = 0;
+  } else {
+    block.remainingEraseLatency -= _maxEraseLatency;
+  }
   block.nextEraseLoopCount++;
 }
 
@@ -440,12 +457,13 @@ void Flash_Block_Manager_Base::eraseBlock(
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
-  const auto &blockModel = blockModels[block.categoryID];
-  int PEC = block.Erase_count;
-  const auto blockStatsIter = blockModel.upper_bound(PEC);
-  assert(blockStatsIter != blockModel.end());
-  const auto &blockStats = blockStatsIter->second;
-  assert(block.nextEraseLoopCount == blockStats.size());
+  // const auto &blockModel = blockModels[block.categoryID];
+  // int PEC = block.Erase_count;
+  // const auto blockStatsIter = blockModel.upper_bound(PEC);
+  // assert(blockStatsIter != blockModel.end());
+  // const auto &blockStats = blockStatsIter->second;
+  // assert(block.nextEraseLoopCount == blockStats.size());
+  assert(block.remainingEraseLatency == 0);
   assert(!block.isBlockErased);
   assert(block.willBeAdaptivelyErased);
   block.isBlockErased = true;
@@ -464,20 +482,31 @@ bool Flash_Block_Manager_Base::isBlockErased(
   return block.isBlockErased;
 }
 
+void Flash_Block_Manager_Base::initEraseLatency(
+    const NVM::FlashMemory::Physical_Page_Address &addr) {
+  const PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  auto &block = planeRecord->Blocks[addr.BlockID];
+  assert(block.remainingEraseLatency == 0);
+  block.remainingEraseLatency = eraseLatency[block.categoryID];
+}
+
 std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
     const NVM::FlashMemory::Physical_Page_Address &addr) const {
   const PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   const auto &block = planeRecord->Blocks[addr.BlockID];
-  const auto &blockModel = blockModels[block.categoryID];
-  int PEC = block.Erase_count;
-  const auto blockStatsIter = blockModel.upper_bound(PEC);
-  assert(blockStatsIter != blockModel.end());
-  const auto &blockStats = blockStatsIter->second;
-  if (block.nextEraseLoopCount < blockStats.size()) {
-    return blockStats[block.nextEraseLoopCount].eraseLatency;
-  } else {
+  // const auto &blockModel = blockModels[block.categoryID];
+  if (block.remainingEraseLatency == 0) {
     return std::nullopt;
+  } else {
+    assert(block.nextEraseLoopCount < maxEraseLatency.size());
+    uint32_t _maxEraseLatency = maxEraseLatency[block.nextEraseLoopCount];
+    if (block.remainingEraseLatency > _maxEraseLatency) {
+      return _maxEraseLatency;
+    } else {
+      return block.remainingEraseLatency;
+    }
   }
 }
 

@@ -105,6 +105,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             Transaction_Source_Type::GC_WL, block->Stream_id,
             gc_wl_candidate_address);
         const auto& bm = _my_instance->block_manager;
+        bm->initEraseLatency(gc_wl_candidate_address);
         auto eraseLatency = bm->getNextEraseLatency(gc_wl_candidate_address);
         assert(eraseLatency.has_value());
         gc_wl_erase_tr->setLatency(eraseLatency.value());
@@ -454,6 +455,7 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
     NVM_Transaction_Flash_ER *wl_erase_tr = new NVM_Transaction_Flash_ER(
         Transaction_Source_Type::GC_WL,
         pbke->Blocks[wl_candidate_block_id].Stream_id, wl_candidate_address);
+    block_manager->initEraseLatency(wl_candidate_address);
     auto eraseLatency = block_manager->getNextEraseLatency(wl_candidate_address);
     assert(eraseLatency.has_value());
     wl_erase_tr->setLatency(eraseLatency.value());
