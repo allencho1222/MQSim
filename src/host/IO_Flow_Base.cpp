@@ -17,7 +17,7 @@ IO_Flow_Base::IO_Flow_Base(
     HostInterface_Types SSD_device_type, PCIe_Root_Complex *pcie_root_complex,
     SATA_HBA *sata_hba, bool enabled_logging, sim_time_type logging_period,
     std::string logging_file_path,
-    std::string latency_file_path)
+    bool recordLatency)
     : MQSimEngine::Sim_Object(name), flow_id(flow_id),
       start_lsa_on_device(start_lsa_on_device),
       end_lsa_on_device(end_lsa_on_device), io_queue_id(io_queue_id),
@@ -46,8 +46,8 @@ IO_Flow_Base::IO_Flow_Base(
       STAT_transferred_bytes_write(0), progress(0), next_progress_step(0),
       enabled_logging(enabled_logging), logging_period(logging_period),
       logging_file_path(logging_file_path),
-      latency_file_path(latency_file_path),
-      latency_file(nullptr) {
+      recordLatency(recordLatency),
+      doWrite(false) {
   Host_IO_Request *t = NULL;
 
   switch (SSD_device_type) {
@@ -170,8 +170,15 @@ IO_Flow_Base::IO_Flow_Base(
 
 IO_Flow_Base::~IO_Flow_Base() {
   log_file.close();
-  if (latency_file) {
-    std::fclose(latency_file);
+  if (doWrite) {
+    std::ofstream readFile("reads.bin", std::ios::out | std::ios::binary);
+    readFile.write(reinterpret_cast<const char*>(&readLatencies[0]), 
+                   readLatencies.size() * sizeof(uint32_t));
+    readFile.close();
+    std::ofstream writeFile("writes.bin", std::ios::out | std::ios::binary);
+    writeFile.write(reinterpret_cast<const char*>(&writeLatencies[0]), 
+                   writeLatencies.size() * sizeof(uint32_t));
+    writeFile.close();
   }
   for (auto &req : waiting_requests) {
     if (req) {
@@ -192,6 +199,7 @@ IO_Flow_Base::~IO_Flow_Base() {
   default:
     PRINT_ERROR("Unsupported host interface type in IO_Flow_Base!")
   }
+
 }
 
 void IO_Flow_Base::initStat() {
@@ -239,13 +247,7 @@ void IO_Flow_Base::Start_simulation(bool isPreconditioning) {
                << "ReponseTime(us)\t"
                << "EndToEndDelay(us)" << std::endl;
     }
-    if (!latency_file_path.empty()) {
-      latency_file = std::fopen(latency_file_path.c_str(), "w");
-      if(!latency_file) {
-          std::perror("Latency file open failed");
-          exit(-1);
-      }
-    }
+    doWrite = recordLatency;
   }
 }
 
@@ -360,10 +362,13 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
   sim_time_type device_response_time =
       Simulator->Time() - request->Enqueue_time;
   // Log end-to-end request latency for each request
-  // TODO (sungjun): make sure that it only reports read request latency
-  if (latency_file) {
-    fmt::print(latency_file, "{} {}\n", Simulator->Time() - request->Enqueue_time,
-        static_cast<int>(request->Type == Host_IO_Request_Type::READ));
+  if (doWrite) {
+    uint32_t latency = Simulator->Time() - request->Enqueue_time;
+    if (request->Type == Host_IO_Request_Type::READ) {
+      readLatencies.push_back(latency);
+    } else {
+      writeLatencies.push_back(latency);
+    }
   }
   sim_time_type request_delay = Simulator->Time() - request->Arrival_time;
   STAT_serviced_request_count++;

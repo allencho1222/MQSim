@@ -15,7 +15,7 @@ public:
                              // delay to send/receive a SATA message in
                              // nanoseconds
   static bool Enable_ResponseTime_Logging;
-  static std::string Latency_Log_File_Path;
+  static bool Record_Latency;
   static sim_time_type ResponseTime_Logging_Period_Length;
   static std::vector<std::unique_ptr<IO_Flow_Parameter_Set>> IO_Flow_Definitions;
   static std::string Input_file_path; // This parameter is not serialized. This

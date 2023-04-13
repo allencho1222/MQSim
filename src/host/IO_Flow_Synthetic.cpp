@@ -26,7 +26,7 @@ IO_Flow_Synthetic::IO_Flow_Synthetic(
     PCIe_Root_Complex *pcie_root_complex, SATA_HBA *sata_hba,
     bool enabled_logging, sim_time_type logging_period,
     std::string logging_file_path,
-    std::string latency_file_path,
+    bool recordLatency,
     std::string synthetic_trace_file_path)
     : IO_Flow_Base(name, flow_id, start_lsa_on_device,
                    LHA_type(start_lsa_on_device +
@@ -36,7 +36,7 @@ IO_Flow_Synthetic::IO_Flow_Synthetic(
                    nvme_completion_queue_size, priority_class, stop_time,
                    initial_occupancy_ratio, total_req_count, SSD_device_type,
                    pcie_root_complex, sata_hba, enabled_logging, logging_period,
-                   logging_file_path, latency_file_path),
+                   logging_file_path, recordLatency),
       read_ratio(read_ratio), address_distribution(address_distribution),
       working_set_ratio(working_set_ratio), hot_region_ratio(hot_region_ratio),
       request_size_distribution(request_size_distribution),

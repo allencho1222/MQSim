@@ -28,7 +28,7 @@ public:
       PCIe_Root_Complex *pcie_root_complex, SATA_HBA *sata_hba,
       bool enabled_logging, sim_time_type logging_period,
       std::string logging_file_path,
-      std::string latency_file_path,
+      bool recordLatency,
       std::string synthetic_trace_file_path);
   ~IO_Flow_Synthetic();
   Host_IO_Request *Generate_next_request();

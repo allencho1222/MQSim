@@ -21,13 +21,13 @@ IO_Flow_Trace_Based::IO_Flow_Trace_Based(
     HostInterface_Types SSD_device_type, PCIe_Root_Complex *pcie_root_complex,
     SATA_HBA *sata_hba, bool enabled_logging, sim_time_type logging_period,
     std::string logging_file_path,
-    std::string latency_file_path)
+    bool recordLatency)
     : IO_Flow_Base(name, flow_id, start_lsa_on_device, end_lsa_on_device,
                    io_queue_id, nvme_submission_queue_size,
                    nvme_completion_queue_size, priority_class, 0,
                    initial_occupancy_ratio, 0, SSD_device_type,
                    pcie_root_complex, sata_hba, enabled_logging, logging_period,
-                   logging_file_path, latency_file_path),
+                   logging_file_path, recordLatency),
       current_trace_file_path(""),
       trace_file_path(trace_file_path), time_unit(time_unit),
       total_replay_no(total_replay_count),
@@ -112,6 +112,8 @@ void IO_Flow_Trace_Based::Start_simulation(bool isPreconditioning) {
   PRINT_MESSAGE("Investigating input trace file: " << current_trace_file_path);
 
   sim_time_type last_request_arrival_time = 0;
+  uint32_t numReads = 0;
+  uint32_t numWrites = 0;
   while (std::getline(trace_file, trace_line)) {
     Utils::Helper_Functions::Remove_cr(trace_line);
     current_trace_line.clear();
@@ -129,6 +131,12 @@ void IO_Flow_Trace_Based::Start_simulation(bool isPreconditioning) {
                   << last_request_arrival_time
                   << "\nMQSim expects request arrival times to be "
                      "monotonically increasing in the input trace!")
+    }
+    if (current_trace_line[ASCIITraceTypeColumn].compare(ASCIITraceWriteCode) ==
+        0) {
+      numWrites++;
+    } else {
+      numReads++;
     }
   }
 
@@ -156,6 +164,10 @@ void IO_Flow_Trace_Based::Start_simulation(bool isPreconditioning) {
   Simulator->Register_sim_event(
       std::strtoll(current_trace_line[ASCIITraceTimeColumn].c_str(), &pEnd, 10),
       this);
+  if (doWrite) {
+    readLatencies.reserve(numReads);
+    writeLatencies.reserve(numWrites);
+  }
 }
 
 void IO_Flow_Trace_Based::Validate_simulation_config() {}

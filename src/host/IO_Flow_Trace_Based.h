@@ -24,7 +24,7 @@ public:
                       PCIe_Root_Complex *pcie_root_complex, SATA_HBA *sata_hba,
                       bool enabled_logging, sim_time_type logging_period,
                       std::string logging_file_path,
-                      std::string latency_file_path);
+                      bool recordLatency);
   ~IO_Flow_Trace_Based();
   Host_IO_Request *Generate_next_request();
   void NVMe_consume_io_request(Completion_Queue_Entry *);
