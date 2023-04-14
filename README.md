@@ -23,7 +23,7 @@ $ conan profile detect --force
 1. Build MQSim in `Debug` or `Release` mode. Dependencies (fmt, spdlog, boost, and yaml-cpp) will be automatically installed by `conan`.
 ```
 # build MQSim (MODE: Debug or Release).
-$ conan install . -s "&:build_type=${MODE}" -s "build_type=Release"
+$ conan install . --build=missing -s "&:build_type=${MODE}" -s "build_type=Release"
 ```
 
 2. Configure cmake
