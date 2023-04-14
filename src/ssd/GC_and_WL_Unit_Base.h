@@ -56,7 +56,8 @@ public:
       unsigned int page_no_per_block, unsigned int sector_no_per_page,
       bool use_copyback, double rho, unsigned int max_ongoing_gc_reqs_per_plane,
       bool dynamic_wearleveling_enabled, bool static_wearleveling_enabled,
-      unsigned int static_wearleveling_threshold, int seed);
+      unsigned int static_wearleveling_threshold, int seed,
+      bool true_lazy_erase);
   void Setup_triggers();
   void Start_simulation(bool isPreconditioning);
   void Validate_simulation_config();
@@ -135,6 +136,7 @@ protected:
   unsigned int block_no_per_plane;
   unsigned int pages_no_per_block;
   unsigned int sector_no_per_page;
+  bool true_lazy_erase;
 public:
   std::optional<unsigned int> requireRetry(const EraseStatus& blockStat);
 };

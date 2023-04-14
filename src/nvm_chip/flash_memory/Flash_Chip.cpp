@@ -172,7 +172,8 @@ void Flash_Chip::start_command_execution(Flash_Command *command) {
 
   auto &cmd = command->CommandCode;
   if (cmd == CMD_ERASE_BLOCK || cmd == CMD_ERASE_BLOCK_MULTIPLANE) {
-    assert(command->latency != 0);
+    // erase latency can be 0.
+    //assert(command->latency != 0);
     targetDie->Expected_finish_time = Simulator->Time() + command->latency;
   } else {
     targetDie->Expected_finish_time =
@@ -206,7 +207,8 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
 
   auto &cmd = command->CommandCode;
   if (cmd == CMD_ERASE_BLOCK || cmd == CMD_ERASE_BLOCK_MULTIPLANE) {
-    assert(command->latency != 0);
+    // erase latency can be 0.
+    //assert(command->latency != 0);
     targetDie->STAT_TotalReadTime += command->latency;
   } else {
     targetDie->STAT_TotalReadTime += Get_command_execution_latency(

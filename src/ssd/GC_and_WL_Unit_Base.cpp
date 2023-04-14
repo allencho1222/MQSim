@@ -21,7 +21,8 @@ GC_and_WL_Unit_Base::GC_and_WL_Unit_Base(
     unsigned int sector_no_per_page, bool use_copyback, double rho,
     unsigned int max_ongoing_gc_reqs_per_plane,
     bool dynamic_wearleveling_enabled, bool static_wearleveling_enabled,
-    unsigned int static_wearleveling_threshold, int seed)
+    unsigned int static_wearleveling_threshold, int seed,
+    bool true_lazy_erase)
     : Sim_Object(id), address_mapping_unit(address_mapping_unit),
       block_manager(block_manager), tsu(tsu),
       flash_controller(flash_controller), force_gc(false),
@@ -37,7 +38,8 @@ GC_and_WL_Unit_Base::GC_and_WL_Unit_Base(
       sector_no_per_page(sector_no_per_page),
       dynamic_wearleveling_enabled(dynamic_wearleveling_enabled),
       static_wearleveling_enabled(static_wearleveling_enabled),
-      static_wearleveling_threshold(static_wearleveling_threshold) {
+      static_wearleveling_threshold(static_wearleveling_threshold),
+      true_lazy_erase(true_lazy_erase) {
   _my_instance = this;
   block_pool_gc_threshold =
       (unsigned int)(gc_threshold * (double)block_no_per_plane);
@@ -281,33 +283,65 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         .Erase_transaction->Page_movement_activities.remove(
             (NVM_Transaction_Flash_WR *)transaction);
   } else if (trType == Transaction_Type::PROXY_ERASE) {
-    // WARNING: `Add_erased_block_to_pool` do not increase `Erase_count`
-    pbke->Ongoing_erase_operations.erase(
-        pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
-    _my_instance->block_manager->Add_erased_block_to_pool(
-        transaction->Address);
-    _my_instance->block_manager->GC_WL_finished(transaction->Address);
-    if (_my_instance->check_static_wl_required(transaction->Address)) {
-      _my_instance->run_static_wearleveling(transaction->Address);
-    }
-    _my_instance->address_mapping_unit
-        ->Start_servicing_writes_for_overfull_plane(
-            transaction
-                ->Address); // Must be inovked after above statements since it
-                            // may lead to flash page consumption for waiting
-                            // program transactions
+    // _my_instance->block_manager->Add_erased_block_to_pool(
+    //     transaction->Address);
+    // _my_instance->block_manager->GC_WL_finished(transaction->Address);
+    // if (_my_instance->check_static_wl_required(transaction->Address)) {
+    //   _my_instance->run_static_wearleveling(transaction->Address);
+    // }
+    // _my_instance->address_mapping_unit
+    //     ->Start_servicing_writes_for_overfull_plane(
+    //         transaction
+    //             ->Address); // Must be inovked after above statements since it
+    //                         // may lead to flash page consumption for waiting
+    //                         // program transactions
+    //
+    // if (_my_instance->Stop_servicing_writes(transaction->Address)) {
+    //   _my_instance->Check_gc_required(pbke->Get_free_block_pool_size(),
+    //                                   transaction->Address);
+    // }
+    const auto &bm = _my_instance->block_manager;
+    bm->finishEraseLoop(transaction->Address);
+    assert(bm->numRemainingEraseLoops(transaction->Address) != 0);
+    if (_my_instance->true_lazy_erase && 
+        bm->numRemainingEraseLoops(transaction->Address) > 1) {
+      _my_instance->tsu->Prepare_for_transaction_submit();
+      auto eraseLatency = bm->getNextEraseLatency(transaction->Address);
+      assert(eraseLatency.has_value());
+      auto eraseTR = new NVM_Transaction_Flash_ER(
+          Transaction_Source_Type::GC_WL, transaction->Stream_id,
+          transaction->Address);
+      eraseTR->setLatency(eraseLatency.value());
+      _my_instance->tsu->Submit_transaction(eraseTR);
+      _my_instance->tsu->Schedule();
+    } else {
+      // WARNING: `Add_erased_block_to_pool` do not increase `Erase_count`
+      pbke->Ongoing_erase_operations.erase(
+          pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
+      _my_instance->block_manager->Add_erased_block_to_pool(
+          transaction->Address);
+      _my_instance->block_manager->GC_WL_finished(transaction->Address);
+      if (_my_instance->check_static_wl_required(transaction->Address)) {
+        _my_instance->run_static_wearleveling(transaction->Address);
+      }
+      _my_instance->address_mapping_unit
+          ->Start_servicing_writes_for_overfull_plane(
+              transaction
+                  ->Address); // Must be inovked after above statements since it
+                              // may lead to flash page consumption for waiting
+                              // program transactions
 
-    if (_my_instance->Stop_servicing_writes(transaction->Address)) {
-      _my_instance->Check_gc_required(pbke->Get_free_block_pool_size(),
-                                      transaction->Address);
+      if (_my_instance->Stop_servicing_writes(transaction->Address)) {
+        _my_instance->Check_gc_required(pbke->Get_free_block_pool_size(),
+                                        transaction->Address);
+      }
     }
-    const auto &blockManager = _my_instance->block_manager;
-    blockManager->finishEraseLoop(transaction->Address);
   } else if (trType == Transaction_Type::ADAPTIVE_ERASE) {
     const auto &blockManager = _my_instance->block_manager;
     const auto &eraseAddr = transaction->Address;
     blockManager->finishEraseLoop(eraseAddr);
     if (auto eraseLatency = blockManager->getNextEraseLatency(eraseAddr)) {
+      assert(!_my_instance->true_lazy_erase);
       _my_instance->tsu->Prepare_for_transaction_submit();
       auto eraseTR = new NVM_Transaction_Flash_ER(
           Transaction_Source_Type::GC_WL, transaction->Stream_id,

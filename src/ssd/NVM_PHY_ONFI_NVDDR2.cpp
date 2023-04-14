@@ -228,7 +228,8 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
   if (transaction_list.front()->Type == Transaction_Type::ADAPTIVE_ERASE ||
       transaction_list.front()->Type == Transaction_Type::PROXY_ERASE) {
     dieBKE->ActiveCommand->latency = transaction_list.front()->getLatency();
-    assert(dieBKE->ActiveCommand->latency != 0);
+    // Latency can be 0 because the shallow latency of the baseline is set to 0.
+    //assert(dieBKE->ActiveCommand->latency != 0);
   }
   for (std::list<NVM_Transaction_Flash *>::iterator it =
            transaction_list.begin();

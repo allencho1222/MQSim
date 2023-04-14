@@ -187,8 +187,8 @@ public:
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
   void resetEraseCount();
   void initEraseLatency(const NVM::FlashMemory::Physical_Page_Address &addr);
-
-
+  int numRemainingEraseLoops(
+      const NVM::FlashMemory::Physical_Page_Address &addr) const;
 protected:
   PlaneBookKeepingType ***
       *plane_manager; // Keeps track of plane block usage information

@@ -510,4 +510,23 @@ std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
   }
 }
 
+int Flash_Block_Manager_Base::numRemainingEraseLoops(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  const PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  const auto &block = planeRecord->Blocks[addr.BlockID];
+  int tempLoopCount = block.nextEraseLoopCount;
+  uint32_t tempLatency = block.remainingEraseLatency;
+  while (tempLatency != 0) {
+    assert(tempLoopCount < maxEraseLatency.size());
+    uint32_t maxLatency = maxEraseLatency[tempLoopCount++];
+    if (tempLatency > maxLatency) {
+      tempLatency -= maxLatency;
+    } else {
+      tempLatency = 0;
+    }
+  }
+  return tempLoopCount - block.nextEraseLoopCount;
+}
+
 } // namespace SSD_Components

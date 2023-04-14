@@ -73,6 +73,7 @@ public:
       GC_Block_Selection_Policy;
   static bool Use_Copyback_for_GC;
   static bool Preemptible_GC_Enabled;
+  static bool True_Lazy_Erase;
   static double GC_Hard_Threshold; // The hard gc execution threshold, used to
                                    // stop preemptible gc execution
   static bool Dynamic_Wearleveling_Enabled;

@@ -24,7 +24,8 @@ public:
       unsigned int max_ongoing_gc_reqs_per_plane = 10,
       bool dynamic_wearleveling_enabled = true,
       bool static_wearleveling_enabled = true,
-      unsigned int static_wearleveling_threshold = 100, int seed = 432);
+      unsigned int static_wearleveling_threshold = 100, int seed = 432,
+      bool true_lazy_erase = true);
 
   /*This function is used for implementing preemptible GC execution. If for a
    * flash chip the free block pool becomes close to empty, then the GC requests

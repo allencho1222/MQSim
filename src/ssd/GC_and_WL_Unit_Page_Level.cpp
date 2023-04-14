@@ -23,7 +23,8 @@ GC_and_WL_Unit_Page_Level::GC_and_WL_Unit_Page_Level(
     unsigned int sectors_per_page, bool use_copyback, double rho,
     unsigned int max_ongoing_gc_reqs_per_plane,
     bool dynamic_wearleveling_enabled, bool static_wearleveling_enabled,
-    unsigned int static_wearleveling_threshold, int seed)
+    unsigned int static_wearleveling_threshold, int seed,
+    bool true_lazy_erase)
     : GC_and_WL_Unit_Base(
           id, address_mapping_unit, block_manager, tsu, flash_controller,
           block_selection_policy, gc_threshold, preemptible_gc_enabled,
@@ -31,7 +32,7 @@ GC_and_WL_Unit_Page_Level::GC_and_WL_Unit_Page_Level(
           plane_no_per_die, block_no_per_plane, Page_no_per_block,
           sectors_per_page, use_copyback, rho, max_ongoing_gc_reqs_per_plane,
           dynamic_wearleveling_enabled, static_wearleveling_enabled,
-          static_wearleveling_threshold, seed) {
+          static_wearleveling_threshold, seed, true_lazy_erase) {
   rga_set_size = (unsigned int)log2(block_no_per_plane);
 }
 

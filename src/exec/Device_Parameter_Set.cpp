@@ -139,6 +139,7 @@ SSD_Components::GC_Block_Selection_Policy_Type
         SSD_Components::GC_Block_Selection_Policy_Type::RGA;
 bool Device_Parameter_Set::Use_Copyback_for_GC = false;
 bool Device_Parameter_Set::Preemptible_GC_Enabled = true;
+bool Device_Parameter_Set::True_Lazy_Erase = true;
 double Device_Parameter_Set::GC_Hard_Threshold =
     0.005; // The hard gc execution threshold, used to stop preemptible gc
            // execution
@@ -247,6 +248,7 @@ void Device_Parameter_Set::parseYAML(const YAML::Node &deviceParams) {
     } else {
       Transaction_Scheduling_Policy = schedulingTypeMap[schedulingType];
     }
+    True_Lazy_Erase = deviceParams["true_lazy_erase"].as<bool>();
 
     const auto &gcYAMLNode = deviceParams["garbage_collection"];
     Overprovisioning_Ratio = gcYAMLNode["overprovisioning_ratio"].as<double>();
