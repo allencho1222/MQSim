@@ -27,11 +27,12 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
   uint32_t lastCategoryID = 0;
   uint32_t accBlockNum = 0;
   //std::unordered_map<unsigned int, unsigned int> blockCategory;
-  std::vector<unsigned int> blockCategories;
+  std::vector<unsigned int> tempBlockCategories;
   // parse model file
   const auto yaml = YAML::LoadFile(blockModelFile);
   maxEraseLatency = yaml["max_erase_latency"].as<std::vector<uint32_t>>();
   auto targetPEC = yaml["target_pec"].as<uint32_t>();
+  auto blockIndexFilePath = yaml["block_index_file"].as<std::string>();
   const auto categories = yaml["category"];
   double totalRatio = 0;
   eraseLatency.reserve(categories.size());
@@ -46,7 +47,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     totalRatio += ratio;
     accBlockNum += numBlocksInCategory;
     for (int i = 0; i < numBlocksInCategory; ++i) {
-      blockCategories.push_back(lastCategoryID);
+      tempBlockCategories.push_back(lastCategoryID);
     }
     //blockCategory.insert_or_assign(lastCategoryID, numBlocksInCategory);
     const auto latency = it->second["latency"];
@@ -66,11 +67,29 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
   }
   assert(static_cast<int>(totalRatio) == 100);
   for (int i = accBlockNum; i < block_no_per_plane; ++i) {
-    blockCategories.push_back(lastCategoryID);
+    tempBlockCategories.push_back(lastCategoryID);
   }
-  // shuffle block category
-  std::mt19937 seed(327);
-  std::shuffle(std::begin(blockCategories), std::end(blockCategories), seed);
+  std::ifstream blockIndexFile(blockIndexFilePath);
+  if (!blockIndexFile.is_open()) {
+    std::cout << "Unable to open block index file\n";
+    exit(-1);
+  }
+  std::vector<int> blockIndices;
+  int num;
+  while (blockIndexFile >> num) {
+      blockIndices.push_back(num);
+  }
+  blockIndexFile.close();
+  std::vector<uint32_t> blockCategories(tempBlockCategories.size());
+  int i = 0;
+  std::set<uint32_t> dupCheck;
+  for (const auto& index : blockIndices) {
+    assert(!dupCheck.contains(index));
+    dupCheck.insert(index);
+    blockCategories[i++] = tempBlockCategories[index];
+  }
+  assert(i == tempBlockCategories.size());
+  fmt::print("correctly set block categories\n");
 
   plane_manager = new PlaneBookKeepingType ***[channel_count];
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
@@ -110,6 +129,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
             categories.pop_back();
             // TODO: init values in the constructor
             block.BlockID = blockID;
+            block.nextEraseLoopCount = 0;
             block.Current_page_write_index = 0;
             block.Current_status = Block_Service_Status::IDLE;
             block.Invalid_page_count = 0;
@@ -188,21 +208,21 @@ Flash_Block_Manager_Base::~Flash_Block_Manager_Base() {
 }
 
 void Flash_Block_Manager_Base::resetEraseCount() {
-  for (unsigned int channel_id = 0; channel_id < channel_count; channel_id++) {
-    for (unsigned int chip_id = 0; chip_id < chip_no_per_channel; chip_id++) {
-      for (unsigned int die_id = 0; die_id < die_no_per_chip; die_id++) {
-        for (unsigned int plane_id = 0; plane_id < plane_no_per_die;
-             plane_id++) {
-          for (unsigned int blockID = 0; blockID < block_no_per_plane;
-               blockID++) {
-            auto &block = plane_manager[channel_id][chip_id][die_id][plane_id]
-                              .Blocks[blockID];
-            block.Erase_count = initialEraseCount;
-          }
-        }
-      }
-    }
-  }
+  // for (unsigned int channel_id = 0; channel_id < channel_count; channel_id++) {
+  //   for (unsigned int chip_id = 0; chip_id < chip_no_per_channel; chip_id++) {
+  //     for (unsigned int die_id = 0; die_id < die_no_per_chip; die_id++) {
+  //       for (unsigned int plane_id = 0; plane_id < plane_no_per_die;
+  //            plane_id++) {
+  //         for (unsigned int blockID = 0; blockID < block_no_per_plane;
+  //              blockID++) {
+  //           auto &block = plane_manager[channel_id][chip_id][die_id][plane_id]
+  //                             .Blocks[blockID];
+  //           block.Erase_count = initialEraseCount;
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
 void Flash_Block_Manager_Base::Set_GC_and_WL_Unit(GC_and_WL_Unit_Base *gcwl) {
@@ -488,6 +508,7 @@ void Flash_Block_Manager_Base::initEraseLatency(
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
   assert(block.remainingEraseLatency == 0);
+  assert(block.categoryID != -1);
   block.remainingEraseLatency = eraseLatency[block.categoryID];
 }
 

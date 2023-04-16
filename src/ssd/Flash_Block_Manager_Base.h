@@ -56,7 +56,7 @@ public:
   void Erase();
 
   int nextEraseLoopCount;
-  int categoryID = 0;
+  int categoryID = -1;
   uint32_t remainingEraseLatency;
 };
 
