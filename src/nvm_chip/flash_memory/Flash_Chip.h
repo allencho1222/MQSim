@@ -174,6 +174,7 @@ private:
   std::vector<std::vector<std::vector<unsigned int>>> numShallowErases;
   std::vector<std::vector<std::vector<unsigned int>>> numWrites;
   std::vector<std::vector<std::vector<unsigned int>>> numReads;
+  double totalEraseLatency;
 };
 } // namespace FlashMemory
 } // namespace NVM

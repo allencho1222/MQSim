@@ -37,6 +37,7 @@ public:
       const unsigned int free_block_pool_size,
       const NVM::FlashMemory::Physical_Page_Address &plane_address);
 
+  ~GC_and_WL_Unit_Page_Level();
 private:
   NVM_PHY_ONFI *flash_controller;
 };

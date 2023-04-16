@@ -78,6 +78,7 @@ public:
   bool Stop_servicing_writes(
       const NVM::FlashMemory::Physical_Page_Address &plane_address);
 
+  virtual ~GC_and_WL_Unit_Base() = default;
 protected:
   GC_Block_Selection_Policy_Type block_selection_policy;
   static GC_and_WL_Unit_Base *_my_instance;
@@ -137,6 +138,9 @@ protected:
   unsigned int pages_no_per_block;
   unsigned int sector_no_per_page;
   bool true_lazy_erase;
+  uint32_t totalReads = 0;
+  uint32_t totalWrites = 0;
+
 public:
   std::optional<unsigned int> requireRetry(const EraseStatus& blockStat);
 };

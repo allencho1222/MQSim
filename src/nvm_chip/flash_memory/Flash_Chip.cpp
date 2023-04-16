@@ -29,7 +29,8 @@ Flash_Chip::Flash_Chip(
       expectedFinishTime(INVALID_TIME), STAT_readCount(0), STAT_progamCount(0),
       STAT_eraseCount(0), STAT_totalSuspensionCount(0),
       STAT_totalResumeCount(0), STAT_totalExecTime(0), STAT_totalXferTime(0),
-      STAT_totalOverlappedXferExecTime(0) {
+      STAT_totalOverlappedXferExecTime(0),
+      totalEraseLatency(0) {
   int bits_per_cell = static_cast<int>(flash_technology);
   _readLatency = new sim_time_type[bits_per_cell];
   _programLatency = new sim_time_type[bits_per_cell];
@@ -82,6 +83,7 @@ void Flash_Chip::Connect_to_chip_ready_signal(
 }
 
 void Flash_Chip::Start_simulation(bool isPreconditionig) {
+  totalEraseLatency = 0;
   lastTransferStart = INVALID_TIME;
   executionStartTime = INVALID_TIME;
   expectedFinishTime = INVALID_TIME;
@@ -296,6 +298,7 @@ void Flash_Chip::finish_command_execution(Flash_Command *command) {
         numAdaptiveErases[dieId][planeId][blockId]++;
       }
     }
+    totalEraseLatency += (command->latency / (1000 * 1000));
     break;
   default:
     PRINT_ERROR("Flash chip " << ID() << ": unhandled flash command type!")
@@ -419,17 +422,19 @@ void Flash_Chip::reportResults(fmt::ostream &output) {
                             "frac_exec "
                             "frac_data_transfer "
                             "frac_data_transfer_and_exec "
-                            "frac_idle";
+                            "frac_idle "
+                            "total_erase_latency";
     output.print("{}\n", header);
     isReportHeaderPrinted = true;
   }
-  output.print("{} {} {} {} {} {}\n", ChannelID, ChipID,
+  output.print("{} {} {} {} {} {} {}\n", ChannelID, ChipID,
                STAT_totalExecTime / double(Simulator->Time()),
                STAT_totalXferTime / double(Simulator->Time()),
                STAT_totalOverlappedXferExecTime / double(Simulator->Time()),
                (Simulator->Time() - STAT_totalOverlappedXferExecTime -
                 STAT_totalXferTime) /
-                   double(Simulator->Time()));
+                   double(Simulator->Time()),
+              totalEraseLatency);
 }
 
 // void Flash_Chip::Report_results_in_XML(std::string name_prefix,

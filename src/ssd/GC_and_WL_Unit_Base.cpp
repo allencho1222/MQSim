@@ -178,6 +178,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     PPA_type ppa;
     MPPN_type mppa;
     page_status_type page_status_bitmap;
+    _my_instance->totalReads += transaction->Data_and_metadata_size_in_byte;
     if (pbke->Blocks[transaction->Address.BlockID].Holds_mapping_data) {
       _my_instance->address_mapping_unit->Get_translation_mapping_info_for_gc(
           transaction->Stream_id, (MVPN_type)transaction->LPA, mppa,
@@ -263,6 +264,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       }
     }
   } else if (trType == Transaction_Type::WRITE) {
+    _my_instance->totalWrites += transaction->Data_and_metadata_size_in_byte;
     _my_instance->block_manager->Program_transaction_serviced(
         transaction->Address);
     if (pbke->Blocks[((NVM_Transaction_Flash_WR *)transaction)
