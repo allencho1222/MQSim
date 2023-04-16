@@ -214,6 +214,7 @@ void IO_Flow_Trace_Based::Get_statistics(
     Utils::Workload_Statistics &stats,
     LPA_type (*Convert_host_logical_address_to_device_address)(LHA_type lha),
     page_status_type (*Find_NVM_subunit_access_bitmap)(LHA_type lha)) {
+  stats.Address_distribution_type = Utils::Address_Distribution_Type::RANDOM_UNIFORM;
   stats.Type = Utils::Workload_Type::TRACE_BASED;
   stats.Stream_id =
       io_queue_id - 1; // In MQSim, there is a simple relation between stream id
@@ -232,7 +233,7 @@ void IO_Flow_Trace_Based::Get_statistics(
   stats.Total_accessed_lbas = 0;
 
   std::ifstream trace_file_temp;
-  trace_file_temp.open(current_trace_file_path, std::ios::in);
+  trace_file_temp.open(trace_file_path, std::ios::in);
   if (!trace_file_temp.is_open()) {
     PRINT_ERROR("Error while opening the input trace file!")
   }

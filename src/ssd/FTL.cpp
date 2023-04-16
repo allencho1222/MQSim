@@ -136,10 +136,10 @@ void FTL::Perform_precondition(
       bool is_read = false;
       unsigned int size = 0;
       LHA_type start_LBA = 0, streaming_next_address = 0;
-      Utils::RandomGenerator *random_request_type_generator =
-          new Utils::RandomGenerator(stat->random_request_type_generator_seed);
-      Utils::RandomGenerator *random_address_generator =
-          new Utils::RandomGenerator(stat->random_address_generator_seed);
+      auto random_request_type_generator =
+          std::make_unique<Utils::RandomGenerator>(stat->random_request_type_generator_seed);
+      auto random_address_generator =
+          std::make_unique<Utils::RandomGenerator>(stat->random_address_generator_seed);
       Utils::RandomGenerator *random_hot_address_generator = NULL;
       Utils::RandomGenerator *random_hot_cold_generator = NULL;
       Utils::RandomGenerator *random_request_size_generator = NULL;
@@ -477,8 +477,8 @@ void FTL::Perform_precondition(
             Utils::Address_Distribution_Type::RANDOM_UNIFORM;
       }
 
-      Utils::RandomGenerator *random_address_generator =
-          new Utils::RandomGenerator(preconditioning_seed++);
+      auto random_address_generator =
+          std::make_unique<Utils::RandomGenerator>(preconditioning_seed++);
       unsigned int size = stat->Average_request_size_sector;
       LHA_type start_LHA = 0;
 

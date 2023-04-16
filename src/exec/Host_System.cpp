@@ -14,7 +14,8 @@ Host_System::Host_System(
     SSD_Components::Host_Interface_Base *ssd_host_interface)
     : MQSimEngine::Sim_Object("Host"),
       preconditioning_required(preconditioning_required),
-      isStreamInitialized(false) {
+      isStreamInitialized(false),
+      isPreconditioningDone(false) {
   Simulator->AddObject(this);
 
   // Create the main components of the host system
@@ -198,14 +199,16 @@ void Host_System::Start_simulation(bool isPreconditioning) {
     isStreamInitialized = true;
   }
   //
-  // if (preconditioning_required) {
-  //   std::vector<Utils::Workload_Statistics *> workload_stats =
-  //       get_workloads_statistics();
-  //   ssd_device->Perform_preconditioning(workload_stats);
-  //   for (auto &stat : workload_stats) {
-  //     delete stat;
-  //   }
-  // }
+  if (!isPreconditioningDone && preconditioning_required) {
+    fmt::print("perform preconditioning\n");
+    std::vector<Utils::Workload_Statistics *> workload_stats =
+        get_workloads_statistics();
+    ssd_device->Perform_preconditioning(workload_stats);
+    for (auto &stat : workload_stats) {
+      delete stat;
+    }
+    isPreconditioningDone = true;
+  }
 }
 
 void Host_System::Validate_simulation_config() {

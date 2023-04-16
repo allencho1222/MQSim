@@ -42,6 +42,7 @@ private:
   std::vector<Utils::Workload_Statistics *> get_workloads_statistics();
   bool preconditioning_required;
   bool isStreamInitialized;
+  bool isPreconditioningDone;
 };
 
 #endif // !HOST_SYSTEM_H
