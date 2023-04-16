@@ -36,9 +36,11 @@ public:
                                                // page + bytes of metadata
 
   void setLatency(sim_time_type lat) {
+    isLatencySet = true;
     latency = lat;
   }
   sim_time_type getLatency() {
+    assert(isLatencySet);
     return latency;
   }
 
@@ -59,6 +61,7 @@ public:
   std::vector<NVM_Transaction_Flash*> followingTransactions;
 private:
   sim_time_type latency;
+  bool isLatencySet = false;
 };
 } // namespace SSD_Components
 
