@@ -11,7 +11,7 @@ std::unordered_map<std::string, Flash_Technology_Type>
 
 std::unordered_map<std::string, NVM::FlashMemory::Command_Suspension_Mode>
     Flash_Parameter_Set::cmdSuspensionModeMap = {
-        {"SLC", NVM::FlashMemory::Command_Suspension_Mode::NONE},
+        {"NONE", NVM::FlashMemory::Command_Suspension_Mode::NONE},
         {"ERASE", NVM::FlashMemory::Command_Suspension_Mode::ERASE},
         {"PROGRAM", NVM::FlashMemory::Command_Suspension_Mode::PROGRAM},
         {"PROGRAM_ERASE",

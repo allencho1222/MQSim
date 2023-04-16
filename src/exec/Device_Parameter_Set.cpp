@@ -62,7 +62,7 @@ std::unordered_map<std::string, SSD_Components::Flash_Scheduling_Type>
 std::unordered_map<std::string, SSD_Components::GC_Block_Selection_Policy_Type>
     Device_Parameter_Set::gcBlockSelectionPolicyMap = {
         {"FLIN", SSD_Components::GC_Block_Selection_Policy_Type::FIFO},
-        {"OUT_OF_ORDER",
+        {"GREEDY",
          SSD_Components::GC_Block_Selection_Policy_Type::GREEDY},
         {"RANDOM", SSD_Components::GC_Block_Selection_Policy_Type::RANDOM},
         {"RANDOM_P", SSD_Components::GC_Block_Selection_Policy_Type::RANDOM_P},

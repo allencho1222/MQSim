@@ -372,24 +372,31 @@ SSD_Device::SSD_Device(
         max_rho = (io_flows)[i]->Initial_Occupancy_Percentage;
       }
     }
+    fmt::print("what is true lazy erase? {}\n", parameters.True_Lazy_Erase);
     max_rho /= 100; // Convert from percentage to a value between zero and 1
     SSD_Components::GC_and_WL_Unit_Base *gcwl;
     gcwl = new SSD_Components::GC_and_WL_Unit_Page_Level(
-        ftl->ID() + ".GCandWLUnit", amu, fbm, tsu,
+        ftl->ID() + ".GCandWLUnit", 
+        amu, 
+        fbm, tsu,
         (SSD_Components::NVM_PHY_ONFI *)device->PHY,
         parameters.GC_Block_Selection_Policy, parameters.GC_Exec_Threshold,
         parameters.Preemptible_GC_Enabled, parameters.GC_Hard_Threshold,
-        parameters.Flash_Channel_Count, parameters.Chip_No_Per_Channel,
+        parameters.Flash_Channel_Count, 
+        parameters.Chip_No_Per_Channel,
         parameters.Flash_Parameters.Die_No_Per_Chip,
         parameters.Flash_Parameters.Plane_No_Per_Die,
         parameters.Flash_Parameters.Block_No_Per_Plane,
         parameters.Flash_Parameters.Page_No_Per_Block,
         parameters.Flash_Parameters.Page_Capacity / SECTOR_SIZE_IN_BYTE,
-        parameters.Use_Copyback_for_GC, max_rho, 10,
+        parameters.Use_Copyback_for_GC, 
+        max_rho, 
+        10, 
         parameters.Dynamic_Wearleveling_Enabled,
         parameters.Static_Wearleveling_Enabled,
         parameters.Static_Wearleveling_Threshold,
-        parameters.Seed++);
+        parameters.Seed++,
+        parameters.True_Lazy_Erase);
     Simulator->AddObject(gcwl);
     fbm->Set_GC_and_WL_Unit(gcwl);
     ftl->GC_and_WL_Unit = gcwl;
