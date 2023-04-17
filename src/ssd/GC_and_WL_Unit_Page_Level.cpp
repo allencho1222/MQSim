@@ -34,11 +34,12 @@ GC_and_WL_Unit_Page_Level::GC_and_WL_Unit_Page_Level(
           dynamic_wearleveling_enabled, static_wearleveling_enabled,
           static_wearleveling_threshold, seed, true_lazy_erase) {
   rga_set_size = (unsigned int)log2(block_no_per_plane);
+}
 
 GC_and_WL_Unit_Page_Level::~GC_and_WL_Unit_Page_Level() {
   auto gc_output = fmt::output_file("gc.txt");
-  gc_output.print("read_bytes write_bytes bad_gcs\n");
-  gc_output.print("{} {} {}\n", totalReads, totalWrites, numBadGCs);
+  gc_output.print("read_bytes write_bytes\n");
+  gc_output.print("{} {}\n", totalReads, totalWrites);
 }
 
 bool GC_and_WL_Unit_Page_Level::GC_is_in_urgent_mode(
