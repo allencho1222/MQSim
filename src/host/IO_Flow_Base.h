@@ -152,8 +152,8 @@ protected:
 
   bool recordLatency;
   bool doWrite;
-  std::vector<uint32_t> readLatencies;
-  std::vector<uint32_t> writeLatencies;
+  std::vector<sim_time_type> readLatencies;
+  std::vector<sim_time_type> writeLatencies;
   
   uint32_t Get_device_response_time_short_term();     // in microseconds
   uint32_t Get_end_to_end_request_delay_short_term(); // in microseconds

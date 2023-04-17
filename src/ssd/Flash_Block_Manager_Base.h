@@ -205,8 +205,8 @@ protected:
       const NVM::FlashMemory::Physical_Page_Address
           &page_address); // Updates the block bookkeeping record
 private:
-  std::vector<uint32_t> eraseLatency;
-  std::vector<uint32_t> maxEraseLatency;
+  std::vector<sim_time_type> eraseLatency;
+  std::vector<sim_time_type> maxEraseLatency;
   unsigned int initialEraseCount;
 
 };

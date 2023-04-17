@@ -177,7 +177,7 @@ IO_Flow_Base::~IO_Flow_Base() {
     readFile.close();
     std::ofstream writeFile("writes.bin", std::ios::out | std::ios::binary);
     writeFile.write(reinterpret_cast<const char*>(&writeLatencies[0]), 
-                    writeLatencies.size() * sizeof(sim_time_type));
+                   writeLatencies.size() * sizeof(sim_time_type));
     writeFile.close();
   }
   for (auto &req : waiting_requests) {

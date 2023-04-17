@@ -30,7 +30,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
   std::vector<unsigned int> tempBlockCategories;
   // parse model file
   const auto yaml = YAML::LoadFile(blockModelFile);
-  maxEraseLatency = yaml["max_erase_latency"].as<std::vector<uint32_t>>();
+  maxEraseLatency = yaml["max_erase_latency"].as<std::vector<sim_time_type>>();
   auto targetPEC = yaml["target_pec"].as<uint32_t>();
   auto blockIndexFilePath = yaml["block_index_file"].as<std::string>();
   const auto categories = yaml["category"];
@@ -58,7 +58,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       assert(!dupPECs.contains(pec));
       dupPECs.insert(pec);
       if (pec == targetPEC) {
-        const auto lat = l->second.as<uint32_t>();
+        const auto lat = l->second.as<sim_time_type>();
         eraseLatency[lastCategoryID] = lat;
         isSelected = true;
       }
@@ -447,7 +447,8 @@ void Flash_Block_Manager_Base::finishEraseLoop(
   PlaneBookKeepingType *planeRecord =
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   auto &block = planeRecord->Blocks[addr.BlockID];
-  uint32_t _maxEraseLatency = maxEraseLatency[block.nextEraseLoopCount];
+  assert(block.nextEraseLoopCount < maxEraseLatency.size());
+  sim_time_type _maxEraseLatency = maxEraseLatency[block.nextEraseLoopCount];
   if (block.remainingEraseLatency < _maxEraseLatency) {
     block.remainingEraseLatency = 0;
   } else {
@@ -522,7 +523,7 @@ std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
     return std::nullopt;
   } else {
     assert(block.nextEraseLoopCount < maxEraseLatency.size());
-    uint32_t _maxEraseLatency = maxEraseLatency[block.nextEraseLoopCount];
+    sim_time_type _maxEraseLatency = maxEraseLatency[block.nextEraseLoopCount];
     if (block.remainingEraseLatency > _maxEraseLatency) {
       return _maxEraseLatency;
     } else {
@@ -537,10 +538,10 @@ int Flash_Block_Manager_Base::numRemainingEraseLoops(
       &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
   const auto &block = planeRecord->Blocks[addr.BlockID];
   int tempLoopCount = block.nextEraseLoopCount;
-  uint32_t tempLatency = block.remainingEraseLatency;
+  sim_time_type tempLatency = block.remainingEraseLatency;
   while (tempLatency != 0) {
     assert(tempLoopCount < maxEraseLatency.size());
-    uint32_t maxLatency = maxEraseLatency[tempLoopCount++];
+    sim_time_type maxLatency = maxEraseLatency[tempLoopCount++];
     if (tempLatency > maxLatency) {
       tempLatency -= maxLatency;
     } else {
