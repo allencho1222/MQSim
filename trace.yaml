@@ -18,19 +18,19 @@ channel_ids: [0, 1, 2, 3, 4, 5, 6, 7]
 # channel (defined in the SSD configuration file), then the chip ID list 
 # should include values in the range 0 to W-1. If no resource partitioning 
 # is required, then all workloads should have chip IDs 0 to W-1.
-chip_ids: [0, 1, 2, 3]
+chip_ids: [0, 1]
 # a comma-separated list of chip IDs that are allocated to this workload. 
 # This list is used for resource partitioning. If there are D dies in each 
 # flash chip (defined in the SSD configuration file), then the die ID list 
 # should include values in the range 0 to D-1. If no resource partitioning 
 # is required, then all workloads should have die IDs 0 to D-1.
-die_ids: [0, 1]
+die_ids: [0]
 # a comma-separated list of plane IDs that are allocated to this workload. 
 # This list is used for resource partitioning. If there are P planes in 
 # each die (defined in the SSD configuration file), then the plane ID list 
 # should include values in the range 0 to P-1. If no resource partitioning 
 # is required, then all workloads should have plane IDs 0 to P-1.
-plane_ids: [0, 1]
+plane_ids: [0, 1, 2, 3]
 # the percentage of the storage space (i.e., logical pages) that is filled 
 # during preconditioning. 
 # Range = {all integer values in the range 1 to 100}.

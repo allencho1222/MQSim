@@ -1,6 +1,6 @@
 host_parameters:
   # the PCIe bandwidth per lane in GB/s. Range = {all positive double precision values}.
-  pcie_lane_bandwidth: 1.00000
+  pcie_lane_bandwidth: 2.00000
   # the number of PCIe lanes. Range = {all positive integer values}.
   pcie_lane_count: 4
   # defines the aggregate hardware and software processing delay to 
@@ -49,7 +49,8 @@ device_parameters:
     # Range = {SHARED, EQUAL_PARTITIONING}.
     mode: SHARED
     # the size of the DRAM data cache in bytes. Range = {all positive integers}
-    capacity: 268435456
+    #capacity: 268435456
+    capacity: 16777216
     # the size of the DRAM rows in bytes. 
     # Range = {all positive power of two numbers}.
     dram_row_size: 8192
@@ -97,7 +98,7 @@ device_parameters:
   garbage_collection:
     # the ratio of reserved storage space with respect to the available flash 
     # storage capacity. Range = {all positive double precision values}.
-    overprovisioning_ratio: 0.07
+    overprovisioning_ratio: 0.2
     # the threshold for starting Garbage Collection (GC). When the ratio of 
     # the free physical pages for a plane drops below this threshold, 
     # GC execution begins. Range = {all positive double precision values}.
@@ -110,13 +111,14 @@ device_parameters:
     # Range {GREEDY, RGA (described in [4] and [5]), 
     # RANDOM (described in [4]), RANDOM_P (described in [4]), 
     # RANDOM_PP (described in [4]), FIFO (described in [6])}.
-    block_selection_policy: RGA
+    #block_selection_policy: RGA
+    block_selection_policy: GREEDY
     # used in GC_and_WL_Unit_Page_Level to determine 
     # block_manager→Is_page_valid gc_write transaction
     use_copyback: false
     # the toggle to enable pre-emptible GC (described in [7]). 
     # Range = {true, false}.
-    enable_preemption: false
+    enable_preemption: true
   wear_leveling:
     # the toggle to enable static wear-leveling (described in [9]). 
     # Range = {true, false}.
@@ -145,43 +147,43 @@ device_parameters:
   channel:
     # the number of flash channels in the SSD back end. 
     # Range = {all positive integer values}.
-    channel_count: 1
+    channel_count: 8
     # the width of each flash channel in byte. 
     # Range = {all positive integer values}.
     channel_width: 1
     # the transfer rate of flash channels in the SSD back end in MT/s. 
     # Range = {all positive integer values}.
-    transfer_rate: 333
+    transfer_rate: 2000
     # the number of flash chips attached to each channel in the SSD back end. 
     # Range = {all positive integer values}.
-    num_chips: 1
+    num_chips: 2
     # the Open NAND Flash Interface (ONFI) protocol used for data transfer 
     # over flash channels in the SSD back end. Range = {NVDDR2}.
     protocol: NVDDR2
   flash_parameters:
     # Range = {SLC, MLC, TLC}.
-    technology: MLC
+    technology: TLC
     # the type of suspend command support by flash chips. 
     # Range = {NONE, PROGRAM, PROGRAM_ERASE, ERASE}.
     cmd_suspension_mode: ERASE
     # the latency of reading LSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_read_latency_lsb: 75000
+    page_read_latency_lsb: 40000
     # the latency of reading CSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_read_latency_csb: 75000
+    page_read_latency_csb: 40000
     # the latency of reading MSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_read_latency_msb: 75000
+    page_read_latency_msb: 40000
     # the latency of programming LSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_program_latency_lsb: 750000
+    page_program_latency_lsb: 700000
     # the latency of programming CSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_program_latency_csb: 750000
+    page_program_latency_csb: 700000
     # the latency of programming MSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_program_latency_msb: 750000
+    page_program_latency_msb: 700000
     # the latency of erasing a flash block in nanoseconds. 
     # Range = {all positive integer values}.
     full_block_erase_latency: 3800000
@@ -200,16 +202,16 @@ device_parameters:
     # Range = {all positive integer values}.
     num_dies_per_chip: 1
     # the number of planes in each die. Range = {all positive integer values}.
-    num_planes_per_die: 1
+    num_planes_per_die: 4
     # the number of flash blocks in each plane. 
     # Range = {all positive integer values}.
-    num_blocks_per_plane: 512
+    num_blocks_per_plane: 497
     # the number of physical pages in each flash block. 
     # Range = {all positive integer values}.
-    num_pages_per_block: 256
+    num_pages_per_block: 2112
     # the size of each physical flash page in bytes. 
     # Range = {all positive integer values}.
-    page_capacity: 8192
+    page_capacity: 16384
     # the size of the metadata area of each physical flash page in bytes. 
     # Range = {all positive integer values}.
     page_metadata_capacity: 448
