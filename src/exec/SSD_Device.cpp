@@ -380,7 +380,11 @@ SSD_Device::SSD_Device(
         parameters.Flash_Parameters.Block_No_Per_Plane,
         parameters.Flash_Parameters.Page_No_Per_Block,
         parameters.Flash_Parameters.Page_Capacity / SECTOR_SIZE_IN_BYTE,
-        parameters.Use_Copyback_for_GC, max_rho, 10, parameters.Seed++);
+        parameters.Use_Copyback_for_GC, max_rho, 10,
+        parameters.Dynamic_Wearleveling_Enabled,
+        parameters.Static_Wearleveling_Enabled,
+        parameters.Static_Wearleveling_Threshold,
+        parameters.Seed++);
     Simulator->AddObject(gcwl);
     fbm->Set_GC_and_WL_Unit(gcwl);
     ftl->GC_and_WL_Unit = gcwl;
