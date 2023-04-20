@@ -261,7 +261,9 @@ void Host_System::reportResults(const Execution_Parameter_Set &execParams) {
                           "max_device_resposne_Time "
                           "end_to_end_req_delay "
                           "min_end_to_end_req_delay "
-                          "max_end_to_end_req_delay";
+                          "max_end_to_end_req_delay "
+                          "max_device_response_time_read "
+                          "max_device_response_time_write";
   output.print("{}\n", header);
   for (auto &flow : IO_flows) {
     flow->reportResults(output);

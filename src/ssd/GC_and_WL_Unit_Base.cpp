@@ -392,7 +392,7 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
       for (flash_page_ID_type pageID = 0;
            pageID < block->Current_page_write_index; pageID++) {
         if (block_manager->Is_page_valid(block, pageID)) {
-          Stats::Total_page_movements_for_gc;
+          Stats::Total_page_movements_for_wl++;
           wl_candidate_address.PageID = pageID;
           if (use_copyback) {
             wl_write = new NVM_Transaction_Flash_WR(

@@ -1166,8 +1166,10 @@ void FTL::reportResults(fmt::ostream &output) {
                 "total_cmt_queries_for_read "
                 "total_cmt_queries_for_write "
                 "total_gc_executions "
+                "total_page_movements_for_gc "
                 "avg_page_movement_for_gc "
                 "total_wl_executions "
+                "total_page_movements_for_wl "
                 "avg_page_movement_for_wl";
   output.print("{}\n", header);
   output.print("{}\n", *this);
@@ -1209,7 +1211,7 @@ auto fmt::formatter<SSD_Components::FTL>::format(const SSD_Components::FTL &ftl,
                          "{} {} {} {} {} "
                          "{} {} {} {} {} "
                          "{} {} {} {} {} "
-                         "{} {}";
+                         "{} {} {} {}";
   return fmt::format_to(
       ctx.out(), items, 
       SSD_Components::Stats::IssuedReadCMD,
@@ -1241,9 +1243,11 @@ auto fmt::formatter<SSD_Components::FTL>::format(const SSD_Components::FTL &ftl,
       SSD_Components::Stats::total_readTR_CMT_queries,
       SSD_Components::Stats::total_writeTR_CMT_queries,
       SSD_Components::Stats::Total_gc_executions,
+      SSD_Components::Stats::Total_page_movements_for_gc,
       double(SSD_Components::Stats::Total_page_movements_for_gc) /
           double(SSD_Components::Stats::Total_gc_executions),
       SSD_Components::Stats::Total_wl_executions,
+      SSD_Components::Stats::Total_page_movements_for_wl,
       double(SSD_Components::Stats::Total_page_movements_for_wl) /
           double(SSD_Components::Stats::Total_wl_executions));
 }

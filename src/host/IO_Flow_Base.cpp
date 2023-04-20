@@ -173,11 +173,11 @@ IO_Flow_Base::~IO_Flow_Base() {
   if (doWrite) {
     std::ofstream readFile("reads.bin", std::ios::out | std::ios::binary);
     readFile.write(reinterpret_cast<const char*>(&readLatencies[0]), 
-                   readLatencies.size() * sizeof(uint32_t));
+                   readLatencies.size() * sizeof(sim_time_type));
     readFile.close();
     std::ofstream writeFile("writes.bin", std::ios::out | std::ios::binary);
     writeFile.write(reinterpret_cast<const char*>(&writeLatencies[0]), 
-                   writeLatencies.size() * sizeof(uint32_t));
+                    writeLatencies.size() * sizeof(sim_time_type));
     writeFile.close();
   }
   for (auto &req : waiting_requests) {
@@ -363,7 +363,7 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
       Simulator->Time() - request->Enqueue_time;
   // Log end-to-end request latency for each request
   if (doWrite) {
-    uint32_t latency = Simulator->Time() - request->Enqueue_time;
+    sim_time_type latency = Simulator->Time() - request->Enqueue_time;
     if (request->Type == Host_IO_Request_Type::READ) {
       readLatencies.push_back(latency);
     } else {
@@ -627,6 +627,14 @@ uint32_t IO_Flow_Base::Get_max_device_response_time() {
   return (uint32_t)(STAT_max_device_response_time /
                     SIM_TIME_TO_MICROSECONDS_COEFF);
 }
+uint32_t IO_Flow_Base::Get_max_device_response_time_read() {
+  return (uint32_t)(STAT_max_device_response_time_read /
+                    SIM_TIME_TO_MICROSECONDS_COEFF);
+}
+uint32_t IO_Flow_Base::Get_max_device_response_time_write() {
+  return (uint32_t)(STAT_max_device_response_time_write /
+                    SIM_TIME_TO_MICROSECONDS_COEFF);
+}
 
 uint32_t IO_Flow_Base::Get_end_to_end_request_delay() {
   if (STAT_serviced_request_count == 0) {
@@ -759,7 +767,7 @@ void IO_Flow_Base::reportResults(fmt::ostream &output) {
   constexpr auto items = "{} {} {} {} {} "
                          "{} {} {} {} {} "
                          "{} {} {} {} {} "
-                         "{} {} {} {}\n";
+                         "{} {} {} {} {} {}\n";
   output.print(
       items, ID(), STAT_generated_request_count,
       STAT_generated_read_request_count, STAT_generated_write_request_count,
@@ -779,6 +787,8 @@ void IO_Flow_Base::reportResults(fmt::ostream &output) {
           ((double)Simulator->Time() / SIM_TIME_TO_SECONDS_COEFF),
       Get_device_response_time(), Get_min_device_response_time(),
       Get_max_device_response_time(), Get_end_to_end_request_delay(),
-      Get_min_end_to_end_request_delay(), Get_max_end_to_end_request_delay());
+      Get_min_end_to_end_request_delay(), Get_max_end_to_end_request_delay(),
+      Get_max_device_response_time_read(),
+      Get_max_device_response_time_write());
 }
 } // namespace Host_Components

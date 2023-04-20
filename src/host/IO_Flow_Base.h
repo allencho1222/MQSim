@@ -73,6 +73,8 @@ public:
   uint32_t Get_device_response_time();         // in microseconds
   uint32_t Get_min_device_response_time();     // in microseconds
   uint32_t Get_max_device_response_time();     // in microseconds
+  uint32_t Get_max_device_response_time_read();     // in microseconds
+  uint32_t Get_max_device_response_time_write();     // in microseconds
   uint32_t Get_end_to_end_request_delay();     // in microseconds
   uint32_t Get_min_end_to_end_request_delay(); // in microseconds
   uint32_t Get_max_end_to_end_request_delay(); // in microseconds
