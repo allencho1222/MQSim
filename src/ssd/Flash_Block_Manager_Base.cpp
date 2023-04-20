@@ -31,7 +31,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
   // parse model file
   const auto yaml = YAML::LoadFile(blockModelFile);
   maxEraseLatency = yaml["max_erase_latency"].as<std::vector<sim_time_type>>();
-  auto targetPEC = yaml["target_pec"].as<uint32_t>();
+  //auto targetPEC = yaml["target_pec"].as<uint32_t>();
   auto blockIndexFilePath = yaml["block_index_file"].as<std::string>();
   const auto categories = yaml["category"];
   double totalRatio = 0;
@@ -50,20 +50,8 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       tempBlockCategories.push_back(lastCategoryID);
     }
     //blockCategory.insert_or_assign(lastCategoryID, numBlocksInCategory);
-    const auto latency = it->second["latency"];
-    bool isSelected = false;
-    std::set<uint32_t> dupPECs;
-    for (auto l = std::cbegin(latency); l != std::cend(latency); ++l) {
-      const auto pec = l->first.as<uint32_t>();
-      assert(!dupPECs.contains(pec));
-      dupPECs.insert(pec);
-      if (pec == targetPEC) {
-        const auto lat = l->second.as<sim_time_type>();
-        eraseLatency[lastCategoryID] = lat;
-        isSelected = true;
-      }
-    }
-    assert(isSelected);
+    const auto latency = it->second["latency"].as<sim_time_type>();
+    eraseLatency[lastCategoryID] = latency;
   }
   assert(static_cast<int>(totalRatio) == 100);
   for (int i = accBlockNum; i < block_no_per_plane; ++i) {
