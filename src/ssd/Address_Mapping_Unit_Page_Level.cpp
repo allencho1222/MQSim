@@ -537,7 +537,7 @@ void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
                              ((NVM_Transaction_Flash *)(*it))->LPA)) {
       // iterator should be post-incremented since the iterator may be deleted
       // from list
-      manage_user_transaction_facing_barrier((NVM_Transaction_Flash *)*(it++));
+      manage_user_transaction_facing_barrier((NVM_Transaction_Flash *)*(it++), true);
     } else {
       query_cmt((NVM_Transaction_Flash *)(*it++));
     }
