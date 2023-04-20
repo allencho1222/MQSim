@@ -18,7 +18,8 @@ TSU_Priority_OutOfOrder::TSU_Priority_OutOfOrder(
                ChipNoPerChannel, DieNoPerChip, PlaneNoPerDie,
                WriteReasonableSuspensionTimeForRead,
                EraseReasonableSuspensionTimeForRead,
-               EraseReasonableSuspensionTimeForWrite, EraseSuspensionEnabled,
+               EraseReasonableSuspensionTimeForWrite,
+               EraseSuspensionEnabled,
                ProgramSuspensionEnabled) {
   initQueue();
 }
