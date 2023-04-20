@@ -42,6 +42,9 @@ public:
   //                            Utils::XmlWriter &xmlwriter);
   void reportResults(fmt::ostream& output);
 
+  void eraseTransaction(LPA_type lpa) override;
+  void eraseLock(LPA_type lpa) override;
+
 private:
   void clearQueue() override;
   void initQueue() override;

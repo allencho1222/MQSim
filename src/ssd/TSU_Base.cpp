@@ -1,4 +1,8 @@
 #include "TSU_Base.h"
+#include "FTL.h"
+#include "Flash_Block_Manager_Base.h"
+#include "Address_Mapping_Unit_Base.h"
+#include <cassert>
 #include <string>
 
 #define TRTOSTR(TR)                                                            \
@@ -97,8 +101,7 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
     transaction_dispatch_slots.clear();
     planeVector = 0;
 
-    for (Flash_Transaction_Queue::iterator it = sourceQueue1->begin();
-         it != sourceQueue1->end();) {
+    for (auto it = sourceQueue1->begin(); it != sourceQueue1->end();) {
       if (transaction_is_ready(*it) && (*it)->Address.DieID == dieID &&
           !(planeVector & 1 << (*it)->Address.PlaneID)) {
         // Check for identical pages when running multiplane command
@@ -120,8 +123,7 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
 
     if (sourceQueue2 != NULL &&
         transaction_dispatch_slots.size() < plane_no_per_die) {
-      for (Flash_Transaction_Queue::iterator it = sourceQueue2->begin();
-           it != sourceQueue2->end();) {
+      for (auto it = sourceQueue2->begin(); it != sourceQueue2->end();) {
         if (transaction_is_ready(*it) && (*it)->Address.DieID == dieID &&
             !(planeVector & 1 << (*it)->Address.PlaneID)) {
           // Check for identical pages when running multiplane command
@@ -146,6 +148,18 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
     if (transaction_dispatch_slots.size() > 0) {
       for (auto transaction : transaction_dispatch_slots) {
         transaction->scheduledAt = Simulator->Time();
+        const auto& isRead = transaction->Type == Transaction_Type::READ;
+        const auto& isGC = transaction->Source == Transaction_Source_Type::GC_WL;
+        if (isRead && isGC) {
+          LPA_type lpa = _NVMController->Get_metadata(
+              transaction->Address.ChannelID,
+              transaction->Address.ChipID,
+              transaction->Address.DieID,
+              transaction->Address.PlaneID,
+              transaction->Address.BlockID,
+              transaction->Address.PageID);
+          ftl->Address_Mapping_Unit->setOngoing(transaction->Stream_id, lpa);
+        }
       }
       _NVMController->Send_command_to_chip(transaction_dispatch_slots);
       transaction_dispatch_slots.clear();

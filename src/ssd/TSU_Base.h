@@ -9,6 +9,7 @@
 #include "NVM_PHY_ONFI_NVDDR2.h"
 #include <list>
 #include <fmt/os.h>
+#include <cassert>
 
 namespace SSD_Components {
 enum class Flash_Scheduling_Type { OUT_OF_ORDER, PRIORITY_OUT_OF_ORDER, FLIN };
@@ -56,6 +57,8 @@ public:
   // virtual void Report_results_in_XML(std::string name_prefix,
   //                                    Utils::XmlWriter &xmlwriter);
   virtual void reportResults(fmt::ostream& output);
+  virtual void eraseTransaction(LPA_type lpa) = 0;
+  virtual void eraseLock(LPA_type lpa) = 0;
 
 protected:
   FTL *ftl;
@@ -101,10 +104,12 @@ protected:
       }
     }
   }
+  std::unordered_map<LPA_type, std::pair<Flash_Transaction_Queue*, std::list<NVM_Transaction_Flash*>::iterator>>
+    lockedQueue;
 
 private:
-  virtual void clearQueue() = 0;
   virtual void initQueue() = 0;
+  virtual void clearQueue() = 0;
   bool transaction_is_ready(NVM_Transaction_Flash *transaction) {
     switch (transaction->Type) {
     case Transaction_Type::READ:

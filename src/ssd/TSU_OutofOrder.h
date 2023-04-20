@@ -30,15 +30,17 @@ public:
                  bool EraseSuspensionEnabled, bool ProgramSuspensionEnabled);
   ~TSU_OutOfOrder();
 
-  void Schedule();
+  void Schedule() override;
 
-  void Start_simulation(bool isPreconditioning);
-  void Validate_simulation_config();
-  void Execute_simulator_event(MQSimEngine::Sim_Event *);
+  void Start_simulation(bool isPreconditioning) override;
+  void Validate_simulation_config() override;
+  void Execute_simulator_event(MQSimEngine::Sim_Event *) override;
   // void Report_results_in_XML(std::string name_prefix,
   //                            Utils::XmlWriter &xmlwriter);
-  void reportResults(fmt::ostream &output);
+  void reportResults(fmt::ostream &output) override;
 
+  void eraseTransaction(LPA_type lpa) override;
+  void eraseLock(LPA_type lpa) override;
 private:
   void clearQueue() override;
   void initQueue() override;

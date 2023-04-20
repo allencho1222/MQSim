@@ -94,9 +94,17 @@ bool Address_Mapping_Unit_Hybrid::is_mvpn_locked_for_gc(
   return false;
 }
 void Address_Mapping_Unit_Hybrid::manage_user_transaction_facing_barrier(
-    NVM_Transaction_Flash *transaction) {}
+    NVM_Transaction_Flash *transaction, bool queryCMT) {}
 void Address_Mapping_Unit_Hybrid::manage_mapping_transaction_facing_barrier(
     stream_id_type stream_id, MVPN_type mvpn, bool read) {}
 void Address_Mapping_Unit_Hybrid::Start_servicing_writes_for_overfull_plane(
     const NVM::FlashMemory::Physical_Page_Address plane_address) {}
+bool Address_Mapping_Unit_Hybrid::is_lpa_done_for_gc(stream_id_type stream_id, LPA_type lpa) { return false; }
+bool Address_Mapping_Unit_Hybrid::is_lpa_ongoing_for_gc(stream_id_type stream_id, LPA_type lpa) { return false; }
+
+void Address_Mapping_Unit_Hybrid::setDone(stream_id_type stream_id, LPA_type lpa) {}
+void Address_Mapping_Unit_Hybrid::setOngoing(stream_id_type stream_id, LPA_type lpa) {}
+
+void Address_Mapping_Unit_Hybrid::process_barrier_for_read(
+  stream_id_type stream_id, LPA_type lpa) {}
 } // namespace SSD_Components

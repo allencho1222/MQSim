@@ -64,6 +64,7 @@ public:
   typedef void (*ChipIdleHandlerType)(NVM::FlashMemory::Flash_Chip *);
   void ConnectToChipIdleSignal(ChipIdleHandlerType);
 
+  void broadcastTransactionServicedSignal(NVM_Transaction_Flash *transaction);
 protected:
   unsigned int channel_count;
   unsigned int chip_no_per_channel;
@@ -71,7 +72,6 @@ protected:
   unsigned int plane_no_per_die;
   std::vector<TransactionServicedHandlerType>
       connectedTransactionServicedHandlers;
-  void broadcastTransactionServicedSignal(NVM_Transaction_Flash *transaction);
   std::vector<ChannelIdleHandlerType> connectedChannelIdleHandlers;
   void broadcastChannelIdleSignal(flash_channel_ID_type);
   std::vector<ChipIdleHandlerType> connectedChipIdleHandlers;

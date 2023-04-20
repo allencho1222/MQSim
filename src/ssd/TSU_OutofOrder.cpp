@@ -481,4 +481,7 @@ bool TSU_OutOfOrder::service_erase_transaction(
 
   return true;
 }
+
+void TSU_OutOfOrder::eraseTransaction(LPA_type lpa) {}
+void TSU_OutOfOrder::eraseLock(LPA_type lpa) {}
 } // namespace SSD_Components

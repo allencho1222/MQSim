@@ -335,6 +335,10 @@ Address_Mapping_Unit_Page_Level::Address_Mapping_Unit_Page_Level(
           Overprovisioning_ratio, sharing_mode, fold_large_addresses) {
   _my_instance = this;
   domains = new AddressMappingDomain *[no_of_input_streams];
+  for (int i = 0; i < no_of_input_streams; ++i) {
+    isOngoing.push_back(std::unordered_set<LPA_type>());
+    isDone.push_back(std::unordered_set<LPA_type>());
+  }
 
   Write_transactions_for_overfull_planes =
       new std::set<NVM_Transaction_Flash_WR *> ***[channel_count];
@@ -2548,6 +2552,7 @@ Address_Mapping_Unit_Page_Level::handle_transaction_serviced_signal_from_PHY(
           while (it2 != _my_instance->domains[transaction->Stream_id]
                             ->Waiting_unmapped_read_transactions.end() &&
                  (*it2).first == lpa) {
+            assert(it2->second->Type == Transaction_Type::WRITE);
             if (_my_instance->is_lpa_locked_for_gc(transaction->Stream_id,
                                                    lpa)) {
               _my_instance->manage_user_transaction_facing_barrier(it2->second);
@@ -2567,6 +2572,7 @@ Address_Mapping_Unit_Page_Level::handle_transaction_serviced_signal_from_PHY(
           while (it2 != _my_instance->domains[transaction->Stream_id]
                             ->Waiting_unmapped_program_transactions.end() &&
                  (*it2).first == lpa) {
+            assert(it2->second->Type == Transaction_Type::WRITE);
             if (_my_instance->is_lpa_locked_for_gc(transaction->Stream_id,
                                                    lpa)) {
               _my_instance->manage_user_transaction_facing_barrier(it2->second);
@@ -2677,15 +2683,26 @@ Address_Mapping_Unit_Page_Level::Set_barrier_for_accessing_physical_block(
   }
 }
 
-inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
+void Address_Mapping_Unit_Page_Level::setDone(
+    stream_id_type stream_id, LPA_type lpa) {
+  assert(!isDone[stream_id].contains(lpa));
+  isDone[stream_id].insert(lpa);
+}
+void Address_Mapping_Unit_Page_Level::setOngoing(
+    stream_id_type stream_id, LPA_type lpa) {
+  assert(!isOngoing[stream_id].contains(lpa));
+  isOngoing[stream_id].insert(lpa);
+}
+
+void Address_Mapping_Unit_Page_Level::process_barrier_for_read(
     stream_id_type stream_id, LPA_type lpa) {
   auto itr = domains[stream_id]->Locked_LPAs.find(lpa);
   if (itr == domains[stream_id]->Locked_LPAs.end()) {
     PRINT_ERROR(
-        "Illegal operation: Unlocking an LPA that has not been locked!");
+        "Illegal operation: Unlocking an LPA that has not been locked 2!");
   }
-  domains[stream_id]->Locked_LPAs.erase(itr);
-
+  assert(is_lpa_ongoing_for_gc(stream_id, lpa));
+  setDone(stream_id, lpa);
   // If there are read requests waiting behind the barrier, then MQSim assumes
   // they can be serviced with the actual page data that is accessed during GC
   // execution
@@ -2698,9 +2715,41 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
       ftl->Data_cache_manager->release_from_barrier(tr);
     }
     handle_transaction_serviced_signal_from_PHY((*read_tr).second);
-    if (!tr->is_from_cache) {
-      delete (*read_tr).second;
+    delete (*read_tr).second;
+    domains[stream_id]->Read_transactions_behind_LPA_barrier.erase(read_tr);
+    read_tr =
+        domains[stream_id]->Read_transactions_behind_LPA_barrier.find(lpa);
+  }
+}
+
+inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
+    stream_id_type stream_id, LPA_type lpa) {
+  assert(is_lpa_ongoing_for_gc(stream_id, lpa));
+  assert(is_lpa_done_for_gc(stream_id, lpa));
+  isDone[stream_id].erase(lpa);
+  isOngoing[stream_id].erase(lpa);
+
+  auto itr = domains[stream_id]->Locked_LPAs.find(lpa);
+  if (itr == domains[stream_id]->Locked_LPAs.end()) {
+    PRINT_ERROR(
+        "Illegal operation: Unlocking an LPA that has not been locked!");
+  }
+  domains[stream_id]->Locked_LPAs.erase(itr);
+
+  // If there are read requests waiting behind the barrier, then MQSim assumes
+  // they can be serviced with the actual page data that is accessed during GC
+  // execution
+  assert(!domains[stream_id]->Read_transactions_behind_LPA_barrier.contains(lpa));
+  auto read_tr =
+      domains[stream_id]->Read_transactions_behind_LPA_barrier.find(lpa);
+  while (read_tr !=
+         domains[stream_id]->Read_transactions_behind_LPA_barrier.end()) {
+    auto& tr = (*read_tr).second;
+    if (tr->is_from_cache) {
+      ftl->Data_cache_manager->release_from_barrier(tr);
     }
+    handle_transaction_serviced_signal_from_PHY((*read_tr).second);
+    delete (*read_tr).second;
     domains[stream_id]->Read_transactions_behind_LPA_barrier.erase(read_tr);
     read_tr =
         domains[stream_id]->Read_transactions_behind_LPA_barrier.find(lpa);
@@ -2724,9 +2773,7 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_lpa(
       ftl->Data_cache_manager->release_from_barrier(tr);
     }
     handle_transaction_serviced_signal_from_PHY(tr);
-    if (!tr->is_from_cache) {
-      delete tr;
-    }
+    delete tr;
     domains[stream_id]->Write_transactions_behind_LPA_barrier.erase(write_tr);
     write_tr =
         domains[stream_id]->Write_transactions_behind_LPA_barrier.find(lpa);
@@ -2823,15 +2870,43 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_mvpn(
 
 inline void
 Address_Mapping_Unit_Page_Level::manage_user_transaction_facing_barrier(
-    NVM_Transaction_Flash *transaction) {
-  std::pair<LPA_type, NVM_Transaction_Flash *> entry(transaction->LPA,
-                                                     transaction);
-  if (transaction->Type == Transaction_Type::READ) {
-    domains[transaction->Stream_id]
-        ->Read_transactions_behind_LPA_barrier.insert(entry);
-  } else {
-    domains[transaction->Stream_id]
-        ->Write_transactions_behind_LPA_barrier.insert(entry);
+    NVM_Transaction_Flash *transaction, bool queryCMT) {
+  const auto& isRead = transaction->Type == Transaction_Type::READ;
+  bool goToBarrier = true;
+  if (isRead) {
+    if (is_lpa_done_for_gc(transaction->Stream_id, transaction->LPA)) {
+      // return
+      if (transaction->is_from_cache) {
+        ftl->Data_cache_manager->release_from_barrier(transaction);
+      }
+      handle_transaction_serviced_signal_from_PHY(transaction);
+      delete transaction;
+      goToBarrier = false;
+    } else if (!is_lpa_ongoing_for_gc(transaction->Stream_id, transaction->LPA)) {
+      assert(queryCMT);
+      // schedule
+      query_cmt(transaction);
+      transaction->lock_but_schedule = true;
+      // test
+      // if (transaction->is_from_cache) {
+      //   ftl->Data_cache_manager->release_from_barrier(transaction);
+      // }
+      // handle_transaction_serviced_signal_from_PHY(transaction);
+      // delete transaction;
+      goToBarrier = false;
+    } 
+  }
+
+  if (goToBarrier) {
+    std::pair<LPA_type, NVM_Transaction_Flash *> entry(transaction->LPA,
+                                                       transaction);
+    if (transaction->Type == Transaction_Type::READ) {
+      domains[transaction->Stream_id]
+          ->Read_transactions_behind_LPA_barrier.insert(entry);
+    } else {
+      domains[transaction->Stream_id]
+          ->Write_transactions_behind_LPA_barrier.insert(entry);
+    }
   }
 }
 
@@ -2849,6 +2924,7 @@ Address_Mapping_Unit_Page_Level::manage_mapping_transaction_facing_barrier(
 
 void Address_Mapping_Unit_Page_Level::mange_unsuccessful_translation(
     NVM_Transaction_Flash *transaction) {
+  assert(transaction->Type == Transaction_Type::WRITE);
   // Currently, the only unsuccessfull translation would be for program
   // translations that are accessing a plane that is running out of free pages
   Write_transactions_for_overfull_planes
@@ -2870,6 +2946,7 @@ void Address_Mapping_Unit_Page_Level::Start_servicing_writes_for_overfull_plane(
   ftl->TSU->Prepare_for_transaction_submit();
   auto program = waiting_write_list.begin();
   while (program != waiting_write_list.end()) {
+    assert((*program)->Type == Transaction_Type::WRITE);
     // WARNING (sungjun): need to check whether LPA is locked or not.
     // A block containing LPA can be being erased.
     if (is_lpa_locked_for_gc((*program)->Stream_id, (*program)->LPA)) {
@@ -2887,5 +2964,14 @@ void Address_Mapping_Unit_Page_Level::Start_servicing_writes_for_overfull_plane(
     }
   }
   ftl->TSU->Schedule();
+}
+
+bool Address_Mapping_Unit_Page_Level::is_lpa_done_for_gc(
+    stream_id_type stream_id, LPA_type lpa) {
+  return isDone[stream_id].contains(lpa);
+}
+bool Address_Mapping_Unit_Page_Level::is_lpa_ongoing_for_gc(
+    stream_id_type stream_id, LPA_type lpa) {
+  return isOngoing[stream_id].contains(lpa);
 }
 } // namespace SSD_Components

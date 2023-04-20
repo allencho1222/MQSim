@@ -5,6 +5,7 @@
 #include "../nvm_chip/flash_memory/Physical_Page_Address.h"
 #include "../sim/Sim_Object.h"
 #include "SSD_Defs.h"
+#include <unordered_map>
 
 #include <map>
 #include <vector>
@@ -193,6 +194,14 @@ public:
           plane_address) = 0; // This function is invoked when GC execution is
                               // finished on a plane and the plane has enough
                               // number of free pages to service writes
+  virtual bool is_lpa_done_for_gc(stream_id_type stream_id, LPA_type lpa) = 0;
+  virtual bool is_lpa_ongoing_for_gc(stream_id_type stream_id, LPA_type lpa) = 0;
+
+  virtual void setDone(stream_id_type stream_id, LPA_type lpa) = 0;
+  virtual void setOngoing(stream_id_type stream_id, LPA_type lpa) = 0;
+
+  virtual void process_barrier_for_read(
+    stream_id_type stream_id, LPA_type lpa) = 0;
 protected:
   FTL *ftl;
   NVM_PHY_ONFI *flash_controller;
@@ -228,7 +237,7 @@ protected:
       NVM::FlashMemory::Physical_Page_Address &read_address,
       uint64_t read_sectors_bitmap) = 0;
   virtual void manage_user_transaction_facing_barrier(
-      NVM_Transaction_Flash *transaction) = 0;
+      NVM_Transaction_Flash *transaction, bool queryCMT) = 0;
   virtual void
   manage_mapping_transaction_facing_barrier(stream_id_type stream_id,
                                             MVPN_type mvpn, bool read) = 0;

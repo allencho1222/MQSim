@@ -21,6 +21,15 @@ void NVM_PHY_ONFI::broadcastTransactionServicedSignal(
        it != connectedTransactionServicedHandlers.end(); it++) {
     (*it)(transaction);
   }
+  for (auto& tr : transaction->followingTransactions) {
+    for (std::vector<TransactionServicedHandlerType>::iterator it =
+             connectedTransactionServicedHandlers.begin();
+         it != connectedTransactionServicedHandlers.end(); it++) {
+      (*it)(tr);
+    }
+    delete tr;
+  }
+
   delete transaction; // This transaction has been consumed and no more needed
 }
 

@@ -59,6 +59,15 @@ public:
   void Start_servicing_writes_for_overfull_plane(
       const NVM::FlashMemory::Physical_Page_Address plane_address);
 
+  bool is_lpa_done_for_gc(stream_id_type stream_id, LPA_type lpa);
+  bool is_lpa_ongoing_for_gc(stream_id_type stream_id, LPA_type lpa);
+
+  void setDone(stream_id_type stream_id, LPA_type lpa);
+  void setOngoing(stream_id_type stream_id, LPA_type lpa);
+
+  void process_barrier_for_read(
+    stream_id_type stream_id, LPA_type lpa);
+
 private:
   bool query_cmt(NVM_Transaction_Flash *transaction);
   PPA_type online_create_entry_for_reads(
@@ -66,7 +75,7 @@ private:
       NVM::FlashMemory::Physical_Page_Address &read_address,
       uint64_t read_sectors_bitmap);
   void
-  manage_user_transaction_facing_barrier(NVM_Transaction_Flash *transaction);
+  manage_user_transaction_facing_barrier(NVM_Transaction_Flash *transaction, bool queryCMT = false);
   void manage_mapping_transaction_facing_barrier(stream_id_type stream_id,
                                                  MVPN_type mvpn, bool read);
   bool is_lpa_locked_for_gc(stream_id_type stream_id, LPA_type lpa);

@@ -5,6 +5,7 @@
 #include "../sim/Sim_Defs.h"
 #include <list>
 #include <unordered_map>
+#include <vector>
 #include "Host_Interface_NVMe_Priorities.h"
 
 namespace SSD_Components {
@@ -22,11 +23,13 @@ public:
       : Stream_id(stream_id), Source(source), Type(type),
         UserIORequest(user_request), Priority_class(priority_class),
         Issue_time(Simulator->Time()), STAT_execution_time(INVALID_TIME),
-        STAT_transfer_time(INVALID_TIME), is_from_cache(false) {}
+        STAT_transfer_time(INVALID_TIME), is_from_cache(false),
+        lock_but_schedule(false),
+        isFollowing(false) {}
   stream_id_type Stream_id;
   Transaction_Source_Type Source;
   Transaction_Type Type;
-  User_Request *UserIORequest;
+  User_Request *UserIORequest = nullptr;
   IO_Flow_Priority_Class::Priority Priority_class;
   // std::list<NVM_Transaction*>::iterator RelatedNodeInQueue;//Just used for
   // high performance linkedlist insertion/deletion
@@ -45,6 +48,9 @@ public:
     {Transaction_Source_Type::MAPPING, "MAPPING"}
   };
   bool is_from_cache;
+  uint64_t start_lba = 0;
+  bool lock_but_schedule;
+  bool isFollowing;
 };
 } // namespace SSD_Components
 

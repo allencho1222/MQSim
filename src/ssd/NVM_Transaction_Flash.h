@@ -49,6 +49,7 @@ public:
   sim_time_type enqueuedAt;
   sim_time_type scheduledAt;
   sim_time_type finishedAt;
+  std::vector<NVM_Transaction_Flash*> followingTransactions;
 private:
 };
 } // namespace SSD_Components

@@ -85,7 +85,13 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     default:
       PRINT_ERROR("Unexpected situation in the GC_and_WL_Unit_Base function!")
     }
-    if (_my_instance->block_manager->Block_has_ongoing_gc_wl(
+    if (transaction->lock_but_schedule && !transaction->isFollowing) {
+      _my_instance->tsu->eraseLock(transaction->LPA);
+    }
+    // Check whether a block is shallowly erased or not.
+    // If the block is not shallowly erased yet, the condition becomes true.
+    if (!transaction->lock_but_schedule && 
+        _my_instance->block_manager->Block_has_ongoing_gc_wl(
             transaction->Address)) {
       if (_my_instance->block_manager->Can_execute_gc_wl(
               transaction->Address)) {
@@ -159,8 +165,9 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     return;
   }
 
-  switch (transaction->Type) {
-  case Transaction_Type::READ: {
+  const auto &trType = transaction->Type;
+  assert(transaction->Source == Transaction_Source_Type::GC_WL);
+  if (trType == Transaction_Type::READ) {
     PPA_type ppa;
     MPPN_type mppa;
     page_status_type page_status_bitmap;
@@ -195,6 +202,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       // There has been no write on the page since GC start, and it is still
       // valid
       if (ppa == transaction->PPA) {
+        _my_instance->address_mapping_unit->process_barrier_for_read(
+            transaction->Stream_id, transaction->LPA);
         ((NVM_Transaction_Flash_RD *)transaction)
             ->RelatedWrite->write_sectors_bitmap = page_status_bitmap;
         ((NVM_Transaction_Flash_RD *)transaction)->RelatedWrite->LPA =
@@ -212,9 +221,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         PRINT_ERROR("Inconsistency found when moving a page for GC/WL!")
       }
     }
-    break;
-  }
-  case Transaction_Type::WRITE:
+  } else if (trType == Transaction_Type::WRITE) {
     _my_instance->block_manager->Program_transaction_serviced(
         transaction->Address);
     if (pbke->Blocks[((NVM_Transaction_Flash_WR *)transaction)
@@ -234,8 +241,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
                      ->RelatedErase->Address.BlockID]
         .Erase_transaction->Page_movement_activities.remove(
             (NVM_Transaction_Flash_WR *)transaction);
-    break;
-  case Transaction_Type::ERASE:
+  } else if (trType == Transaction_Type::ERASE) {
     pbke->Ongoing_erase_operations.erase(
         pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
     _my_instance->block_manager->Add_erased_block_to_pool(transaction->Address);
@@ -254,8 +260,14 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       _my_instance->Check_gc_required(pbke->Get_free_block_pool_size(),
                                       transaction->Address);
     }
-    break;
-  } // switch (transaction->Type)
+  } else {
+    assert(false);
+  }
+
+  if (trType == Transaction_Type::READ &&
+      transaction->Source == Transaction_Source_Type::GC_WL) {
+    _my_instance->tsu->eraseTransaction(transaction->LPA);
+  }
 }
 
 void GC_and_WL_Unit_Base::Start_simulation(bool isPreconditioning) {}
