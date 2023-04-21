@@ -225,6 +225,7 @@ void Data_Cache_Manager_Flash_Advanced::process_new_user_request(
           if (available_sectors_bitmap == tr->read_sectors_bitmap) {
             user_request->Sectors_serviced_from_cache +=
                 count_sector_no_from_status_bitmap(tr->read_sectors_bitmap);
+            delete (*it);
             user_request->Transaction_list.erase(
                 it++); // the ++ operation should happen here, otherwise the
                        // iterator will be part of the list after erasing it
@@ -380,6 +381,8 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
       bloom_filter[user_request->Stream_id].insert(tr->LPA);
       tr->is_from_cache = true;
       writeback_transactions.push_back(tr);
+    } else {
+      delete (*it);
     }
     user_request->Transaction_list.erase(it++);
   }
@@ -402,6 +405,8 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
         MEMORY_READ_FOR_CACHE_EVICTION_FINISHED;
     read_transfer_info->Stream_id = user_request->Stream_id;
     service_dram_access_request(read_transfer_info);
+  } else {
+    delete evicted_cache_slots;
   }
 
   // Issue memory write to write data to DRAM

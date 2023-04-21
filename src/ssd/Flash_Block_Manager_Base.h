@@ -58,6 +58,7 @@ public:
   int nextEraseLoopCount;
   int categoryID = -1;
   uint32_t remainingEraseLatency;
+  bool LatencyInitiated;
 };
 
 class PlaneBookKeepingType {
@@ -188,6 +189,8 @@ public:
   void resetEraseCount();
   void initEraseLatency(const NVM::FlashMemory::Physical_Page_Address &addr);
   int numRemainingEraseLoops(
+      const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  bool isLatencyInitiated(
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
 protected:
   PlaneBookKeepingType ***

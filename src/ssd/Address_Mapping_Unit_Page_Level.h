@@ -271,7 +271,7 @@ private:
       NVM::FlashMemory::Physical_Page_Address &read_address,
       uint64_t read_sectors_bitmap);
   void mange_unsuccessful_translation(NVM_Transaction_Flash *transaction);
-  void
+  bool
   manage_user_transaction_facing_barrier(NVM_Transaction_Flash *transaction, bool queryCMT = false);
   void manage_mapping_transaction_facing_barrier(stream_id_type stream_id,
                                                  MVPN_type mvpn, bool read);

@@ -92,9 +92,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     }
     // Check whether a block is shallowly erased or not.
     // If the block is not shallowly erased yet, the condition becomes true.
-    if (!transaction->lock_but_schedule && 
-        _my_instance->block_manager->Block_has_ongoing_gc_wl(
-            transaction->Address)) {
+    if (_my_instance->block_manager->Block_has_ongoing_gc_wl(transaction->Address) &&
+        !_my_instance->block_manager->isLatencyInitiated(transaction->Address)) {
       if (_my_instance->block_manager->Can_execute_gc_wl(
               transaction->Address)) {
         NVM::FlashMemory::Physical_Page_Address gc_wl_candidate_address(
@@ -186,6 +185,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       // There has been no write on the page since GC start, and it is still
       // valid
       if (mppa == transaction->PPA) {
+        _my_instance->address_mapping_unit->process_barrier_for_read(
+            transaction->Stream_id, transaction->LPA);
         _my_instance->tsu->Prepare_for_transaction_submit();
         ((NVM_Transaction_Flash_RD *)transaction)
             ->RelatedWrite->write_sectors_bitmap = FULL_PROGRAMMED_PAGE;

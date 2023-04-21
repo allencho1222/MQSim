@@ -93,8 +93,8 @@ bool Address_Mapping_Unit_Hybrid::is_mvpn_locked_for_gc(
     stream_id_type stream_id, MVPN_type mvpn) {
   return false;
 }
-void Address_Mapping_Unit_Hybrid::manage_user_transaction_facing_barrier(
-    NVM_Transaction_Flash *transaction, bool queryCMT) {}
+bool Address_Mapping_Unit_Hybrid::manage_user_transaction_facing_barrier(
+    NVM_Transaction_Flash *transaction, bool queryCMT) { return false;}
 void Address_Mapping_Unit_Hybrid::manage_mapping_transaction_facing_barrier(
     stream_id_type stream_id, MVPN_type mvpn, bool read) {}
 void Address_Mapping_Unit_Hybrid::Start_servicing_writes_for_overfull_plane(

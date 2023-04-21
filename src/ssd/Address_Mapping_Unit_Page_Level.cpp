@@ -532,49 +532,59 @@ Address_Mapping_Unit_Page_Level::Get_current_cmt_occupancy_for_stream(
 
 void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
     const std::list<NVM_Transaction *> &transactionList) {
-  for (auto it = transactionList.begin(); it != transactionList.end();) {
+  std::list<NVM_Transaction*> copied;
+  std::copy(std::begin(transactionList), std::end(transactionList), std::back_inserter(copied));
+  for (auto it = std::begin(copied); it !=  std::end(copied); ) {
     if (is_lpa_locked_for_gc((*it)->Stream_id,
                              ((NVM_Transaction_Flash *)(*it))->LPA)) {
       // iterator should be post-incremented since the iterator may be deleted
       // from list
-      manage_user_transaction_facing_barrier((NVM_Transaction_Flash *)*(it++), true);
+      bool removeEntry = manage_user_transaction_facing_barrier((NVM_Transaction_Flash *)(*it), true);
+      if (removeEntry) {
+        copied.erase(it++);
+      } else {
+        it++;
+      }
     } else {
-      query_cmt((NVM_Transaction_Flash *)(*it++));
+      query_cmt((NVM_Transaction_Flash *)(*it));
+      it++;
     }
   }
-  if (transactionList.size() > 0) {
-    ftl->TSU->Prepare_for_transaction_submit();
-    for (std::list<NVM_Transaction *>::const_iterator it =
-             transactionList.begin();
-         it != transactionList.end(); it++) {
-      if (((NVM_Transaction_Flash *)(*it))->Physical_address_determined) {
-        ftl->TSU->Submit_transaction(static_cast<NVM_Transaction_Flash *>(*it));
-        if (((NVM_Transaction_Flash *)(*it))->Type == Transaction_Type::WRITE) {
-          const auto &eraseAddr =
-              static_cast<NVM_Transaction_Flash_WR *>(*it)->Address;
-          const auto &bm = _my_instance->block_manager;
-          if (!bm->isAdaptiveEraseInitiated(eraseAddr)) {
-            bm->initiateAdaptiveErase(eraseAddr);
-            if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
-              const auto eraseTR = new NVM_Transaction_Flash_ER(
-                  Transaction_Source_Type::GC_WL, (*it)->Stream_id, eraseAddr,
-                  true);
-              eraseTR->setLatency(eraseLatency.value());
-              ftl->TSU->Submit_transaction(eraseTR);
-            } else {
-              bm->eraseBlock(eraseAddr);
-            }
+
+  // if (transactionList.size() > 0) {
+  ftl->TSU->Prepare_for_transaction_submit();
+  for (auto it = std::begin(copied); it != std::end(copied); ++it) {
+  // for (std::list<NVM_Transaction *>::const_iterator it =
+  //          transactionList.begin();
+  //      it != transactionList.end(); it++) {
+    if (((NVM_Transaction_Flash *)(*it))->Physical_address_determined) {
+      ftl->TSU->Submit_transaction(static_cast<NVM_Transaction_Flash *>(*it));
+      if (((NVM_Transaction_Flash *)(*it))->Type == Transaction_Type::WRITE) {
+        const auto &eraseAddr =
+            static_cast<NVM_Transaction_Flash_WR *>(*it)->Address;
+        const auto &bm = _my_instance->block_manager;
+        if (!bm->isAdaptiveEraseInitiated(eraseAddr)) {
+          bm->initiateAdaptiveErase(eraseAddr);
+          if (auto eraseLatency = bm->getNextEraseLatency(eraseAddr)) {
+            const auto eraseTR = new NVM_Transaction_Flash_ER(
+                Transaction_Source_Type::GC_WL, (*it)->Stream_id, eraseAddr,
+                true);
+            eraseTR->setLatency(eraseLatency.value());
+            ftl->TSU->Submit_transaction(eraseTR);
+          } else {
+            bm->eraseBlock(eraseAddr);
           }
-          if (((NVM_Transaction_Flash_WR *)(*it))->RelatedRead != NULL) {
-            ftl->TSU->Submit_transaction(
-                ((NVM_Transaction_Flash_WR *)(*it))->RelatedRead);
-          }
+        }
+        if (((NVM_Transaction_Flash_WR *)(*it))->RelatedRead != NULL) {
+          ftl->TSU->Submit_transaction(
+              ((NVM_Transaction_Flash_WR *)(*it))->RelatedRead);
         }
       }
     }
-
-    ftl->TSU->Schedule();
   }
+
+  ftl->TSU->Schedule();
+  // }
 }
 
 bool Address_Mapping_Unit_Page_Level::query_cmt(
@@ -2926,20 +2936,23 @@ inline void Address_Mapping_Unit_Page_Level::Remove_barrier_for_accessing_mvpn(
   }
 }
 
-inline void
+inline bool
 Address_Mapping_Unit_Page_Level::manage_user_transaction_facing_barrier(
     NVM_Transaction_Flash *transaction, bool queryCMT) {
-  const auto& isRead = transaction->Type == Transaction_Type::READ;
+  const auto isRead = transaction->Type == Transaction_Type::READ;
   bool goToBarrier = true;
+  bool removeEntry = false;
   if (isRead) {
+    bool deleteTransaction = false;
     if (is_lpa_done_for_gc(transaction->Stream_id, transaction->LPA)) {
       // return
       if (transaction->is_from_cache) {
         ftl->Data_cache_manager->release_from_barrier(transaction);
       }
       handle_transaction_serviced_signal_from_PHY(transaction);
-      delete transaction;
+      deleteTransaction = true;
       goToBarrier = false;
+      removeEntry = true;
     } else if (!is_lpa_ongoing_for_gc(transaction->Stream_id, transaction->LPA)) {
       assert(queryCMT);
       // schedule
@@ -2951,11 +2964,20 @@ Address_Mapping_Unit_Page_Level::manage_user_transaction_facing_barrier(
       // }
       // handle_transaction_serviced_signal_from_PHY(transaction);
       // delete transaction;
+      assert(transaction->Physical_address_determined);
       goToBarrier = false;
-    } 
+    } else {
+      goToBarrier = true;
+    }
+
+    if (deleteTransaction) {
+      delete transaction;
+    }
   }
 
   if (goToBarrier) {
+    removeEntry = true;
+    assert(!transaction->Physical_address_determined);
     std::pair<LPA_type, NVM_Transaction_Flash *> entry(transaction->LPA,
                                                        transaction);
     if (transaction->Type == Transaction_Type::READ) {
@@ -2966,6 +2988,8 @@ Address_Mapping_Unit_Page_Level::manage_user_transaction_facing_barrier(
           ->Write_transactions_behind_LPA_barrier.insert(entry);
     }
   }
+
+  return removeEntry;
 }
 
 inline void

@@ -236,7 +236,7 @@ protected:
       LPA_type lpa, const stream_id_type stream_id,
       NVM::FlashMemory::Physical_Page_Address &read_address,
       uint64_t read_sectors_bitmap) = 0;
-  virtual void manage_user_transaction_facing_barrier(
+  virtual bool manage_user_transaction_facing_barrier(
       NVM_Transaction_Flash *transaction, bool queryCMT) = 0;
   virtual void
   manage_mapping_transaction_facing_barrier(stream_id_type stream_id,

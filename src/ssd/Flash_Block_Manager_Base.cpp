@@ -116,6 +116,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
             block.categoryID = categories.back();
             categories.pop_back();
             // TODO: init values in the constructor
+            block.LatencyInitiated = false;
             block.BlockID = blockID;
             block.nextEraseLoopCount = 0;
             block.Current_page_write_index = 0;
@@ -476,6 +477,7 @@ void Flash_Block_Manager_Base::eraseBlock(
   assert(!block.isBlockErased);
   assert(block.willBeAdaptivelyErased);
   block.isBlockErased = true;
+  block.LatencyInitiated = false;
   // TODO (sungjun): need to separate logical and physical erase count.
   // physical erase count: # of erase operation.
   // logical erase count: # of ISPEs
@@ -499,6 +501,7 @@ void Flash_Block_Manager_Base::initEraseLatency(
   assert(block.remainingEraseLatency == 0);
   assert(block.categoryID != -1);
   block.remainingEraseLatency = eraseLatency[block.categoryID];
+  block.LatencyInitiated = true;
 }
 
 std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
@@ -518,6 +521,15 @@ std::optional<sim_time_type> Flash_Block_Manager_Base::getNextEraseLatency(
       return block.remainingEraseLatency;
     }
   }
+}
+
+bool Flash_Block_Manager_Base::isLatencyInitiated(
+    const NVM::FlashMemory::Physical_Page_Address &addr) const {
+  const PlaneBookKeepingType *planeRecord =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  auto &block = planeRecord->Blocks[addr.BlockID];
+  assert(block.categoryID != -1);
+  return block.LatencyInitiated;
 }
 
 int Flash_Block_Manager_Base::numRemainingEraseLoops(

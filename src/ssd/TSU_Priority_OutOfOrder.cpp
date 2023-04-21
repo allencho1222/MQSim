@@ -132,6 +132,7 @@ void TSU_Priority_OutOfOrder::clearQueue() {
 }
 
 TSU_Priority_OutOfOrder::~TSU_Priority_OutOfOrder() {
+  assert(lockedQueue.empty());
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     for (unsigned int chipId = 0; chipId < chip_no_per_channel; chipId++) {
       delete[] UserReadTRQueue[channelID][chipId];
@@ -359,10 +360,12 @@ void TSU_Priority_OutOfOrder::Schedule() {
       case Transaction_Source_Type::CACHE:
       case Transaction_Source_Type::USERIO:
         if ((*it)->Priority_class != IO_Flow_Priority_Class::UNDEFINED) {
+          bool inserted = false;
           if (!lockedQueue.contains((*it)->LPA)) {
             UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
                            [static_cast<int>((*it)->Priority_class)]
                                .push_back((*it));
+            inserted = true;
           }
           if ((*it)->lock_but_schedule) {
             assert((*it)->LPA != NO_LPA);
@@ -370,17 +373,21 @@ void TSU_Priority_OutOfOrder::Schedule() {
             if (lockedQueue.contains((*it)->LPA)) {
               (*it)->isFollowing = true;
               (*(lockedQueue[(*it)->LPA].second))->followingTransactions.push_back((*it));
+              inserted = true;
             } else {
               auto* q = &UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
                              [static_cast<int>((*it)->Priority_class)];
               lockedQueue[(*it)->LPA] = std::make_pair(q, --std::end(*q));
             }
           }
+          assert(inserted);
         } else {
+          bool inserted = false;
           if (!lockedQueue.contains((*it)->LPA)) {
             UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
                            [IO_Flow_Priority_Class::HIGH]
                                .push_back((*it));
+            inserted = true;
           }
           if ((*it)->lock_but_schedule) {
             assert((*it)->LPA != NO_LPA);
@@ -388,12 +395,14 @@ void TSU_Priority_OutOfOrder::Schedule() {
             if (lockedQueue.contains((*it)->LPA)) {
               (*it)->isFollowing = true;
               (*(lockedQueue[(*it)->LPA].second))->followingTransactions.push_back((*it));
+              inserted = true;
             } else {
               auto* q = &UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
                              [static_cast<int>((*it)->Priority_class)];
               lockedQueue[(*it)->LPA] = std::make_pair(q, --std::end(*q));
             }
           }
+          assert(inserted);
         }
 
         break;
