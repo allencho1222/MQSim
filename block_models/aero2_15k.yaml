@@ -1,0 +1,30 @@
+max_erase_latency:
+  - 1000000
+  - 2500000
+  - 3500000
+block_index_file: /root/work_dir/projects/MQSim/block_index.txt
+category:
+  0:
+    ratio: 2
+    latency: 2000000
+  1:
+    ratio: 23
+    latency: 2500000
+  2:
+    ratio: 28
+    latency: 3000000
+  3:
+    ratio: 25
+    latency: 3500000
+  4:
+    ratio: 13
+    latency: 4000000
+  5:
+    ratio: 5
+    latency: 4500000
+  6:
+    ratio: 2
+    latency: 5000000
+  7:
+    ratio: 2
+    latency: 5500000
