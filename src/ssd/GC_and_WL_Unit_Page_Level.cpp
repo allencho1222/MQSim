@@ -5,7 +5,7 @@
 #include "Flash_Block_Manager.h"
 #include <math.h>
 #include <set>
-#include <vector>
+#include <vector> 
 #include <cassert>
 
 namespace SSD_Components {
@@ -80,17 +80,11 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
         GREEDY: // Find the set of blocks with maximum number of invalid pages
                 // and no free pages
     {
-      gc_candidate_block_id = 0;
-      if (pbke->Ongoing_erase_operations.find(0) !=
-          pbke->Ongoing_erase_operations.end()) {
-        gc_candidate_block_id++;
-      }
-      for (flash_block_ID_type block_id = 1; block_id < block_no_per_plane;
-           block_id++) {
-        if (pbke->Blocks[block_id].Invalid_page_count >
-                pbke->Blocks[gc_candidate_block_id].Invalid_page_count &&
-            pbke->Blocks[block_id].Current_page_write_index ==
-                pages_no_per_block &&
+      for (uint32_t block_id = 0; block_id < block_no_per_plane; block_id++) {
+        auto& curBlock = pbke->Blocks[block_id];
+        auto& candidateBlock = pbke->Blocks[gc_candidate_block_id];
+        if ((curBlock.Invalid_page_count > candidateBlock.Invalid_page_count) &&
+            !pbke->Ongoing_erase_operations.contains(block_id) &&
             is_safe_gc_wl_candidate(pbke, block_id)) {
           gc_candidate_block_id = block_id;
         }
