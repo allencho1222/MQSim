@@ -87,9 +87,9 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     default:
       PRINT_ERROR("Unexpected situation in the GC_and_WL_Unit_Base function!")
     }
-    if (transaction->lock_but_schedule && !transaction->isFollowing) {
-      _my_instance->tsu->eraseLock(transaction->LPA);
-    }
+    // if (transaction->lock_but_schedule && !transaction->isFollowing) {
+    //   _my_instance->tsu->eraseLock(transaction->LPA);
+    // }
     // Check whether a block is shallowly erased or not.
     // If the block is not shallowly erased yet, the condition becomes true.
     if (_my_instance->block_manager->Block_has_ongoing_gc_wl(transaction->Address) &&
@@ -319,6 +319,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       _my_instance->tsu->Schedule();
     } else {
       // WARNING: `Add_erased_block_to_pool` do not increase `Erase_count`
+      assert(pbke->Ongoing_erase_operations.contains(transaction->Address.BlockID));
       pbke->Ongoing_erase_operations.erase(
           pbke->Ongoing_erase_operations.find(transaction->Address.BlockID));
       _my_instance->block_manager->Add_erased_block_to_pool(
@@ -360,10 +361,10 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     assert(false);
   }
 
-  if (trType == Transaction_Type::READ &&
-      transaction->Source == Transaction_Source_Type::GC_WL) {
-    _my_instance->tsu->eraseTransaction(transaction->LPA);
-  }
+  // if (trType == Transaction_Type::READ &&
+  //     transaction->Source == Transaction_Source_Type::GC_WL) {
+  //   _my_instance->tsu->eraseTransaction(transaction->LPA);
+  // }
 }
 
 void GC_and_WL_Unit_Base::Start_simulation(bool isPreconditioning) {

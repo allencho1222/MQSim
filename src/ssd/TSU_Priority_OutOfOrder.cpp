@@ -338,6 +338,9 @@ void TSU_Priority_OutOfOrder::eraseTransaction(LPA_type lpa) {
   }
 }
 
+// void TSU_Priority_OutOfOrder::releaseWaitingRequests(LPA_type lpa) {
+// }
+
 void TSU_Priority_OutOfOrder::Schedule() {
   opened_scheduling_reqs--;
   if (opened_scheduling_reqs > 0) {
@@ -360,49 +363,55 @@ void TSU_Priority_OutOfOrder::Schedule() {
       case Transaction_Source_Type::CACHE:
       case Transaction_Source_Type::USERIO:
         if ((*it)->Priority_class != IO_Flow_Priority_Class::UNDEFINED) {
+          // if (!pendingLPAs.contains((*it)->LPA)) {
           bool inserted = false;
-          if (!lockedQueue.contains((*it)->LPA)) {
-            UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
-                           [static_cast<int>((*it)->Priority_class)]
-                               .push_back((*it));
-            inserted = true;
-          }
-          if ((*it)->lock_but_schedule) {
-            assert((*it)->LPA != NO_LPA);
-            //assert(!lockedQueue.contains((*it)->LPA));
-            if (lockedQueue.contains((*it)->LPA)) {
-              (*it)->isFollowing = true;
-              (*(lockedQueue[(*it)->LPA].second))->followingTransactions.push_back((*it));
-              inserted = true;
-            } else {
-              auto* q = &UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
-                             [static_cast<int>((*it)->Priority_class)];
-              lockedQueue[(*it)->LPA] = std::make_pair(q, --std::end(*q));
-            }
-          }
-          assert(inserted);
+          UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
+                         [static_cast<int>((*it)->Priority_class)]
+                             .push_back((*it));
+          // pendingLPAs[(*it)->LPA] = std::vector<NVM_TransactioN_Flash*>();
+          // } else {
+          //   pendingLPAs.push_back(*it);
+          // }
+
+          //   auto* q = &UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
+          //                  [static_cast<int>((*it)->Priority_class)];
+          //   // if (lockedQueue.contains[(*it)->LPA]) {
+          //   //   lockedQueue.erase((*it)->LPA);
+          //   // }
+          //   lockedQueue[(*it)->LPA].push_back(std::make_pair(q, --std::end(*q)));
+          // }
+          // if ((*it)->lock_but_schedule) {
+          //   //assert(!lockedQueue.contains((*it)->LPA));
+          //   if (lockedQueue.contains((*it)->LPA)) {
+          //     (*it)->isFollowing = true;
+          //     (*(lockedQueue[(*it)->LPA].second))->followingTransactions.push_back((*it));
+          //     inserted = true;
+          //   }
+          // }
+          // assert(inserted);
         } else {
           bool inserted = false;
-          if (!lockedQueue.contains((*it)->LPA)) {
-            UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
-                           [IO_Flow_Priority_Class::HIGH]
-                               .push_back((*it));
-            inserted = true;
-          }
-          if ((*it)->lock_but_schedule) {
-            assert((*it)->LPA != NO_LPA);
-            //assert(!lockedQueue.contains((*it)->LPA));
-            if (lockedQueue.contains((*it)->LPA)) {
-              (*it)->isFollowing = true;
-              (*(lockedQueue[(*it)->LPA].second))->followingTransactions.push_back((*it));
-              inserted = true;
-            } else {
-              auto* q = &UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
-                             [static_cast<int>((*it)->Priority_class)];
-              lockedQueue[(*it)->LPA] = std::make_pair(q, --std::end(*q));
-            }
-          }
-          assert(inserted);
+          // if (!lockedQueue.contains((*it)->LPA)) {
+          UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
+                         [IO_Flow_Priority_Class::HIGH]
+                             .push_back((*it));
+          //   inserted = true;
+          //   if ((*it)->lock_but_schedule) {
+          //     auto* q = &UserReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
+          //                    [static_cast<int>((*it)->Priority_class)];
+          //     lockedQueue[(*it)->LPA] = std::make_pair(q, --std::end(*q));
+          //   }
+          // }
+          // if ((*it)->lock_but_schedule) {
+          //   assert((*it)->LPA != NO_LPA);
+          //   //assert(!lockedQueue.contains((*it)->LPA));
+          //   if (lockedQueue.contains((*it)->LPA)) {
+          //     (*it)->isFollowing = true;
+          //     (*(lockedQueue[(*it)->LPA].second))->followingTransactions.push_back((*it));
+          //     inserted = true;
+          //   } 
+          // }
+          // assert(inserted);
         }
 
         break;
@@ -610,6 +619,7 @@ bool TSU_Priority_OutOfOrder::service_read_transaction(
   default:
     return false;
   }
+  assert(!suspensionRequired);
 
   return issue_command_to_chip(sourceQueue1, sourceQueue2,
                                Transaction_Type::READ, suspensionRequired);
@@ -714,6 +724,7 @@ bool TSU_Priority_OutOfOrder::service_write_transaction(
     return false;
   }
 
+  assert(!suspensionRequired);
   return issue_command_to_chip(sourceQueue1, sourceQueue2,
                                Transaction_Type::WRITE, suspensionRequired);
   //
