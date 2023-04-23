@@ -1,23 +1,15 @@
 ratio_list = [
-3,
-5,
-4,
-5,
-6,
-6,
-6,
-5,
-6,
-9,
-10,
+2,
+23,
+28,
+25,
 13,
-10,
 5,
-4,
-3,
+2,
+2,
 ]
-latency_start = 10000000
-total_erase_latency = 17500000
+latency_start = 2000000
+total_erase_latency = 5500000
 # latency_sequence = [1000000, 2500000, 3500000, 3500000, 3500000, 3500000,
 #                     3500000, 3500000, 3500000]
 latency_sequence = [3500000, 3500000, 3500000, 3500000, 3500000,
@@ -45,5 +37,5 @@ data = {
     'category' : category,
 }
 import yaml
-with open('base_45k.yaml', 'w') as fout:
+with open('aero2_15k.yaml', 'w') as fout:
     yaml.dump(data, fout, default_flow_style=False)
