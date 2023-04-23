@@ -419,10 +419,6 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
         Data_Cache_Simulation_Event_Type::MEMORY_WRITE_FOR_USERIO_FINISHED;
     write_transfer_info->Stream_id = user_request->Stream_id;
     service_dram_access_request(write_transfer_info);
-  } else {
-    if (is_user_request_finished(user_request)) {
-      broadcast_user_request_serviced_signal(user_request);
-    }
   }
 
   // If any writeback should be performed, then issue flash write transactions
@@ -430,8 +426,13 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
     static_cast<FTL *>(nvm_firmware)
         ->Address_Mapping_Unit->Translate_lpa_to_ppa_and_dispatch(
             writeback_transactions);
+  } else {
+    // Transactions inserted in Transaction_list are not used.
+    if (dram_write_size_in_sectors == 0 &&
+        is_user_request_finished(user_request)) {
+      broadcast_user_request_serviced_signal(user_request);
+    }
   }
-
   // Reset control data structures used for hot/cold separation
   if (Simulator->Time() > next_bloom_filter_reset_milestone) {
     bloom_filter[user_request->Stream_id].clear();
