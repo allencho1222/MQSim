@@ -32,6 +32,7 @@ public:
    * for that flash chip should be prioritized and GC should go on in
    * non-preemptible mode.*/
   bool GC_is_in_urgent_mode(const NVM::FlashMemory::Flash_Chip *);
+  bool is_urgent_GC(uint32_t chID, uint32_t chipID);
 
   void Check_gc_required(
       const unsigned int free_block_pool_size,

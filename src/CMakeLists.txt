@@ -16,5 +16,6 @@ target_link_libraries(mqsim
   fmt::fmt
   spdlog::spdlog
   yaml-cpp
+  robin_hood::robin_hood
 )
 target_compile_options(mqsim PRIVATE -Wall -O3 -g)

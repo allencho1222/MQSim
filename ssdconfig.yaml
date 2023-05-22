@@ -18,8 +18,10 @@ host_parameters:
   record_latency: false
 
 device_parameters:
+  max_read_token: 2
+  max_write_token: 2
   true_lazy_erase: true
-  initial_erase_count: 500
+  initial_erase_count: 0
   # the seed value that is used for random number generation. 
   # Range = {all positive integer values}.
   seed: 321
@@ -76,7 +78,7 @@ device_parameters:
     # adddress translation requests are always successful (i.e., all the
     # mapping entries are found in the DRAM and there is no need to read 
     # mapping entries from flash)
-    ideal: false
+    ideal: true
   cmt:
     # the size of the SRAM/DRAM space in bytes used to cache the address 
     # mapping table (Cached Mapping Table). 
@@ -165,7 +167,7 @@ device_parameters:
     technology: TLC
     # the type of suspend command support by flash chips. 
     # Range = {NONE, PROGRAM, PROGRAM_ERASE, ERASE}.
-    cmd_suspension_mode: ERASE
+    cmd_suspension_mode: NONE
     # the latency of reading LSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
     page_read_latency_lsb: 40000
@@ -177,13 +179,13 @@ device_parameters:
     page_read_latency_msb: 40000
     # the latency of programming LSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_program_latency_lsb: 700000
+    page_program_latency_lsb: 350000
     # the latency of programming CSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_program_latency_csb: 700000
+    page_program_latency_csb: 350000
     # the latency of programming MSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
-    page_program_latency_msb: 700000
+    page_program_latency_msb: 350000
     # the latency of erasing a flash block in nanoseconds. 
     # Range = {all positive integer values}.
     full_block_erase_latency: 3800000

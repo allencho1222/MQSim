@@ -71,7 +71,39 @@ NVM_PHY_ONFI_NVDDR2::NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
 }
 
 // Must be deleted to flush output data in a buffer
-NVM_PHY_ONFI_NVDDR2::~NVM_PHY_ONFI_NVDDR2() { output.close(); }
+NVM_PHY_ONFI_NVDDR2::~NVM_PHY_ONFI_NVDDR2() { 
+  // std::ofstream readFile("read_scheduled_at.bin", std::ios::out | std::ios::binary);
+  // readFile.write(reinterpret_cast<const char*>(&readScheduledAt[0]), 
+  //                readScheduledAt.size() * sizeof(sim_time_type));
+  // readFile.close();
+  //
+  // std::ofstream readFile_2("read_enqueued_at.bin", std::ios::out | std::ios::binary);
+  // readFile_2.write(reinterpret_cast<const char*>(&readEnqueuedAt[0]), 
+  //                readEnqueuedAt.size() * sizeof(sim_time_type));
+  // readFile_2.close();
+  //
+  // std::ofstream readFile_3("read_channels.bin", std::ios::out | std::ios::binary);
+  // readFile_3.write(reinterpret_cast<const char*>(&readChannels[0]), 
+  //                readChannels.size() * sizeof(sim_time_type));
+  // readFile_3.close();
+  //
+  // std::ofstream eraseFile("erase_finished_at.bin", std::ios::out | std::ios::binary);
+  // eraseFile.write(reinterpret_cast<const char*>(&eraseFinishedAt[0]), 
+  //                eraseFinishedAt.size() * sizeof(sim_time_type));
+  // eraseFile.close();
+  //
+  // std::ofstream eraseFile_2("erase_scheduled_at.bin", std::ios::out | std::ios::binary);
+  // eraseFile_2.write(reinterpret_cast<const char*>(&eraseScheduledAt[0]), 
+  //                eraseScheduledAt.size() * sizeof(sim_time_type));
+  // eraseFile_2.close();
+  // output.close(); 
+  //
+  // std::ofstream eraseFile_3("erase_channels.bin", std::ios::out | std::ios::binary);
+  // eraseFile_3.write(reinterpret_cast<const char*>(&eraseChannels[0]), 
+  //                eraseChannels.size() * sizeof(sim_time_type));
+  // eraseFile_3.close();
+  // output.close(); 
+}
 
 void NVM_PHY_ONFI_NVDDR2::Setup_triggers() {
   Sim_Object::Setup_triggers();
@@ -701,6 +733,22 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
   for (auto transaction : dieBKE->ActiveTransactions) {
     transaction->finishedAt = Simulator->Time();
   }
+  //
+  //   if ((transaction->Source == Transaction_Source_Type::USERIO) &&
+  //       (transaction->Type == Transaction_Type::READ)) {
+  //     if (transaction->enqueuedAt != 0) {
+  //       _my_instance->readChannels.push_back(chip->ChannelID * _my_instance->chip_no_per_channel + chip->ChipID);
+  //       _my_instance->readScheduledAt.push_back(transaction->scheduledAt);
+  //       _my_instance->readEnqueuedAt.push_back(transaction->enqueuedAt);
+  //     }
+  //   }
+  //   if ((transaction->Type == Transaction_Type::PROXY_ERASE) ||
+  //       (transaction->Type == Transaction_Type::ADAPTIVE_ERASE)) {
+  //     _my_instance->eraseChannels.push_back(chip->ChannelID * _my_instance->chip_no_per_channel + chip->ChipID);
+  //     _my_instance->eraseScheduledAt.push_back(transaction->scheduledAt);
+  //     _my_instance->eraseFinishedAt.push_back(transaction->finishedAt);
+  //   }
+  // }
   //_my_instance->recordTransactionHistory(dieBKE->ActiveTransactions, command);
 
   switch (command->CommandCode) {

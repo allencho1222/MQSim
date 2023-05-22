@@ -12,14 +12,16 @@ Flash_Block_Manager::Flash_Block_Manager(
     unsigned int plane_no_per_die, unsigned int block_no_per_plane,
     unsigned int page_no_per_block,
     const std::string blockModelFile,
-    unsigned int initialEraseCount)
+    unsigned int initialEraseCount,
+    unsigned int maxReadToken, unsigned int maxWriteToken)
     : Flash_Block_Manager_Base(gc_and_wl_unit, max_allowed_block_erase_count,
                                total_concurrent_streams_no, channel_count,
                                chip_no_per_channel, die_no_per_chip,
                                plane_no_per_die, block_no_per_plane,
                                page_no_per_block,
                                blockModelFile,
-                               initialEraseCount) {}
+                               initialEraseCount,
+                               maxReadToken, maxWriteToken) {}
 
 Flash_Block_Manager::~Flash_Block_Manager() {}
 

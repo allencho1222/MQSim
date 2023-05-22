@@ -18,6 +18,8 @@
 class Device_Parameter_Set {
 public:
   static unsigned int Initial_Erase_Count;
+  static unsigned int Max_Read_Token;
+  static unsigned int Max_Write_Token;
   static int Seed; // Seed for random number generation (used in device's random
                    // number generators)
   static bool Enabled_Preconditioning;

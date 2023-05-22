@@ -16,6 +16,7 @@
 #include <vector>
 #include <fmt/os.h>
 #include <cstdio>
+#include <robin_hood.h>
 
 namespace Host_Components {
 struct NVMe_Queue_Pair {
@@ -115,7 +116,7 @@ protected:
   std::list<Host_IO_Request *>
       waiting_requests; // The I/O requests that are still waiting to be
                         // enqueued in the I/O queue (the I/O queue is full)
-  std::unordered_map<sim_time_type, Host_IO_Request *>
+  robin_hood::unordered_map<sim_time_type, Host_IO_Request *>
       nvme_software_request_queue; // The I/O requests that are enqueued in the
                                    // I/O queue of the SSD device
   void NVMe_update_and_submit_completion_queue_tail();
@@ -160,6 +161,7 @@ protected:
   sim_time_type STAT_sum_device_response_time_short_term,
       STAT_sum_request_delay_short_term;
   unsigned int STAT_serviced_request_count_short_term;
+  bool isPre = false;
 };
 } // namespace Host_Components
 

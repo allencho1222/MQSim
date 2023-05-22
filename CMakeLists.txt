@@ -10,5 +10,6 @@ find_package(Boost REQUIRED)
 find_package(fmt REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(robin_hood REQUIRED)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/src)

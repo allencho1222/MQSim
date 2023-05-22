@@ -2,6 +2,7 @@
 #include "FTL.h"
 #include "Flash_Block_Manager_Base.h"
 #include "Address_Mapping_Unit_Base.h"
+#include "NVM_Transaction.h"
 #include <cassert>
 #include <string>
 
@@ -40,6 +41,8 @@ TSU_Base::TSU_Base(const sim_object_id_type &id, FTL *ftl,
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     Round_robin_turn_of_channel[channelID] = 0;
   }
+  assert(!eraseSuspensionEnabled);
+  assert(!programSuspensionEnabled);
 }
 
 TSU_Base::~TSU_Base() { delete[] Round_robin_turn_of_channel; }
@@ -89,6 +92,38 @@ void TSU_Base::handle_chip_idle_signal(NVM::FlashMemory::Flash_Chip *chip) {
 //                                      Utils::XmlWriter &xmlwriter) {}
 void TSU_Base::reportResults(fmt::ostream &output) {}
 
+bool TSU_Base::pop_and_front_transaction(Flash_Transaction_Queue *q, int planeID) {
+  decltype(q->begin()) targetIt;
+  bool done = false;
+  for (auto it = q->begin(); it != q->end(); ++it) {
+    auto curPlaneID = (*it)->Address.PlaneID;
+    if (curPlaneID == planeID) {
+      done = true;
+      targetIt = it;
+      break;
+    }
+  }
+  if (done) {
+    auto targetTr = *targetIt;
+    q->remove(targetIt);
+    q->push_front(targetTr);
+  }
+  return done;
+}
+
+std::optional<NVM::FlashMemory::Physical_Page_Address>
+TSU_Base::get_first_schedulable_addr(Flash_Transaction_Queue *q) const {
+  flash_die_ID_type dieID = q->front()->Address.DieID;
+  for (auto it = q->begin(); it != q->end();) {
+    if (transaction_is_ready(*it) && (*it)->Address.DieID == dieID) {
+      return std::optional<NVM::FlashMemory::Physical_Page_Address>((*it)->Address);
+    }
+  }
+  return std::nullopt;
+}
+
+
+
 bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
                                      Flash_Transaction_Queue *sourceQueue2,
                                      Transaction_Type transactionType,
@@ -107,6 +142,11 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
           !(planeVector & 1 << (*it)->Address.PlaneID)) {
         // Check for identical pages when running multiplane command
         if (planeVector == 0 || (*it)->Address.PageID == pageID) {
+          // If we find first schedulable transaction.
+          if (planeVector == 0) {
+            assert(transaction_dispatch_slots.empty());
+            pageID = (*it)->Address.PageID;
+          }
           (*it)->SuspendRequired = suspensionRequired;
           planeVector |= 1 << (*it)->Address.PlaneID;
           transaction_dispatch_slots.push_back(*it);
@@ -129,6 +169,11 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
             !(planeVector & 1 << (*it)->Address.PlaneID)) {
           // Check for identical pages when running multiplane command
           if (planeVector == 0 || (*it)->Address.PageID == pageID) {
+            // If we find first schedulable transaction.
+            if (planeVector == 0) {
+              assert(transaction_dispatch_slots.empty());
+              pageID = (*it)->Address.PageID;
+            }
             (*it)->SuspendRequired = suspensionRequired;
             planeVector |= 1 << (*it)->Address.PlaneID;
             transaction_dispatch_slots.push_back(*it);
@@ -149,6 +194,7 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
     if (transaction_dispatch_slots.size() > 0) {
       for (auto transaction : transaction_dispatch_slots) {
         transaction->scheduledAt = Simulator->Time();
+        assert(transaction->Type == transactionType);
         const auto& isRead = transaction->Type == Transaction_Type::READ;
         const auto& isGC = transaction->Source == Transaction_Source_Type::GC_WL;
         if (isRead && isGC) {
@@ -161,12 +207,49 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
               transaction->Address.PageID);
           ftl->Address_Mapping_Unit->setOngoing(transaction->Stream_id, lpa);
         }
+        auto& bm = ftl->BlockManager;
+        const auto& amu = ftl->Address_Mapping_Unit;
+        const auto& addr = transaction->Address;
+        // Manage R/W token
+        bool isRWTokenChanged = false;
+        if (isRead) {
+          if (transaction->Source == Transaction_Source_Type::CACHE ||
+              transaction->Source == Transaction_Source_Type::USERIO) {
+            if (amu->isPlaneBusy(addr) && bm->isTokenAvailable(addr, false)) {
+              bm->useToken(addr, false);
+              isRWTokenChanged = true;
+            }
+          } else { // e.g., GC
+            bm->resetToken(addr, false);
+            isRWTokenChanged = true;
+          }
+        } else {
+          bm->resetToken(addr, false);
+          isRWTokenChanged = true;
+        }
+
+        bool isGCTokenChanged = false;
+        // Manage GC token
+        auto isWrite = transaction->Type == Transaction_Type::WRITE;
+        if (isWrite) {
+          if (isGC) {
+            bm->resetToken(addr, true);
+            isGCTokenChanged = true;
+          } else {
+            if (bm->isPlaneDoingGC(addr) && bm->isTokenAvailable(addr, true)) {
+              bm->useToken(addr, true);
+              isGCTokenChanged = true;
+            }
+          }
+        }
+        // bm->printToken(addr, isRWTokenChanged, isGCTokenChanged);
       }
       _NVMController->Send_command_to_chip(transaction_dispatch_slots);
       transaction_dispatch_slots.clear();
       dieID = (dieID + 1) % die_no_per_chip;
       return true;
     } else {
+      // Guarantee in-order processing
       transaction_dispatch_slots.clear();
       dieID = (dieID + 1) % die_no_per_chip;
       return false;

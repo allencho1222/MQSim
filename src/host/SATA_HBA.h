@@ -9,7 +9,7 @@
 #include <set>
 #include <stdint.h>
 #include <queue>
-#include <unordered_map>
+#include <robin_hood.h>
 
 namespace Host_Components {
 #define SATA_SQ_FULL(Q)                                                        \
@@ -33,7 +33,7 @@ struct NCQ_Control_Structure // SATA native command queue
   uint16_t Completion_queue_size;
   uint64_t Completion_head_register_address_on_device;
   uint64_t Completion_queue_memory_base_address;
-  std::unordered_map<sim_time_type, Host_IO_Request *>
+  robin_hood::unordered_map<sim_time_type, Host_IO_Request *>
       queue; // Contains the I/O requests that are enqueued in the NCQ
 };
 

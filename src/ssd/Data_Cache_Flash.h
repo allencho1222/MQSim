@@ -7,7 +7,7 @@
 #include "SSD_Defs.h"
 #include <list>
 #include <queue>
-#include <unordered_map>
+#include <robin_hood.h>
 
 namespace SSD_Components {
 enum class Cache_Slot_Status {
@@ -70,7 +70,7 @@ public:
                    const page_status_type state_bitmap_of_write_sectors);
 
 private:
-  std::unordered_map<LPA_type, Data_Cache_Slot_Type *> slots;
+  robin_hood::unordered_map<LPA_type, Data_Cache_Slot_Type *> slots;
   std::list<std::pair<LPA_type, Data_Cache_Slot_Type *>> lru_list;
   unsigned int capacity_in_pages;
 };

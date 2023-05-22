@@ -7,6 +7,7 @@
 #include <set>
 #include <vector> 
 #include <cassert>
+#include <spdlog/spdlog.h>
 
 namespace SSD_Components {
 
@@ -40,6 +41,22 @@ GC_and_WL_Unit_Page_Level::~GC_and_WL_Unit_Page_Level() {
   auto gc_output = fmt::output_file("gc.txt");
   gc_output.print("read_bytes write_bytes\n");
   gc_output.print("{} {}\n", totalReads, totalWrites);
+}
+
+bool GC_and_WL_Unit_Page_Level::is_urgent_GC(uint32_t chID, uint32_t chipID) {
+  NVM::FlashMemory::Physical_Page_Address addr;
+  addr.ChannelID = chID;
+  addr.ChipID = chipID;
+  for (unsigned int die_id = 0; die_id < die_no_per_chip; die_id++) {
+    for (unsigned int plane_id = 0; plane_id < plane_no_per_die; plane_id++) {
+      addr.DieID = die_id;
+      addr.PlaneID = plane_id;
+      if (block_manager->Get_pool_size(addr) < block_pool_gc_hard_threshold)
+        return true;
+    }
+  }
+
+  return false;
 }
 
 bool GC_and_WL_Unit_Page_Level::GC_is_in_urgent_mode(
@@ -217,6 +234,16 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
                                // intervene while the GC is progressing
     // If there are ongoing requests targeting the candidate block, the gc
     // execution should be postponed
+    if (!isPre) {
+      SPDLOG_TRACE("GC_SELECT,{},{},{},{},{},{},{}",
+          Simulator->Time(),
+          gc_candidate_address.ChannelID,
+          gc_candidate_address.ChipID,
+          gc_candidate_address.PlaneID,
+          gc_candidate_address.BlockID,
+          block->Current_page_write_index - block->Invalid_page_count,
+          pbke->Ongoing_erase_operations.size());
+    }
     if (block_manager->Can_execute_gc_wl(gc_candidate_address)) {
       Stats::Total_gc_executions++;
       tsu->Prepare_for_transaction_submit();
@@ -230,12 +257,14 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
       gc_erase_tr->setLatency(eraseLatency.value());
       // If there are some valid pages in block, then prepare flash transactions
       // for page movement
+      uint32_t numValids = 0;
       if (block->Current_page_write_index - block->Invalid_page_count > 0) {
         NVM_Transaction_Flash_RD *gc_read = NULL;
         NVM_Transaction_Flash_WR *gc_write = NULL;
         for (flash_page_ID_type pageID = 0;
              pageID < block->Current_page_write_index; pageID++) {
           if (block_manager->Is_page_valid(block, pageID)) {
+            numValids++;
             Stats::Total_page_movements_for_gc++;
             gc_candidate_address.PageID = pageID;
             if (use_copyback) {
@@ -272,6 +301,7 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
           }
         }
       }
+      block_manager->addGCToken(gc_candidate_address, numValids);
       block->Erase_transaction = gc_erase_tr;
       tsu->Submit_transaction(gc_erase_tr);
 

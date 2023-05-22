@@ -9,6 +9,7 @@
 #include "NVM_PHY_ONFI_NVDDR2.h"
 #include <fmt/os.h>
 #include <list>
+#include <optional>
 
 namespace SSD_Components {
 enum class Flash_Scheduling_Type { OUT_OF_ORDER, PRIORITY_OUT_OF_ORDER, FLIN };
@@ -59,6 +60,7 @@ public:
   virtual void eraseTransaction(LPA_type lpa) = 0;
   virtual void eraseLock(LPA_type lpa) = 0;
 
+  std::vector<sim_time_type> readScheduledAt;
 protected:
   FTL *ftl;
   NVM_PHY_ONFI_NVDDR2 *_NVMController;
@@ -82,6 +84,8 @@ protected:
   std::list<NVM_Transaction_Flash *>
       transaction_dispatch_slots; // Used to submit transactions to the channel
                                   // controller
+  virtual bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip) = 0;
+  virtual bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual bool
   service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
@@ -89,6 +93,9 @@ protected:
   service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual bool
   service_shallow_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
+  std::optional<NVM::FlashMemory::Physical_Page_Address>
+  get_first_schedulable_addr(Flash_Transaction_Queue *q) const;
+  bool pop_and_front_transaction(Flash_Transaction_Queue* q, int planeID);
   bool issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
                              Flash_Transaction_Queue *sourceQueue2,
                              Transaction_Type transactionType,

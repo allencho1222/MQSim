@@ -4,6 +4,7 @@
 #include "IO_Flow_Base.h"
 #include "PCIe_Root_Complex.h"
 #include "SATA_HBA.h"
+#include <spdlog/spdlog.h>
 
 namespace Host_Components {
 // unsigned int InputStreamBase::lastId = 0;
@@ -239,6 +240,7 @@ void IO_Flow_Base::initStat() {
 
 void IO_Flow_Base::Start_simulation(bool isPreconditioning) {
   initStat();
+  isPre = isPreconditioning;
   if (!isPreconditioning) {
     next_logging_milestone = logging_period;
     if (enabled_logging) {
@@ -366,6 +368,13 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
     sim_time_type latency = Simulator->Time() - request->Enqueue_time;
     if (request->Type == Host_IO_Request_Type::READ) {
       readLatencies.push_back(latency);
+      // Time, lba_start, lba_count, latency
+      if (!isPre) {
+        SPDLOG_TRACE("DONE,{},{},{},{},{}",
+            Simulator->Time(), 
+            request->Start_LBA, request->LBA_count, request->Enqueue_time, 
+            latency);
+      }
     } else {
       writeLatencies.push_back(latency);
     }
@@ -451,6 +460,11 @@ void IO_Flow_Base::NVMe_consume_io_request(Completion_Queue_Entry *cqe) {
             new_req;
         NVME_UPDATE_SQ_TAIL(nvme_queue_pair);
       }
+      // SPDLOG_TRACE("ENQUEUE_TIME :: Time: {}, IS_READ: {}, "
+      //              "LBA: {}, COUNT: {}",
+      //     Simulator->Time(), 
+      //     new_req->Type == Host_IO_Request_Type::READ, 
+      //     new_req->Start_LBA, new_req->LBA_count);
       new_req->Enqueue_time = Simulator->Time();
       pcie_root_complex->Write_to_device(
           nvme_queue_pair.Submission_tail_register_address_on_device,
@@ -560,6 +574,11 @@ void IO_Flow_Base::Submit_io_request(Host_IO_Request *request) {
             request;
         NVME_UPDATE_SQ_TAIL(nvme_queue_pair);
       }
+      // SPDLOG_TRACE("ENQUEUE_TIME :: Time: {}, IS_READ: {}, "
+      //              "LBA: {}, COUNT: {}",
+      //     Simulator->Time(), 
+      //     request->Type == Host_IO_Request_Type::READ, 
+      //     request->Start_LBA, request->LBA_count);
       request->Enqueue_time = Simulator->Time();
       pcie_root_complex->Write_to_device(
           nvme_queue_pair.Submission_tail_register_address_on_device,

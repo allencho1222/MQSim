@@ -54,6 +54,8 @@ private:
   Flash_Transaction_Queue **MappingReadTRQueue;
   Flash_Transaction_Queue **MappingWriteTRQueue;
 
+  bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip) override {}
+  bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip) override {}
   bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   bool service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;

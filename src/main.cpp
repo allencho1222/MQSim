@@ -40,6 +40,7 @@ void read_workload_definitions(
 
 int main(int argc, char *argv[]) {
   spdlog::set_level(spdlog::level::trace);
+  spdlog::set_pattern("%v");
 
   po::options_description desc("Allowed options");
   desc.add_options()(
@@ -91,8 +92,7 @@ int main(int argc, char *argv[]) {
         static_cast<IO_Flow_Parameter_Set_Trace_Based *>(
             (execParams->Host_Configuration).IO_Flow_Definitions[0].get());
     // Run preconditioning only if the preconditionin trace file is provided.
-    for (const auto& preTraceFilePath : 
-        flow_param->Preconditioning_File_Paths) {
+    for (int i = 0; i < flow_param->Preconditioning_File_Paths.size(); ++i) {
       fmt::print("preconditioning start (num workloads: {})\n",
                  workloadDefFilePaths.size());
       auto startTime = std::chrono::high_resolution_clock::now();

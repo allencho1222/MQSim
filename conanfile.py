@@ -23,12 +23,14 @@ class MQSim(ConanFile):
         self.requires("spdlog/1.11.0")
         self.requires("boost/1.80.0")
         self.requires("yaml-cpp/0.7.0")
+        self.requires("robin-hood-hashing/3.11.5")
 
     def configure(self):
         self.options["fmt/*"].shared = False
         self.options["spdlog/*"].shared = False
         self.options["boost/*"].shared = False
-        self.options["yamlc-pp/*"].shared = False
+        self.options["yaml-cpp/*"].shared = False
+        self.options["robin-hood-hashing/*"].shared = False
 
     def layout(self):
         cmake_layout(self)

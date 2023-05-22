@@ -4,6 +4,7 @@
 #include "Stats.h"
 #include <cassert>
 #include "TSU_Base.h"
+#include <spdlog/spdlog.h>
 
 namespace SSD_Components {
 GC_and_WL_Unit_Base *GC_and_WL_Unit_Base::_my_instance;
@@ -70,6 +71,24 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
                                                 [transaction->Address.ChipID]
                                                 [transaction->Address.DieID]
                                                 [transaction->Address.PlaneID]);
+  auto t = (transaction->Type == Transaction_Type::READ) ?  "READ" :
+           (transaction->Type == Transaction_Type::WRITE) ? "WRITE" :
+           (transaction->Type == Transaction_Type::PROXY_ERASE) ? "SERASE" :
+           (transaction->Type == Transaction_Type::ADAPTIVE_ERASE) ? " AERASE" : "UNKNOWN";
+
+  const auto& src = transaction->Source;
+  auto s = (src == Transaction_Source_Type::USERIO) ? "USER_IO" :
+           (src == Transaction_Source_Type::MAPPING) ? "MAPPING" :
+           (src == Transaction_Source_Type::CACHE) ? "CACHE" :
+           (src == Transaction_Source_Type::GC_WL) ? "GC_WL" : "NONE";
+  const auto& addr = transaction->Address;
+  if (!_my_instance->isPre) {
+    // Time, Channel, Chip, Plane, Block, LPA, LBA, SEGMENTED, ENQUEUED,
+    SPDLOG_TRACE("IO,{},{},{},{},{},{},{},{},{},{},{},{}",
+        Simulator->Time(), addr.ChannelID, addr.ChipID, addr.PlaneID, addr.BlockID,
+        transaction->LPA, transaction->start_lba,
+        transaction->segmentedAt, transaction->enqueuedAt, transaction->finishedAt, t, s);
+  }
 
   switch (transaction->Source) {
   case Transaction_Source_Type::USERIO:
@@ -111,6 +130,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         assert(eraseLatency.has_value());
         gc_wl_erase_tr->setLatency(eraseLatency.value());
 
+        uint32_t numValids = 0;
         // If there are some valid pages in block, then prepare flash
         // transactions for page movement
         if (block->Current_page_write_index - block->Invalid_page_count > 0) {
@@ -122,6 +142,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
           for (flash_page_ID_type pageID = 0;
                pageID < block->Current_page_write_index; pageID++) {
             if (_my_instance->block_manager->Is_page_valid(block, pageID)) {
+              numValids++;
               Stats::Total_page_movements_for_gc++;
               gc_wl_candidate_address.PageID = pageID;
               if (_my_instance->use_copyback) {
@@ -162,9 +183,17 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             }
           }
         }
+        _my_instance->block_manager->addGCToken(gc_wl_candidate_address, numValids);
         block->Erase_transaction = gc_wl_erase_tr;
         _my_instance->tsu->Submit_transaction(gc_wl_erase_tr);
         _my_instance->tsu->Schedule();
+        // SPDLOG_TRACE("GC_SCHEULE :: Time: {}, Ch: {}, Chip: {}, Plane: {}, Block: {}, Valids: {}",
+        //     Simulator->Time(),
+        //     gc_wl_candidate_address.ChannelID,
+        //     gc_wl_candidate_address.ChipID,
+        //     gc_wl_candidate_address.PlaneID,
+        //     gc_wl_candidate_address.BlockID,
+        //     num);
       }
     }
 
@@ -306,6 +335,19 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     const auto &bm = _my_instance->block_manager;
     bm->finishEraseLoop(transaction->Address);
     assert(bm->numRemainingEraseLoops(transaction->Address) != 0);
+    // SPDLOG_TRACE("SHALLOW_ERASE :: Time: {}, Ch: {}, Chip: {} "
+    //              "Plane: {}, Block: {}, Remains: {}, "
+    //              "Latency: {}, "
+    //              "OngoingErase: {}, "
+    //              "Urgent: {}",
+    //     Simulator->Time(), transaction->Address.ChannelID,
+    //     transaction->Address.ChipID,
+    //     transaction->Address.PlaneID,
+    //     transaction->Address.BlockID,
+    //     bm->numRemainingEraseLoops(transaction->Address),
+    //     transaction->getLatency(),
+    //     pbke->Ongoing_erase_operations.size(),
+    //     _my_instance->is_urgent_GC(transaction->Address.ChannelID, transaction->Address.ChipID));
     if (_my_instance->true_lazy_erase && 
         bm->numRemainingEraseLoops(transaction->Address) > 1) {
       _my_instance->tsu->Prepare_for_transaction_submit();
@@ -336,6 +378,11 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
                               // program transactions
 
       if (_my_instance->Stop_servicing_writes(transaction->Address)) {
+        // SPDLOG_TRACE("NEED_GC :: Time: {}, Ch: {}, Chip: {}, Plane: {}, Block: {}",
+        //   Simulator->Time(), transaction->Address.ChannelID,
+        //   transaction->Address.ChipID,
+        //   transaction->Address.PlaneID,
+        //   transaction->Address.BlockID);
         _my_instance->Check_gc_required(pbke->Get_free_block_pool_size(),
                                         transaction->Address);
       }
@@ -344,6 +391,20 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     const auto &blockManager = _my_instance->block_manager;
     const auto &eraseAddr = transaction->Address;
     blockManager->finishEraseLoop(eraseAddr);
+    // SPDLOG_TRACE("ADAPTIVE_ERASE :: Time: {}, Ch: {}, "
+    //              "Chip: {}, Plane: {}, Block: {}, Remains: {}, "
+    //              "Latency: {}, "
+    //              "OngoingErase: {}, "
+    //              "Urgent: {}",
+    //     Simulator->Time(), transaction->Address.ChannelID,
+    //     transaction->Address.ChipID,
+    //     transaction->Address.PlaneID,
+    //     transaction->Address.BlockID,
+    //     blockManager->numRemainingEraseLoops(transaction->Address),
+    //     transaction->getLatency(),
+    //     pbke->Ongoing_erase_operations.size(),
+    //     _my_instance->is_urgent_GC(transaction->Address.ChannelID, transaction->Address.ChipID)
+    // );
     if (auto eraseLatency = blockManager->getNextEraseLatency(eraseAddr)) {
       assert(!_my_instance->true_lazy_erase);
       _my_instance->tsu->Prepare_for_transaction_submit();
@@ -368,6 +429,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
 }
 
 void GC_and_WL_Unit_Base::Start_simulation(bool isPreconditioning) {
+  isPre = isPreconditioning;
   if (!isPreconditioning) {
     auto &blockManager = _my_instance->block_manager;
     blockManager->resetEraseCount();
@@ -483,6 +545,17 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
   address_mapping_unit->Set_barrier_for_accessing_physical_block(
       wl_candidate_address); // Lock the block, so no user request can intervene
                              // while the GC is progressing
+  // Time, channel, chip, plane, block, valids, ongoing
+  if (!isPre) {
+    SPDLOG_TRACE("GC_SELECT,{},{},{},{},{},{},{}",
+        Simulator->Time(),
+        wl_candidate_address.ChannelID,
+        wl_candidate_address.ChipID,
+        wl_candidate_address.PlaneID,
+        wl_candidate_address.BlockID,
+        block->Current_page_write_index - block->Invalid_page_count,
+        pbke->Ongoing_erase_operations.size());
+  }
   if (block_manager->Can_execute_gc_wl(
           wl_candidate_address)) { // If there are ongoing requests targeting
                                    // the candidate block, the gc execution
@@ -497,6 +570,7 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
     auto eraseLatency = block_manager->getNextEraseLatency(wl_candidate_address);
     assert(eraseLatency.has_value());
     wl_erase_tr->setLatency(eraseLatency.value());
+    uint32_t numValids = 0;
     if (block->Current_page_write_index - block->Invalid_page_count >
         0) { // If there are some valid pages in block, then prepare flash
              // transactions for page movement
@@ -505,6 +579,7 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
       for (flash_page_ID_type pageID = 0;
            pageID < block->Current_page_write_index; pageID++) {
         if (block_manager->Is_page_valid(block, pageID)) {
+          numValids++;
           Stats::Total_page_movements_for_wl++;
           wl_candidate_address.PageID = pageID;
           if (use_copyback) {
@@ -540,6 +615,7 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
         }
       }
     }
+    block_manager->addGCToken(wl_candidate_address, numValids);
     block->Erase_transaction = wl_erase_tr;
     tsu->Submit_transaction(wl_erase_tr);
 

@@ -133,6 +133,13 @@ public:
 
   ~NVM_PHY_ONFI_NVDDR2();
 
+  std::vector<sim_time_type> readChannels;
+  std::vector<sim_time_type> readScheduledAt;
+  std::vector<sim_time_type> readEnqueuedAt;
+  std::vector<sim_time_type> eraseFinishedAt;
+  std::vector<sim_time_type> eraseScheduledAt;
+  std::vector<sim_time_type> eraseChannels;
+
 private:
   void transfer_read_data_from_chip(ChipBookKeepingEntry *chipBKE,
                                     DieBookKeepingEntry *dieBKE,

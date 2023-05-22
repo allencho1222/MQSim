@@ -4,6 +4,7 @@
 #include "../nvm_chip/flash_memory/FlashTypes.h"
 #include "../nvm_chip/flash_memory/Physical_Page_Address.h"
 #include "GC_and_WL_Unit_Base.h"
+#include <cmath>
 #include <cstdint>
 #include <list>
 #include <map>
@@ -28,6 +29,13 @@ enum class Block_Service_Status {
   GC_UWAIT,
   GC_USER_UWAIT
 };
+
+typedef struct Token {
+  uint32_t numCopies;
+  double curToken;
+  double maxToken;
+  double tokenIncrement;
+} Token;
 
 class Block_Pool_Slot_Type {
 public:
@@ -63,6 +71,9 @@ public:
 
 class PlaneBookKeepingType {
 public:
+  Token rwToken;
+  std::queue<Token> gcTokens;
+  uint32_t numTotalCopyingPages;
   unsigned int Total_pages_count;
   unsigned int Free_pages_count;
   unsigned int Valid_pages_count;
@@ -113,7 +124,9 @@ public:
                            unsigned int block_no_per_plane,
                            unsigned int page_no_per_block,
                            const std::string blockModelFile,
-                           unsigned int initialEraseCount);
+                           unsigned int initialEraseCount,
+                           unsigned int maxReadToken,
+                           unsigned int maxWriteToken);
   virtual ~Flash_Block_Manager_Base();
   virtual void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type streamID,
@@ -192,6 +205,28 @@ public:
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
   bool isLatencyInitiated(
       const NVM::FlashMemory::Physical_Page_Address &addr) const;
+  // Add token whenever GC happens
+  void addGCToken(
+      const NVM::FlashMemory::Physical_Page_Address &addr,
+      uint32_t numValids);
+  // Use token whenever user write happens
+  void useToken(
+      const NVM::FlashMemory::Physical_Page_Address &addr,
+      bool isGC);
+  // Reset token whenever GC write happens
+  void resetToken(
+      const NVM::FlashMemory::Physical_Page_Address &addr,
+      bool isGC);
+  bool isTokenAvailable(
+      const NVM::FlashMemory::Physical_Page_Address &addr,
+      bool isGC) const;
+  bool isPlaneDoingGC(
+      const NVM::FlashMemory::Physical_Page_Address &addr) const;
+
+  unsigned int pages_no_per_block;
+  void printToken(
+      const NVM::FlashMemory::Physical_Page_Address &addr,
+      bool rw, bool gc) const;
 protected:
   PlaneBookKeepingType ***
       *plane_manager; // Keeps track of plane block usage information
@@ -203,7 +238,6 @@ protected:
   unsigned int die_no_per_chip;
   unsigned int plane_no_per_die;
   unsigned int block_no_per_plane;
-  unsigned int pages_no_per_block;
   void program_transaction_issued(
       const NVM::FlashMemory::Physical_Page_Address
           &page_address); // Updates the block bookkeeping record

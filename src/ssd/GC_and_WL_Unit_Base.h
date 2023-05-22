@@ -63,6 +63,7 @@ public:
   void Validate_simulation_config();
   void Execute_simulator_event(MQSimEngine::Sim_Event *);
 
+  virtual bool is_urgent_GC(uint32_t chID, uint32_t chipID) = 0;
   virtual bool GC_is_in_urgent_mode(const NVM::FlashMemory::Flash_Chip *) = 0;
   virtual void Check_gc_required(
       const unsigned int BlockPoolSize,
@@ -142,6 +143,7 @@ protected:
   uint32_t totalWrites = 0;
 
 public:
+  bool isPre = false;
   std::optional<unsigned int> requireRetry(const EraseStatus& blockStat);
 };
 } // namespace SSD_Components

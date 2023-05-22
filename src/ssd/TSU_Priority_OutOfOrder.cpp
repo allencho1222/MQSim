@@ -2,6 +2,9 @@
 #include "FTL.h"
 #include "GC_and_WL_Unit_Base.h"
 #include "Host_Interface_Defs.h"
+#include "NVM_Transaction.h"
+#include "Address_Mapping_Unit_Base.h"
+#include "Flash_Block_Manager_Base.h"
 
 namespace SSD_Components {
 
@@ -416,6 +419,7 @@ void TSU_Priority_OutOfOrder::Schedule() {
 
         break;
       case Transaction_Source_Type::MAPPING:
+        assert(false);
         MappingReadTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
             .push_back((*it));
         break;
@@ -443,6 +447,7 @@ void TSU_Priority_OutOfOrder::Schedule() {
         }
         break;
       case Transaction_Source_Type::MAPPING:
+        assert(false);
         MappingWriteTRQueue[(*it)->Address.ChannelID][(*it)->Address.ChipID]
             .push_back((*it));
         break;
@@ -478,8 +483,10 @@ void TSU_Priority_OutOfOrder::Schedule() {
             channelID, Round_robin_turn_of_channel[channelID]);
         // The TSU does not check if the chip is idle or not since it is
         // possible to suspend a busy chip and issue a new command
-        if (!service_read_transaction(chip)) {
-          if (!service_write_transaction(chip)) {
+        // if (!service_read_transaction(chip)) {
+        if (!service_aero_read(chip)) {
+          // if (!service_write_transaction(chip)) {
+          if (!service_aero_write(chip)) {
             if (!service_full_erase_transaction(chip)) {
               service_shallow_erase_transaction(chip);
             }
@@ -496,6 +503,200 @@ void TSU_Priority_OutOfOrder::Schedule() {
     }
   }
 }
+
+
+
+bool TSU_Priority_OutOfOrder::service_aero_read(
+    NVM::FlashMemory::Flash_Chip *chip) {
+  auto trType = Transaction_Type::READ;
+  Flash_Transaction_Queue *sourceQueue1 = NULL, *sourceQueue2 = NULL;
+  // If GC is currently executed in the preemptive mode, then user IO
+  // transaction queues are checked first
+  sourceQueue1 = get_next_read_service_queue(chip);
+  if (sourceQueue1 != NULL) {
+    if (GCReadTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+      sourceQueue2 = &GCReadTRQueue[chip->ChannelID][chip->ChipID];
+    }
+    auto userTr = *(sourceQueue1->begin());
+    const auto& addr = userTr->Address;
+    auto userPlaneID = addr.PlaneID;
+    const auto& amu = ftl->Address_Mapping_Unit;
+    const auto& bm = ftl->BlockManager;
+    if (amu->isPlaneBusy(userTr->Address)) {
+      if (!bm->isTokenAvailable(addr, false)) {
+        return false;
+      }
+    }
+  } else {
+    return false;
+  }
+
+  bool suspensionRequired = false;
+  ChipStatus cs = _NVMController->GetChipStatus(chip);
+  switch (cs) {
+  case ChipStatus::IDLE:
+    break;
+  case ChipStatus::WRITING:
+    if (!programSuspensionEnabled ||
+        _NVMController->HasSuspendedCommand(chip)) {
+      return false;
+    }
+    if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
+        writeReasonableSuspensionTimeForRead) {
+      return false;
+    }
+    suspensionRequired = true;
+  case ChipStatus::ERASING:
+    if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
+      return false;
+    }
+    if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
+        eraseReasonableSuspensionTimeForRead) {
+      return false;
+    }
+    suspensionRequired = true;
+  default:
+    return false;
+  }
+  assert(!suspensionRequired);
+
+  return issue_command_to_chip(sourceQueue1, sourceQueue2,
+                               trType, suspensionRequired);
+}
+
+bool TSU_Priority_OutOfOrder::service_aero_write(
+    NVM::FlashMemory::Flash_Chip *chip) {
+  auto trType = Transaction_Type::WRITE;
+  Flash_Transaction_Queue *sourceQueue1 = NULL, *sourceQueue2 = NULL;
+  const auto& bm = ftl->BlockManager;
+  sourceQueue1 = get_next_write_service_queue(chip);
+  if (sourceQueue1 != NULL) {
+    if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+      sourceQueue2 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
+    }
+    const auto& addr = (*(sourceQueue1->begin()))->Address;
+      //const auto& addr = firstAddr.value();
+    auto userPlaneID = addr.PlaneID;
+    // Check whether first schedulable transaction is heading to plane where GC
+    // is activated.
+    if (bm->isPlaneDoingGC(addr)) {
+      if (!bm->isTokenAvailable(addr, true)) {
+        if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+          sourceQueue2 = sourceQueue1;
+          // prioritize gc write queue
+          sourceQueue1 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
+          // Move GC transaction heading to `userPlaneID` into the front of the
+          // queue.
+          if (!pop_and_front_transaction(sourceQueue1, userPlaneID)) {
+            // service GC read transaction
+            sourceQueue1 = &GCReadTRQueue[chip->ChannelID][chip->ChipID];
+            // Move GC transaction heading to `userPlaneID` into the front of the
+            // queue.
+            if (!pop_and_front_transaction(sourceQueue1, userPlaneID)) {
+              sourceQueue1 = get_next_write_service_queue(chip);
+              if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+                sourceQueue2 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
+              }
+            } else {
+              trType = Transaction_Type::READ;
+              sourceQueue2 = get_next_read_service_queue(chip);
+            }
+          }
+        } else {
+          // Both gc R/W queue can be empty because the write transaction will be
+          // inserted after the read transaction finishes its job.
+          if (GCReadTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+            // service GC read transaction
+            // Move GC transaction heading to `userPlaneID` into the front of the
+            // queue.
+            sourceQueue1 = &GCReadTRQueue[chip->ChannelID][chip->ChipID];
+            if (!pop_and_front_transaction(sourceQueue1, userPlaneID)) {
+              sourceQueue1 = get_next_write_service_queue(chip);
+              if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+                sourceQueue2 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
+              }
+            } else {
+              trType = Transaction_Type::READ;
+              sourceQueue2 = get_next_read_service_queue(chip);
+            }
+          } else {
+            sourceQueue1 = get_next_write_service_queue(chip);
+            sourceQueue2 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
+          }
+        }
+      }
+    }
+    // } else {
+    //   if (sourceQueue2 != NULL) {
+    //     sourceQueue1 = sourceQueue2;
+    //     sourceQueue2 = get_next_write_service_queue(chip);
+    //   } else {
+    //     if (GCReadTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+    //       sourceQueue1 = &GCReadTRQueue[chip->ChannelID][chip->ChipID];
+    //       sourceQueue2 = get_next_read_service_queue(chip);
+    //     }
+    //   }
+    // }
+  } else if (GCWriteTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+    sourceQueue1 = &GCWriteTRQueue[chip->ChannelID][chip->ChipID];
+  } else {
+    if (GCReadTRQueue[chip->ChannelID][chip->ChipID].size() > 0) {
+      trType = Transaction_Type::READ;
+      sourceQueue1 = &GCReadTRQueue[chip->ChannelID][chip->ChipID];
+      sourceQueue2 = get_next_read_service_queue(chip);
+    } else {
+      return false;
+    }
+  }
+  bool suspensionRequired = false;
+  ChipStatus cs = _NVMController->GetChipStatus(chip);
+  if (trType == Transaction_Type::READ) {
+    switch (cs) {
+    case ChipStatus::IDLE:
+      break;
+    case ChipStatus::WRITING:
+      if (!programSuspensionEnabled ||
+          _NVMController->HasSuspendedCommand(chip)) {
+        return false;
+      }
+      if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
+          writeReasonableSuspensionTimeForRead) {
+        return false;
+      }
+      suspensionRequired = true;
+    case ChipStatus::ERASING:
+      if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
+        return false;
+      }
+      if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
+          eraseReasonableSuspensionTimeForRead) {
+        return false;
+      }
+      suspensionRequired = true;
+    default:
+      return false;
+    }
+  } else {
+    switch (cs) {
+    case ChipStatus::IDLE:
+      break;
+    case ChipStatus::ERASING:
+      if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip))
+        return false;
+      if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
+          eraseReasonableSuspensionTimeForWrite)
+        return false;
+      suspensionRequired = true;
+    default:
+      return false;
+    }
+  }
+  assert(!suspensionRequired);
+
+  return issue_command_to_chip(sourceQueue1, sourceQueue2,
+                               trType, suspensionRequired);
+}
+
 
 Flash_Transaction_Queue *TSU_Priority_OutOfOrder::get_next_read_service_queue(
     NVM::FlashMemory::Flash_Chip *chip) {

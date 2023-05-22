@@ -254,6 +254,8 @@ void Input_Stream_Manager_NVMe::segment_user_request(
           transaction_size * SECTOR_SIZE_IN_BYTE, lpa, NO_PPA, user_request,
           user_request->Priority_class, 0, access_status_bitmap,
           CurrentTimeStamp);
+      transaction->start_lba = user_request->Start_LBA;
+      transaction->segmentedAt = Simulator->Time();
       user_request->Transaction_list.push_back(transaction);
       input_streams[user_request->Stream_id]
           ->STAT_number_of_read_transactions++;
@@ -263,6 +265,8 @@ void Input_Stream_Manager_NVMe::segment_user_request(
           transaction_size * SECTOR_SIZE_IN_BYTE, lpa, user_request,
           user_request->Priority_class, 0, access_status_bitmap,
           CurrentTimeStamp);
+      transaction->start_lba = user_request->Start_LBA;
+      transaction->segmentedAt = Simulator->Time();
       user_request->Transaction_list.push_back(transaction);
       input_streams[user_request->Stream_id]
           ->STAT_number_of_write_transactions++;
@@ -411,6 +415,7 @@ void Request_Fetch_Unit_NVMe::Process_pcie_read_message(
 }
 
 void Request_Fetch_Unit_NVMe::Fetch_next_request(stream_id_type stream_id) {
+  // READ request
   DMA_Req_Item *dma_req_item = new DMA_Req_Item;
   dma_req_item->Type = DMA_Req_Type::REQUEST_INFO;
   dma_req_item->object = (void *)(intptr_t)stream_id;

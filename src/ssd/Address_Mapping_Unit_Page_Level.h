@@ -10,7 +10,7 @@
 #include <map>
 #include <queue>
 #include <set>
-#include <unordered_set>
+#include <robin_hood.h>
 
 namespace SSD_Components {
 #define MAKE_TABLE_INDEX(LPN, STREAM)
@@ -66,7 +66,7 @@ public:
   void Make_clean(const stream_id_type streamID, const LPA_type lpa);
 
 private:
-  std::unordered_map<LPA_type, CMTSlotType *> addressMap;
+  robin_hood::unordered_map<LPA_type, CMTSlotType *> addressMap;
   std::list<std::pair<LPA_type, CMTSlotType *>> lruList;
   unsigned int capacity;
 };
@@ -218,6 +218,7 @@ public:
   void Remove_barrier_for_accessing_lpa(stream_id_type stream_id, LPA_type lpa);
   void Remove_barrier_for_accessing_mvpn(stream_id_type stream_id,
                                          MVPN_type mpvn);
+  bool isPlaneBusy(const NVM::FlashMemory::Physical_Page_Address plane_address) const;
   void Start_servicing_writes_for_overfull_plane(
       const NVM::FlashMemory::Physical_Page_Address plane_address);
 
@@ -228,8 +229,8 @@ public:
   void setOngoing(stream_id_type stream_id, LPA_type lpa);
   void process_barrier_for_read(stream_id_type stream_id, LPA_type lpa);
 private:
-  std::vector<std::unordered_set<LPA_type>> isOngoing;
-  std::vector<std::unordered_set<LPA_type>> isDone;
+  std::vector<robin_hood::unordered_set<LPA_type>> isOngoing;
+  std::vector<robin_hood::unordered_set<LPA_type>> isDone;
   static Address_Mapping_Unit_Page_Level *_my_instance;
   unsigned int cmt_capacity;
   AddressMappingDomain **domains;
@@ -278,6 +279,7 @@ private:
   bool is_lpa_locked_for_gc(stream_id_type stream_id, LPA_type lpa);
   bool is_mvpn_locked_for_gc(stream_id_type stream_id, MVPN_type mvpn);
   bool isPageWrittenByPreconditioning;
+  bool isPre = false;
 };
 
 } // namespace SSD_Components

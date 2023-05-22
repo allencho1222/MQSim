@@ -430,6 +430,7 @@ void Data_Cache_Manager_Flash_Advanced::write_to_destage_buffer(
     // Transactions inserted in Transaction_list are not used.
     if (dram_write_size_in_sectors == 0 &&
         is_user_request_finished(user_request)) {
+      std::cout << "is correct?" << std::endl;
       broadcast_user_request_serviced_signal(user_request);
     }
   }

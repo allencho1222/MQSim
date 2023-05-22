@@ -1,10 +1,12 @@
 #include "Flash_Block_Manager.h"
+#include "Flash_Block_Manager_Base.h"
 #include <cassert>
 #include <yaml-cpp/yaml.h>
 #include <map>
 #include <numeric>
 #include <random>
 #include <algorithm>
+#include <spdlog/spdlog.h>
 
 namespace SSD_Components {
 unsigned int Block_Pool_Slot_Type::Page_vector_size = 0;
@@ -15,7 +17,8 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     unsigned int chip_no_per_channel, unsigned int die_no_per_chip,
     unsigned int plane_no_per_die, unsigned int block_no_per_plane,
     unsigned int page_no_per_block, const std::string blockModelFile,
-    unsigned int initialEraseCount)
+    unsigned int initialEraseCount,
+    unsigned int maxReadToken, unsigned int maxWriteToken)
     : gc_and_wl_unit(gc_and_wl_unit),
       max_allowed_block_erase_count(max_allowed_block_erase_count),
       total_concurrent_streams_no(total_concurrent_streams_no),
@@ -90,6 +93,9 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
             new PlaneBookKeepingType[plane_no_per_die];
         // Initialize plane book keeping data structure
         for (unsigned int planeID = 0; planeID < plane_no_per_die; planeID++) {
+          plane_manager[channelID][chipID][dieID][planeID].rwToken = 
+              {0, (double)maxReadToken, (double)maxReadToken, (double)maxReadToken};
+          plane_manager[channelID][chipID][dieID][planeID].numTotalCopyingPages = 0;
           plane_manager[channelID][chipID][dieID][planeID].Total_pages_count =
               block_no_per_plane * pages_no_per_block;
           plane_manager[channelID][chipID][dieID][planeID].Free_pages_count =
@@ -551,4 +557,100 @@ int Flash_Block_Manager_Base::numRemainingEraseLoops(
   return tempLoopCount - block.nextEraseLoopCount;
 }
 
+void Flash_Block_Manager_Base::addGCToken(
+    const NVM::FlashMemory::Physical_Page_Address& addr,
+    uint32_t numValids) {
+  if (numValids > 0) {
+    auto plane =
+        &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+    plane->numTotalCopyingPages += numValids;
+    uint32_t numInvalids = pages_no_per_block - numValids;
+    double tokenIncrement = static_cast<double>(numInvalids) / numValids;
+    double maxToken = std::max(tokenIncrement, 1.0);
+    Token gcToken = {numValids, tokenIncrement, maxToken, tokenIncrement};
+    plane->gcTokens.push(gcToken);
+  }
+}
+
+bool Flash_Block_Manager_Base::isTokenAvailable(
+    const NVM::FlashMemory::Physical_Page_Address& addr,
+    bool isGC) const {
+  const auto plane =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  if (isGC) {
+    assert(!plane->gcTokens.empty());
+    const auto& gcToken = plane->gcTokens.front();
+    return gcToken.curToken > 1.0;
+  } else {
+    return plane->rwToken.curToken > 1.0;
+  }
+}
+
+void Flash_Block_Manager_Base::useToken(
+    const NVM::FlashMemory::Physical_Page_Address& addr,
+    bool isGC) {
+  auto plane =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  if (isGC) {
+    assert(!plane->gcTokens.empty());
+    auto& gcToken = plane->gcTokens.front();
+    assert(gcToken.curToken > 0);
+    assert(gcToken.numCopies > 0);
+    gcToken.curToken -= 1.0;
+  } else {
+    plane->rwToken.curToken -= 1.0;
+  }
+}
+
+void Flash_Block_Manager_Base::resetToken(
+    const NVM::FlashMemory::Physical_Page_Address& addr,
+    bool isGC) {
+  auto plane =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  if (isGC) {
+    assert(!plane->gcTokens.empty());
+    auto& gcToken = plane->gcTokens.front();
+    //assert(gcToken.curToken == 0);
+    gcToken.curToken = std::min(
+      gcToken.curToken + gcToken.tokenIncrement, gcToken.maxToken);
+
+    gcToken.numCopies -= 1;
+    if (gcToken.numCopies == 0) {
+      plane->gcTokens.pop();
+    }
+    assert(plane->numTotalCopyingPages > 0);
+    plane->numTotalCopyingPages -= 1;
+    if (plane->numTotalCopyingPages == 0) {
+      assert(plane->gcTokens.empty());
+    }
+  } else {
+    auto& rwToken = plane->rwToken;
+    rwToken.curToken = std::min(
+      rwToken.curToken + rwToken.tokenIncrement, rwToken.maxToken);
+  }
+}
+
+bool Flash_Block_Manager_Base::isPlaneDoingGC(
+    const NVM::FlashMemory::Physical_Page_Address& addr) const {
+  const auto plane =
+      &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+  return plane->numTotalCopyingPages > 0;
+}
+
+void Flash_Block_Manager_Base::printToken(
+    const NVM::FlashMemory::Physical_Page_Address& addr,
+    bool rw, bool gc) const {
+  if (!gc_and_wl_unit->isPre) {
+    const auto plane =
+        &plane_manager[addr.ChannelID][addr.ChipID][addr.DieID][addr.PlaneID];
+    if (rw) {
+      double token = plane->rwToken.curToken;
+      SPDLOG_TRACE("TOKEN,{},{},{},{}", addr.ChannelID, addr.ChipID, addr.PlaneID, token);
+    }
+    if (gc) {
+      double token = plane->gcTokens.empty() ? -1 : plane->gcTokens.front().curToken;
+      SPDLOG_TRACE("TOKEN,{},{},{},{}", addr.ChannelID, addr.ChipID, addr.PlaneID, token);
+    }
+  }
+}
 } // namespace SSD_Components

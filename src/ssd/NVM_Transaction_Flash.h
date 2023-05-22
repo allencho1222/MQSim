@@ -55,9 +55,11 @@ public:
                                     // scheduling
   bool FLIN_Barrier; // Especially used in queue reordering in FLIN scheduler
                      //
-  sim_time_type enqueuedAt;
-  sim_time_type scheduledAt;
-  sim_time_type finishedAt;
+  sim_time_type enqueuedAt = 0;
+  sim_time_type startedAt = 0;
+  sim_time_type scheduledAt = 0;
+  sim_time_type finishedAt = 0;
+  sim_time_type segmentedAt = 0;
   std::vector<NVM_Transaction_Flash*> followingTransactions;
 private:
   sim_time_type latency;

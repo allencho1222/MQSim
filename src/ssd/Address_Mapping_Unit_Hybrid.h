@@ -56,6 +56,7 @@ public:
   void Remove_barrier_for_accessing_lpa(stream_id_type stream_id, LPA_type lpa);
   void Remove_barrier_for_accessing_mvpn(stream_id_type stream_id,
                                          MVPN_type mpvn);
+  bool isPlaneBusy(const NVM::FlashMemory::Physical_Page_Address plane_address) const;
   void Start_servicing_writes_for_overfull_plane(
       const NVM::FlashMemory::Physical_Page_Address plane_address);
 

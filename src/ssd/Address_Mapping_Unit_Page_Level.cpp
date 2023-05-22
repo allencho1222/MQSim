@@ -8,6 +8,7 @@
 #include "Address_Mapping_Unit_Page_Level.h"
 #include "Data_Cache_Manager_Base.h"
 #include "Stats.h"
+#include <spdlog/spdlog.h>
 
 namespace SSD_Components {
 Cached_Mapping_Table::Cached_Mapping_Table(unsigned int capacity)
@@ -336,8 +337,8 @@ Address_Mapping_Unit_Page_Level::Address_Mapping_Unit_Page_Level(
   _my_instance = this;
   domains = new AddressMappingDomain *[no_of_input_streams];
   for (int i = 0; i < no_of_input_streams; ++i) {
-    isOngoing.push_back(std::unordered_set<LPA_type>());
-    isDone.push_back(std::unordered_set<LPA_type>());
+    isOngoing.push_back(robin_hood::unordered_set<LPA_type>());
+    isDone.push_back(robin_hood::unordered_set<LPA_type>());
   }
 
   Write_transactions_for_overfull_planes =
@@ -456,6 +457,7 @@ void Address_Mapping_Unit_Page_Level::Setup_triggers() {
 }
 
 void Address_Mapping_Unit_Page_Level::Start_simulation(bool isPreconditioning) {
+  isPre = isPreconditioning;
   if (isPreconditioning) {
     isPageWrittenByPreconditioning = true;
   }
@@ -551,12 +553,8 @@ void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
     }
   }
 
-  // if (transactionList.size() > 0) {
   ftl->TSU->Prepare_for_transaction_submit();
   for (auto it = std::begin(copied); it != std::end(copied); ++it) {
-  // for (std::list<NVM_Transaction *>::const_iterator it =
-  //          transactionList.begin();
-  //      it != transactionList.end(); it++) {
     if (((NVM_Transaction_Flash *)(*it))->Physical_address_determined) {
       ftl->TSU->Submit_transaction(static_cast<NVM_Transaction_Flash *>(*it));
       if (((NVM_Transaction_Flash *)(*it))->Type == Transaction_Type::WRITE) {
@@ -582,9 +580,7 @@ void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
       }
     }
   }
-
   ftl->TSU->Schedule();
-  // }
 }
 
 bool Address_Mapping_Unit_Page_Level::query_cmt(
@@ -1735,6 +1731,12 @@ void Address_Mapping_Unit_Page_Level::allocate_page_in_plane_for_user_write(
       NVM::FlashMemory::Physical_Page_Address addr;
       Convert_ppa_to_address(old_ppa, addr);
       block_manager->Invalidate_page_in_block(transaction->Stream_id, addr);
+      // Time, Channel, Chip, Plane, Block, LPA, LBA, SEGMENTED
+      if (!isPre) {
+        SPDLOG_TRACE("INVALIDATE0,{},{},{},{},{},{},{},{}",
+            Simulator->Time(), addr.ChannelID, addr.ChipID, addr.PlaneID, addr.BlockID,
+            transaction->LPA, transaction->start_lba, transaction->segmentedAt);
+      }
       page_status_type page_status_in_cmt = domain->Get_page_status(
           ideal_mapping_table, transaction->Stream_id, transaction->LPA);
       if (page_status_in_cmt != transaction->write_sectors_bitmap)
@@ -1750,6 +1752,12 @@ void Address_Mapping_Unit_Page_Level::allocate_page_in_plane_for_user_write(
         NVM::FlashMemory::Physical_Page_Address addr;
         Convert_ppa_to_address(old_ppa, addr);
         block_manager->Invalidate_page_in_block(transaction->Stream_id, addr);
+        // Time, Channel, Chip, Plane, Block, LPA, LBA, SEGMENTED
+        if (!isPre) {
+          SPDLOG_TRACE("INVALIDATE1,{},{},{},{},{},{},{},{}",
+              Simulator->Time(), addr.ChannelID, addr.ChipID, addr.PlaneID, addr.BlockID,
+              transaction->LPA, transaction->start_lba, transaction->segmentedAt);
+        }
       } else {
         page_status_type read_pages_bitmap =
             status_intersection ^ prev_page_status;
@@ -1768,6 +1776,12 @@ void Address_Mapping_Unit_Page_Level::allocate_page_in_plane_for_user_write(
                             // determined
         block_manager->Invalidate_page_in_block(transaction->Stream_id,
                                                 update_read_tr->Address);
+        // Time, Channel, Chip, Plane, Block, LPA, LBA, SEGMENTED
+        if (!isPre) {
+          SPDLOG_TRACE("INVALIDATE2,{},{},{},{},{},{},{},{}",
+              Simulator->Time(), update_read_tr->Address.ChannelID, update_read_tr->Address.ChipID, update_read_tr->Address.PlaneID, update_read_tr->Address.BlockID,
+              transaction->LPA, transaction->start_lba, transaction->segmentedAt);
+        }
         transaction->RelatedRead = update_read_tr;
       }
     }
@@ -3013,6 +3027,16 @@ void Address_Mapping_Unit_Page_Level::mange_unsuccessful_translation(
       [transaction->Address.ChannelID][transaction->Address.ChipID]
       [transaction->Address.DieID][transaction->Address.PlaneID]
           .insert((NVM_Transaction_Flash_WR *)transaction);
+}
+
+bool Address_Mapping_Unit_Page_Level::isPlaneBusy(
+    const NVM::FlashMemory::Physical_Page_Address plane_address) const {
+  std::set<NVM_Transaction_Flash_WR *> &waiting_write_list =
+      Write_transactions_for_overfull_planes[plane_address.ChannelID]
+                                            [plane_address.ChipID]
+                                            [plane_address.DieID]
+                                            [plane_address.PlaneID];
+  return !waiting_write_list.empty();
 }
 
 // FIXME (sungjun): Write transaction from data cache also comes here.

@@ -194,6 +194,7 @@ public:
           plane_address) = 0; // This function is invoked when GC execution is
                               // finished on a plane and the plane has enough
                               // number of free pages to service writes
+  virtual bool isPlaneBusy(const NVM::FlashMemory::Physical_Page_Address) const = 0;
   virtual bool is_lpa_done_for_gc(stream_id_type stream_id, LPA_type lpa) = 0;
   virtual bool is_lpa_ongoing_for_gc(stream_id_type stream_id, LPA_type lpa) = 0;
 
