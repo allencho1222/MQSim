@@ -40,7 +40,6 @@ file_path: /path/to/trace/file
 # A list of preconditioning file path.
 preconditioning_file_path:
   - /path/to/preconditioning/file/path
-  - /path/to/per_workload/preconditioning/file/path
 # the percentage of requests in the input trace file that should be executed. 
 # Range = {all integer values in the range 1 to 100}.
 percentage_to_be_executed: 100

@@ -41,6 +41,6 @@ category:
   11:
     ratio: 3
     latency: 9500000
-  10:
+  12:
     ratio: 2
     latency: 10500000
