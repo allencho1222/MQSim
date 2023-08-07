@@ -106,9 +106,11 @@ protected:
   static void handle_chip_idle_signal(NVM::FlashMemory::Flash_Chip *chip);
   int opened_scheduling_reqs;
   void process_chip_requests(NVM::FlashMemory::Flash_Chip *chip) {
-    if (!_my_instance->service_read_transaction(chip)) {
-      if (!_my_instance->service_full_erase_transaction(chip)) {
-        if (!_my_instance->service_write_transaction(chip)) {
+    // if (!_my_instance->service_read_transaction(chip)) {
+      // if (!_my_instance->service_write_transaction(chip)) {
+    if (!_my_instance->service_aero_read(chip)) {
+      if (!_my_instance->service_aero_write(chip)) {
+        if (!_my_instance->service_full_erase_transaction(chip)) {
           _my_instance->service_shallow_erase_transaction(chip);
         }
       }
