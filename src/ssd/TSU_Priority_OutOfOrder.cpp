@@ -560,9 +560,9 @@ bool TSU_Priority_OutOfOrder::service_aero_read(
     if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
       return false;
     }
-      if (fromGC) {
-        return false;
-      }
+    if (fromGC) {
+      return false;
+    }
     if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
         eraseReasonableSuspensionTimeForRead) {
       return false;
@@ -680,6 +680,9 @@ bool TSU_Priority_OutOfOrder::service_aero_write(
       break;
     case ChipStatus::ERASING:
       if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
+        return false;
+      }
+      if (fromGC) {
         return false;
       }
       if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <

@@ -915,23 +915,13 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
   case CMD_ERASE_BLOCK_MULTIPLANE: {
     DEBUG("Chip " << chip->ChannelID << ", " << chip->ChipID
                   << ": finished erase command")
-    for (std::list<NVM_Transaction_Flash *>::iterator it =
-             dieBKE->ActiveTransactions.begin();
-         it != dieBKE->ActiveTransactions.end(); it++)
-      _my_instance->broadcastTransactionServicedSignal(*it);
-    dieBKE->ActiveTransactions.clear();
-    dieBKE->ClearCommand();
-
-    // std::list<NVM_Transaction_Flash *> tempActiveTransactions(dieBKE->ActiveTransactions);
-    // dieBKE->ActiveTransactions.clear();
-    // dieBKE->ClearCommand();
-    // dieBKE->ActiveTransactions.insert(dieBKE->ActiveTransactions.begin(), tempActiveTransactions.begin(), tempActiveTransactions.end());
-    // std::cout << "dieBKE->ActiveTransactions.size(): " << dieBKE->ActiveTransactions.size() << std::endl;
-    // assert(dieBKE->ActiveTransactions.size());
+                  
     // for (std::list<NVM_Transaction_Flash *>::iterator it =
     //          dieBKE->ActiveTransactions.begin();
     //      it != dieBKE->ActiveTransactions.end(); it++)
     //   _my_instance->broadcastTransactionServicedSignal(*it);
+    // dieBKE->ActiveTransactions.clear();
+    // dieBKE->ClearCommand();
 
     chipBKE->No_of_active_dies--;
     if (chipBKE->No_of_active_dies == 0 && chipBKE->WaitingReadTXCount == 0)
@@ -941,6 +931,15 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
     if (chipBKE->Status == ChipStatus::IDLE)
       if (chipBKE->HasSuspend)
         _my_instance->send_resume_command_to_chip(chip, chipBKE);
+
+    std::list<NVM_Transaction_Flash *> temp_transactions(dieBKE->ActiveTransactions);
+    dieBKE->ActiveTransactions.clear();
+    dieBKE->ClearCommand();
+
+    for (std::list<NVM_Transaction_Flash *>::iterator it =
+            temp_transactions.begin();
+         it != temp_transactions.end(); it++)
+      _my_instance->broadcastTransactionServicedSignal(*it);
     break;
   }
   default:
