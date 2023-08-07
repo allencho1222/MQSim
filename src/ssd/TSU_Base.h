@@ -53,7 +53,7 @@ public:
   /* Shedules the transactions currently stored in inputTransactionSlots. The
    * transactions could be mixes of reads, writes, and erases.
    */
-  virtual void Schedule() = 0;
+  virtual void Schedule(bool fromGC=false) = 0;
   // virtual void Report_results_in_XML(std::string name_prefix,
   //                                    Utils::XmlWriter &xmlwriter);
   virtual void reportResults(fmt::ostream& output);
@@ -84,8 +84,8 @@ protected:
   std::list<NVM_Transaction_Flash *>
       transaction_dispatch_slots; // Used to submit transactions to the channel
                                   // controller
-  virtual bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip) = 0;
-  virtual bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip) = 0;
+  virtual bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) = 0;
+  virtual bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) = 0;
   virtual bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual bool
   service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;

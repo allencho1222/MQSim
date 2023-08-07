@@ -46,6 +46,7 @@ public:
                         // execution! The GC unit may need to know the metadata
                         // of a page to decide if a page is valid or invalid.
   virtual bool HasSuspendedCommand(NVM::FlashMemory::Flash_Chip *chip) = 0;
+  virtual bool EraseFinished(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual ChipStatus GetChipStatus(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual sim_time_type
   Expected_finish_time(NVM::FlashMemory::Flash_Chip *chip) = 0;

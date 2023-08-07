@@ -13,6 +13,7 @@ Die::Die(unsigned int PlanesNoPerDie, unsigned int BlocksNoPerPlane,
   for (unsigned int i = 0; i < PlanesNoPerDie; i++) {
     Planes[i] = new Plane(BlocksNoPerPlane, PagesNoPerBlock);
   }
+  PrevERSRemainingSuspendedExecTime = INVALID_TIME;
 }
 
 Die::~Die() {

@@ -30,7 +30,7 @@ public:
                  bool EraseSuspensionEnabled, bool ProgramSuspensionEnabled);
   ~TSU_OutOfOrder();
 
-  void Schedule() override;
+  void Schedule(bool fromGC=false) override;
 
   void Start_simulation(bool isPreconditioning) override;
   void Validate_simulation_config() override;
@@ -54,8 +54,8 @@ private:
   Flash_Transaction_Queue **MappingReadTRQueue;
   Flash_Transaction_Queue **MappingWriteTRQueue;
 
-  bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip) override {}
-  bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip) override {}
+  bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) override {}
+  bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) override {}
   bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   bool service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;

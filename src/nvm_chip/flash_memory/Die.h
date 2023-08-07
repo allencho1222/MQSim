@@ -19,6 +19,8 @@ public:
   MQSimEngine::Sim_Event *CommandFinishEvent;
   sim_time_type Expected_finish_time;
   sim_time_type RemainingSuspendedExecTime; // used to support suspend command
+  sim_time_type PrevERSRemainingSuspendedExecTime;//used to support suspend command
+  
   Flash_Command *CurrentCMD, *SuspendedCMD;
   bool Suspended;
 

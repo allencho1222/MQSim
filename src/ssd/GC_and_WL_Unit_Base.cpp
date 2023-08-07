@@ -358,7 +358,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
           transaction->Address);
       eraseTR->setLatency(eraseLatency.value());
       _my_instance->tsu->Submit_transaction(eraseTR);
-      _my_instance->tsu->Schedule();
+      _my_instance->tsu->Schedule(true);
     } else {
       // WARNING: `Add_erased_block_to_pool` do not increase `Erase_count`
       assert(pbke->Ongoing_erase_operations.contains(transaction->Address.BlockID));
@@ -413,7 +413,7 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
           eraseAddr, true);
       eraseTR->setLatency(eraseLatency.value());
       _my_instance->tsu->Submit_transaction(eraseTR);
-      _my_instance->tsu->Schedule();
+      _my_instance->tsu->Schedule(true);
     } else {
       // Fully erase block
       _my_instance->block_manager->eraseBlock(eraseAddr);

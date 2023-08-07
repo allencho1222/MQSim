@@ -41,7 +41,7 @@ public:
   void StartCMDDataInXfer() { this->lastTransferStart = Simulator->Time(); }
   void StartDataOutXfer() { this->lastTransferStart = Simulator->Time(); }
   void EndCMDXfer(
-      Flash_Command *command) // End transferring write data to the Flash chip
+      Flash_Command *command, sim_time_type suspendTime) // End transferring write data to the Flash chip
   {
     this->STAT_totalXferTime += (Simulator->Time() - this->lastTransferStart);
     if (this->idleDieNo != die_no)
@@ -50,7 +50,7 @@ public:
     this->Dies[command->Address[0].DieID]->STAT_TotalXferTime +=
         (Simulator->Time() - lastTransferStart);
 
-    start_command_execution(command);
+    start_command_execution(command, suspendTime);
 
     this->lastTransferStart = INVALID_TIME;
   }
@@ -65,7 +65,7 @@ public:
     this->Dies[command->Address[0].DieID]->STAT_TotalXferTime +=
         (Simulator->Time() - lastTransferStart);
 
-    start_command_execution(command);
+    start_command_execution(command, 0);
 
     this->lastTransferStart = INVALID_TIME;
   }
@@ -166,7 +166,7 @@ private:
   sim_time_type STAT_totalExecTime, STAT_totalXferTime,
       STAT_totalOverlappedXferExecTime;
 
-  void start_command_execution(Flash_Command *command);
+  void start_command_execution(Flash_Command *command, sim_time_type suspendTime);
   void finish_command_execution(Flash_Command *command);
   void broadcast_ready_signal(Flash_Command *command);
   std::vector<ChipReadySignalHandlerType> connectedReadyHandlers;

@@ -159,7 +159,7 @@ LPA_type Flash_Chip::Get_metadata(
       .Metadata.LPA;
 }
 
-void Flash_Chip::start_command_execution(Flash_Command *command) {
+void Flash_Chip::start_command_execution(Flash_Command *command, sim_time_type suspendTime) {
   Die *targetDie = Dies[command->Address[0].DieID];
 
   // If this is a simple command (not multiplane) then there should be only one
@@ -181,7 +181,7 @@ void Flash_Chip::start_command_execution(Flash_Command *command) {
     targetDie->Expected_finish_time =
         Simulator->Time() +
         Get_command_execution_latency(command->CommandCode,
-                                      command->Address[0].PageID);
+                                      command->Address[0].PageID) + suspendTime;
   }
   // targetDie->Expected_finish_time =
   //     Simulator->Time() + Get_command_execution_latency(
@@ -330,9 +330,27 @@ void Flash_Chip::Suspend(flash_die_ID_type dieID) {
 
   /*if (targetDie->CurrentCMD & CMD_READ != 0)
   throw "Suspend is not supported for read operations!";*/
+  sim_time_type RemainingExecTime = targetDie->Expected_finish_time - Simulator->Time();
+  switch (targetDie->CurrentCMD->CommandCode) {
+    case CMD_ERASE:
+    case CMD_ERASE_BLOCK:
+    case CMD_ERASE_BLOCK_MULTIPLANE: {
+      // sim_time_type CmdExeTime = Get_command_execution_latency(targetDie->CurrentCMD->CommandCode, targetDie->CurrentCMD->Address[0].PageID);
+      sim_time_type CmdExeTime = targetDie->CurrentCMD->latency;
 
-  targetDie->RemainingSuspendedExecTime =
-      targetDie->Expected_finish_time - Simulator->Time();
+      if (RemainingExecTime > CmdExeTime) {
+        RemainingExecTime = CmdExeTime;
+      }
+      break;
+    }
+    default:
+      assert(0);
+  }
+
+  targetDie->RemainingSuspendedExecTime = RemainingExecTime;
+
+  // targetDie->RemainingSuspendedExecTime =
+  //     targetDie->Expected_finish_time - Simulator->Time();
   Simulator->Ignore_sim_event(
       targetDie
           ->CommandFinishEvent); // The simulator engine should not execute the
@@ -367,11 +385,12 @@ void Flash_Chip::Resume(flash_die_ID_type dieID) {
   targetDie->Suspended = false;
   STAT_totalResumeCount++;
 
-  targetDie->Expected_finish_time =
-      Simulator->Time() + targetDie->RemainingSuspendedExecTime;
-  targetDie->CommandFinishEvent = Simulator->Register_sim_event(
-      targetDie->Expected_finish_time, this, targetDie->CurrentCMD,
-      static_cast<int>(Chip_Sim_Event_Type::COMMAND_FINISHED));
+  targetDie->Expected_finish_time = Simulator->Time() + targetDie->RemainingSuspendedExecTime;
+  targetDie->PrevERSRemainingSuspendedExecTime = targetDie->RemainingSuspendedExecTime;
+
+
+  targetDie->CommandFinishEvent = Simulator->Register_sim_event(targetDie->Expected_finish_time, 
+    this, targetDie->CurrentCMD, static_cast<int>(Chip_Sim_Event_Type::COMMAND_FINISHED));
   if (targetDie->Expected_finish_time > this->expectedFinishTime) {
     this->expectedFinishTime = targetDie->Expected_finish_time;
   }

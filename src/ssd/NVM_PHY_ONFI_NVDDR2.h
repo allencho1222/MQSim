@@ -40,8 +40,10 @@ public:
   sim_time_type DieInterleavedTime; // If the command transfer is done in
                                     // die-interleaved mode, the transfer time
                                     // is recorded in this temporary variable
+  bool ERS_SuspendTrigger;
 
   void PrepareSuspend() {
+    assert(ActiveCommand);
     SuspendedCommand = ActiveCommand;
     RemainingExecTime = Expected_finish_time - Simulator->Time();
     SuspendedTransactions.insert(SuspendedTransactions.begin(),
@@ -54,6 +56,7 @@ public:
   }
 
   void PrepareResume() {
+    assert(SuspendedCommand);
     ActiveCommand = SuspendedCommand;
     Expected_finish_time = Simulator->Time() + RemainingExecTime;
     ActiveTransactions.insert(ActiveTransactions.begin(),
@@ -120,6 +123,7 @@ public:
                     // execution! The GC unit may need to know the metadata of a
                     // page to decide if a page is valid or invalid.
   bool HasSuspendedCommand(NVM::FlashMemory::Flash_Chip *chip);
+  bool EraseFinished(NVM::FlashMemory::Flash_Chip *chip);
   ChipStatus GetChipStatus(NVM::FlashMemory::Flash_Chip *chip);
   sim_time_type Expected_finish_time(NVM::FlashMemory::Flash_Chip *chip);
   sim_time_type Expected_finish_time(NVM_Transaction_Flash *transaction);
@@ -130,6 +134,14 @@ public:
   void
   Change_memory_status_preconditioning(const NVM::NVM_Memory_Address *address,
                                        const void *status_info);
+  void SetTRQueue( Flash_Transaction_Queue*** userReadTRQueue,
+            Flash_Transaction_Queue*** UserWriteTRQueue,
+            Flash_Transaction_Queue** GCReadTRQueue,
+            Flash_Transaction_Queue** GCWriteTRQueue,
+            Flash_Transaction_Queue** GCShallowEraseTRQueue,
+            Flash_Transaction_Queue** GCFullEraseTRQueue,
+            Flash_Transaction_Queue** MappingReadTRQueue,
+            Flash_Transaction_Queue** MappingWriteTRQueue );
 
   ~NVM_PHY_ONFI_NVDDR2();
 
@@ -159,6 +171,15 @@ private:
   Flash_Transaction_Queue *WaitingReadTX, *WaitingGCRead_TX,
       *WaitingMappingRead_TX;
   std::list<DieBookKeepingEntry *> *WaitingCopybackWrites;
+
+  Flash_Transaction_Queue*** UserReadTRQueue;
+  Flash_Transaction_Queue*** UserWriteTRQueue;
+  Flash_Transaction_Queue** GCReadTRQueue;
+  Flash_Transaction_Queue** GCWriteTRQueue;
+  Flash_Transaction_Queue** GCShallowEraseTRQueue;
+  Flash_Transaction_Queue** GCFullEraseTRQueue;
+  Flash_Transaction_Queue** MappingReadTRQueue;
+  Flash_Transaction_Queue** MappingWriteTRQueue;
 
 private:
   fmt::ostream output;

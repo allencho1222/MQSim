@@ -41,7 +41,7 @@ TSU_Base::TSU_Base(const sim_object_id_type &id, FTL *ftl,
   for (unsigned int channelID = 0; channelID < channel_count; channelID++) {
     Round_robin_turn_of_channel[channelID] = 0;
   }
-  assert(!eraseSuspensionEnabled);
+  // assert(!eraseSuspensionEnabled);
   assert(!programSuspensionEnabled);
 }
 

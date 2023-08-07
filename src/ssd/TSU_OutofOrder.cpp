@@ -225,7 +225,7 @@ void TSU_OutOfOrder::reportResults(fmt::ostream &output) {
 //   xmlwriter.Write_close_tag();
 // }
 
-void TSU_OutOfOrder::Schedule() {
+void TSU_OutOfOrder::Schedule(bool fromGC) {
   opened_scheduling_reqs--;
   if (opened_scheduling_reqs > 0) {
     return;
@@ -386,6 +386,7 @@ bool TSU_OutOfOrder::service_read_transaction(
     }
     suspensionRequired = true;
   case ChipStatus::ERASING:
+    // if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip) || _NVMController->EraseFinished(chip)) {
     if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
       return false;
     }

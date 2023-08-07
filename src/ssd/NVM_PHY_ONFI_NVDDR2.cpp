@@ -64,6 +64,7 @@ NVM_PHY_ONFI_NVDDR2::NVM_PHY_ONFI_NVDDR2(const sim_object_id_type &id,
         bookKeepingTable[channelID][chipID]
             .Die_book_keeping_records[dieID]
             .RemainingExecTime = INVALID_TIME;
+        bookKeepingTable[channelID][chipID].Die_book_keeping_records[dieID].ERS_SuspendTrigger = false;
       }
     }
   }
@@ -148,6 +149,12 @@ NVM_PHY_ONFI_NVDDR2::HasSuspendedCommand(NVM::FlashMemory::Flash_Chip *chip) {
   return bookKeepingTable[chip->ChannelID][chip->ChipID].HasSuspend;
 }
 
+inline bool
+NVM_PHY_ONFI_NVDDR2::EraseFinished(NVM::FlashMemory::Flash_Chip *chip) {
+  return true;
+}
+
+
 inline ChipStatus
 NVM_PHY_ONFI_NVDDR2::GetChipStatus(NVM::FlashMemory::Flash_Chip *chip) {
   return bookKeepingTable[chip->ChannelID][chip->ChipID].Status;
@@ -204,6 +211,24 @@ void NVM_PHY_ONFI_NVDDR2::Change_flash_page_status_for_preconditioning(
       ->Chips[page_address.ChipID]
       ->Change_memory_status_preconditioning(&page_address, &lpa);
 }
+void NVM_PHY_ONFI_NVDDR2::SetTRQueue( Flash_Transaction_Queue*** userReadTRQueue,
+          Flash_Transaction_Queue*** userWriteTRQueue,
+          Flash_Transaction_Queue** gCReadTRQueue,
+          Flash_Transaction_Queue** gWriteTRQueue,
+          Flash_Transaction_Queue** gCShallowEraseTRQueue,
+          Flash_Transaction_Queue** gCFullEraseTRQueue,
+          Flash_Transaction_Queue** mappingReadTRQueue,
+          Flash_Transaction_Queue** mappingWriteTRQueue )
+{
+  UserReadTRQueue = userReadTRQueue;
+  UserWriteTRQueue = userWriteTRQueue;
+  GCReadTRQueue = gCReadTRQueue;
+  GCWriteTRQueue = gWriteTRQueue;
+  GCShallowEraseTRQueue = gCShallowEraseTRQueue;
+  GCFullEraseTRQueue = gCFullEraseTRQueue;
+  MappingReadTRQueue = mappingReadTRQueue;
+  MappingWriteTRQueue = mappingWriteTRQueue;
+}
 
 void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
     std::list<NVM_Transaction_Flash *> &transaction_list) {
@@ -235,12 +260,15 @@ void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
         Stats::IssuedSuspendProgramCMD++;
         suspendTime = target_channel->ProgramSuspendCommandTime +
                       targetChip->GetSuspendProgramTime();
+        assert(0 && "No write suspension");
         break;
       case Transaction_Type::PROXY_ERASE:
       case Transaction_Type::ADAPTIVE_ERASE:
         Stats::IssuedSuspendEraseCMD++;
-        suspendTime = target_channel->EraseSuspendCommandTime +
-                      targetChip->GetSuspendEraseTime();
+					assert (chipBKE->No_of_active_dies == 1);
+					chipBKE->No_of_active_dies--;
+          // suspendTime = target_channel->EraseSuspendCommandTime + targetChip->GetSuspendEraseTime();
+					dieBKE->ERS_SuspendTrigger = true;
         break;
       default:
         PRINT_ERROR("Read suspension is not supported!")
@@ -532,12 +560,23 @@ void NVM_PHY_ONFI_NVDDR2::Execute_simulator_event(MQSimEngine::Sim_Event *ev) {
   ChipBookKeepingEntry *chipBKE =
       &bookKeepingTable[channel_id][targetChip->ChipID];
 
+  unsigned int nCH_ID = channel_id;
+  unsigned int nCHIP_ID = dieBKE->ActiveTransactions.front()->Address.ChipID;
+
   switch ((NVDDR2_SimEventType)ev->Type) {
   case NVDDR2_SimEventType::READ_CMD_ADDR_TRANSFERRED:
     // DEBUG2("Chip " << targetChip->ChannelID << ", " << targetChip->ChipID <<
     // ", " << dieBKE->ActiveTransactions.front()->Address.DieID << ":
     // READ_CMD_ADDR_TRANSFERRED ")
-    targetChip->EndCMDXfer(dieBKE->ActiveCommand);
+    // targetChip->EndCMDXfer(dieBKE->ActiveCommand);
+
+    if (true == dieBKE->ERS_SuspendTrigger) {
+      targetChip->EndCMDXfer(dieBKE->ActiveCommand, targetChip->GetSuspendEraseTime());
+      dieBKE->ERS_SuspendTrigger = false;
+    }
+    else {
+      targetChip->EndCMDXfer(dieBKE->ActiveCommand, 0);
+    }
     for (auto tr : dieBKE->ActiveTransactions) {
       tr->STAT_execution_time =
           dieBKE->Expected_finish_time - Simulator->Time();
@@ -557,7 +596,7 @@ void NVM_PHY_ONFI_NVDDR2::Execute_simulator_event(MQSimEngine::Sim_Event *ev) {
     // DEBUG2("Chip " << targetChip->ChannelID << ", " << targetChip->ChipID <<
     // ", " << dieBKE->ActiveTransactions.front()->Address.DieID << ":
     // ERASE_SETUP_COMPLETED ")
-    targetChip->EndCMDXfer(dieBKE->ActiveCommand);
+    targetChip->EndCMDXfer(dieBKE->ActiveCommand, 0);
     for (auto &tr : dieBKE->ActiveTransactions) {
       tr->STAT_execution_time =
           dieBKE->Expected_finish_time - Simulator->Time();
@@ -630,7 +669,14 @@ void NVM_PHY_ONFI_NVDDR2::Execute_simulator_event(MQSimEngine::Sim_Event *ev) {
     }
     if (chipBKE->Status == ChipStatus::IDLE) {
       if (dieBKE->Suspended) {
-        send_resume_command_to_chip(targetChip, chipBKE);
+        bool empty_queues = true;
+        for (int i = 0; i < IO_Flow_Priority_Class::NUMBER_OF_PRIORITY_LEVELS; i++) {
+          if (UserReadTRQueue[nCH_ID][nCHIP_ID][i].size()) {
+            empty_queues = false;
+          }
+        }
+        if (empty_queues)
+          send_resume_command_to_chip(targetChip, chipBKE);
       }
     }
     targetChannel->SetStatus(BusChannelStatus::IDLE, targetChip);
@@ -866,7 +912,7 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
     break;
   }
   case CMD_ERASE_BLOCK:
-  case CMD_ERASE_BLOCK_MULTIPLANE:
+  case CMD_ERASE_BLOCK_MULTIPLANE: {
     DEBUG("Chip " << chip->ChannelID << ", " << chip->ChipID
                   << ": finished erase command")
     for (std::list<NVM_Transaction_Flash *>::iterator it =
@@ -875,6 +921,17 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
       _my_instance->broadcastTransactionServicedSignal(*it);
     dieBKE->ActiveTransactions.clear();
     dieBKE->ClearCommand();
+
+    // std::list<NVM_Transaction_Flash *> tempActiveTransactions(dieBKE->ActiveTransactions);
+    // dieBKE->ActiveTransactions.clear();
+    // dieBKE->ClearCommand();
+    // dieBKE->ActiveTransactions.insert(dieBKE->ActiveTransactions.begin(), tempActiveTransactions.begin(), tempActiveTransactions.end());
+    // std::cout << "dieBKE->ActiveTransactions.size(): " << dieBKE->ActiveTransactions.size() << std::endl;
+    // assert(dieBKE->ActiveTransactions.size());
+    // for (std::list<NVM_Transaction_Flash *>::iterator it =
+    //          dieBKE->ActiveTransactions.begin();
+    //      it != dieBKE->ActiveTransactions.end(); it++)
+    //   _my_instance->broadcastTransactionServicedSignal(*it);
 
     chipBKE->No_of_active_dies--;
     if (chipBKE->No_of_active_dies == 0 && chipBKE->WaitingReadTXCount == 0)
@@ -885,6 +942,7 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
       if (chipBKE->HasSuspend)
         _my_instance->send_resume_command_to_chip(chip, chipBKE);
     break;
+  }
   default:
     break;
   }
@@ -992,10 +1050,14 @@ inline void NVM_PHY_ONFI_NVDDR2::send_resume_command_to_chip(
     case CMD_PROGRAM_PAGE_MULTIPLANE:
     case CMD_PROGRAM_PAGE_COPYBACK:
     case CMD_PROGRAM_PAGE_COPYBACK_MULTIPLANE:
+				assert(chipBKE->No_of_active_dies == 0);
+				chipBKE->No_of_active_dies++;
       chipBKE->Status = ChipStatus::WRITING;
       break;
     case CMD_ERASE_BLOCK:
     case CMD_ERASE_BLOCK_MULTIPLANE:
+				assert(chipBKE->No_of_active_dies == 0);
+				chipBKE->No_of_active_dies++;
       chipBKE->Status = ChipStatus::ERASING;
       break;
     }
