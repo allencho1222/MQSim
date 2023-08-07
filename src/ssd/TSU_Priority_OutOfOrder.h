@@ -62,8 +62,8 @@ private:
   int **currentWeightRead;
   int **currentWeightWrite;
 
-  bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) override;
-  bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) override;
+  bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip, bool fromGC=false) override;
+  bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip, bool fromGC=false) override;
   bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   bool service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) override;
   bool service_full_erase_transaction(NVM::FlashMemory::Flash_Chip *chip) override;

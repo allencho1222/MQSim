@@ -499,20 +499,8 @@ void TSU_Priority_OutOfOrder::Schedule(bool fromGC) {
             if (!service_full_erase_transaction(chip)) {
               service_shallow_erase_transaction(chip);
             }
-            // else {
-            //   if (fromGC)
-            //     std::cout << "fromGC, a" << std::endl;
-            // }
           }
-          // else {
-          //   if (fromGC)
-          //     std::cout << "fromGC, b" << std::endl;
-          // }
         }
-        // else {
-        //   if (fromGC)
-        //     std::cout << "fromGC, b" << std::endl;
-        // }
         Round_robin_turn_of_channel[channelID] =
             (flash_chip_ID_type)(Round_robin_turn_of_channel[channelID] + 1) %
             chip_no_per_channel;
@@ -556,14 +544,8 @@ bool TSU_Priority_OutOfOrder::service_aero_read(
   ChipStatus cs = _NVMController->GetChipStatus(chip);
   switch (cs) {
   case ChipStatus::IDLE:
-    // if (fromGC) {
-    //   std::cout << "Chip is idle!!" << std::endl;
-    // }
     break;
   case ChipStatus::WRITING:
-    // if (fromGC) {
-    //   std::cout << "Chip is writing!!" << std::endl;
-    // }
     if (!programSuspensionEnabled ||
         _NVMController->HasSuspendedCommand(chip)) {
       return false;
@@ -575,15 +557,10 @@ bool TSU_Priority_OutOfOrder::service_aero_read(
     suspensionRequired = true;
     break;
   case ChipStatus::ERASING:
-    // if (fromGC) {
-    //   std::cout << "Chip is erasing!!" << std::endl;
-    // }
-    // if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip) || _NVMController->EraseFinished(chip)) {
     if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
       return false;
     }
       if (fromGC) {
-        // assert(0);
         return false;
       }
     if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
@@ -595,7 +572,6 @@ bool TSU_Priority_OutOfOrder::service_aero_read(
   default:
     return false;
   }
-  // assert(!suspensionRequired);
 
   return issue_command_to_chip(sourceQueue1, sourceQueue2,
                                trType, suspensionRequired);
@@ -690,9 +666,6 @@ bool TSU_Priority_OutOfOrder::service_aero_write(
   if (trType == Transaction_Type::READ) {
     switch (cs) {
     case ChipStatus::IDLE:
-      // if (fromGC) {
-      //   std::cout << "aero_write_erasing!!" << std::endl;
-      // }
       break;
     case ChipStatus::WRITING:
       if (!programSuspensionEnabled ||
@@ -706,9 +679,6 @@ bool TSU_Priority_OutOfOrder::service_aero_write(
       suspensionRequired = true;
       break;
     case ChipStatus::ERASING:
-      // if (fromGC) {
-      //   std::cout << "aero_write_erasing!!" << std::endl;
-      // }
       if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
         return false;
       }
@@ -736,7 +706,6 @@ bool TSU_Priority_OutOfOrder::service_aero_write(
       return false;
     }
   }
-  // assert(!suspensionRequired);
 
   return issue_command_to_chip(sourceQueue1, sourceQueue2,
                                trType, suspensionRequired);
@@ -855,7 +824,6 @@ bool TSU_Priority_OutOfOrder::service_read_transaction(
     suspensionRequired = true;
     break;
   case ChipStatus::ERASING:
-    // if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip) || _NVMController->EraseFinished(chip)) {
     if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
       return false;
     }
@@ -868,7 +836,6 @@ bool TSU_Priority_OutOfOrder::service_read_transaction(
   default:
     return false;
   }
-  // assert(!suspensionRequired);
 
   return issue_command_to_chip(sourceQueue1, sourceQueue2,
                                Transaction_Type::READ, suspensionRequired);

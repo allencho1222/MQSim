@@ -84,8 +84,8 @@ protected:
   std::list<NVM_Transaction_Flash *>
       transaction_dispatch_slots; // Used to submit transactions to the channel
                                   // controller
-  virtual bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) = 0;
-  virtual bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip, bool fromGC) = 0;
+  virtual bool service_aero_read(NVM::FlashMemory::Flash_Chip *chip, bool fromGC=false) = 0;
+  virtual bool service_aero_write(NVM::FlashMemory::Flash_Chip *chip, bool fromGC=false) = 0;
   virtual bool service_read_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
   virtual bool
   service_write_transaction(NVM::FlashMemory::Flash_Chip *chip) = 0;
