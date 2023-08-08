@@ -257,6 +257,17 @@ uint32_t Input_Stream_Manager_Base::Get_average_write_transaction_waiting_time(
                 SIM_TIME_TO_MICROSECONDS_COEFF);
 }
 
+uint32_t Input_Stream_Manager_Base::Get_read_transaction_count(stream_id_type stream_id) {
+  return input_streams[stream_id]->STAT_number_of_read_transactions;
+}
+uint32_t Input_Stream_Manager_Base::Get_write_transaction_count(stream_id_type stream_id) {
+  return input_streams[stream_id]->STAT_number_of_write_transactions;
+}
+uint32_t Input_Stream_Manager_Base::Get_total_transaction_count(stream_id_type stream_id) {
+  return input_streams[stream_id]->STAT_number_of_read_transactions + 
+    input_streams[stream_id]->STAT_number_of_write_transactions;
+}
+
 Request_Fetch_Unit_Base::Request_Fetch_Unit_Base(
     Host_Interface_Base *host_interface)
     : host_interface(host_interface) {}

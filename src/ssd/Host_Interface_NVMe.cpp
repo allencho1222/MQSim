@@ -623,10 +623,13 @@ void Host_Interface_NVMe::reportResults(fmt::ostream &output) {
     "avg_write_transaction_turnaround_time "
     "avg_write_transaction_exec_time "
     "avg_write_transaction_transfer_time "
-    "avg_write_transaction_wait_time";
+    "avg_write_transaction_wait_time "
+    "read_transaction_count "
+    "write_transaction_count "
+    "total_transaction_count";
   output.print("{}\n", header);
   for (uint32_t stream_id = 0; stream_id < no_of_input_streams; ++stream_id) {
-    output.print("{} {} {} {} {} {} {} {} {}\n",
+    output.print("{} {} {} {} {} {} {} {} {} {} {} {}\n",
       stream_id,
       input_stream_manager
         ->Get_average_read_transaction_turnaround_time(stream_id),
@@ -643,7 +646,13 @@ void Host_Interface_NVMe::reportResults(fmt::ostream &output) {
       input_stream_manager
         ->Get_average_write_transaction_transfer_time(stream_id),
       input_stream_manager
-        ->Get_average_write_transaction_waiting_time(stream_id));
+        ->Get_average_write_transaction_waiting_time(stream_id),
+      input_stream_manager
+        ->Get_read_transaction_count(stream_id),
+      input_stream_manager
+        ->Get_write_transaction_count(stream_id),
+      input_stream_manager
+        ->Get_total_transaction_count(stream_id));
   }
 }
 } // namespace SSD_Components

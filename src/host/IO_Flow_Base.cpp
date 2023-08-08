@@ -786,7 +786,7 @@ void IO_Flow_Base::reportResults(fmt::ostream &output) {
   constexpr auto items = "{} {} {} {} {} "
                          "{} {} {} {} {} "
                          "{} {} {} {} {} "
-                         "{} {} {} {} {} {}\n";
+                         "{} {} {} {} {} {} {}\n";
   output.print(
       items, ID(), STAT_generated_request_count,
       STAT_generated_read_request_count, STAT_generated_write_request_count,
@@ -808,6 +808,7 @@ void IO_Flow_Base::reportResults(fmt::ostream &output) {
       Get_max_device_response_time(), Get_end_to_end_request_delay(),
       Get_min_end_to_end_request_delay(), Get_max_end_to_end_request_delay(),
       Get_max_device_response_time_read(),
-      Get_max_device_response_time_write());
+      Get_max_device_response_time_write(),
+      Simulator->Time());
 }
 } // namespace Host_Components
