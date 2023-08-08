@@ -17,7 +17,8 @@ Data_Cache_Manager_Flash_Advanced::Data_Cache_Manager_Flash_Advanced(
     Caching_Mode *caching_mode_per_input_stream,
     Cache_Sharing_Mode sharing_mode, unsigned int stream_count,
     unsigned int sector_no_per_page,
-    unsigned int back_pressure_buffer_max_depth)
+    unsigned int back_pressure_buffer_max_depth,
+    sim_time_type erase_timeout_delay)
     : Data_Cache_Manager_Base(id, host_interface, firmware, dram_row_size,
                               dram_data_rate, dram_busrt_size, dram_tRCD,
                               dram_tCL, dram_tRP, caching_mode_per_input_stream,
@@ -26,7 +27,11 @@ Data_Cache_Manager_Flash_Advanced::Data_Cache_Manager_Flash_Advanced(
       capacity_in_bytes(total_capacity_in_bytes),
       sector_no_per_page(sector_no_per_page), memory_channel_is_busy(false),
       dram_execution_list_turn(0),
-      back_pressure_buffer_max_depth(back_pressure_buffer_max_depth) {
+      back_pressure_buffer_max_depth(back_pressure_buffer_max_depth),
+      erase_timeout_delay(erase_timeout_delay) {
+  if (erase_timeout_delay == 0) {
+    gnERSSuspendOffCount = 0xFFFF;
+  }
   capacity_in_pages =
       capacity_in_bytes / (SECTOR_SIZE_IN_BYTE * sector_no_per_page);
   switch (sharing_mode) {
@@ -197,6 +202,19 @@ void Data_Cache_Manager_Flash_Advanced::process_new_user_request(
   // This condition shouldn't happen, but we check it
   if (user_request->Transaction_list.size() == 0) {
     return;
+  }
+  
+  if (((Data_Cache_Manager_Flash_Advanced*)_my_instance)->waiting_user_requests_queue_for_dram_free_slot[user_request->Stream_id].size() > 0 )
+  {
+    auto pending_write_request = ((Data_Cache_Manager_Flash_Advanced*)_my_instance)->waiting_user_requests_queue_for_dram_free_slot[user_request->Stream_id].begin();
+    assert ((*pending_write_request)->Type == UserRequestType::WRITE);
+
+    if (((Simulator->Time() - (*pending_write_request)->STAT_InitiationTime) / SIM_TIME_TO_MS_COEFF) >= erase_timeout_delay ) {
+      if ((*pending_write_request)->bNeedERSSuspensionOff == false ) {
+        (*pending_write_request)->bNeedERSSuspensionOff = true;
+        gnERSSuspendOffCount++;
+      }
+    }
   }
 
   if (user_request->Type == UserRequestType::READ) {

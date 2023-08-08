@@ -230,6 +230,30 @@ void NVM_PHY_ONFI_NVDDR2::SetTRQueue( Flash_Transaction_Queue*** userReadTRQueue
   MappingWriteTRQueue = mappingWriteTRQueue;
 }
 
+bool NVM_PHY_ONFI_NVDDR2::Check_ERS_suspend_threshold(flash_channel_ID_type channel_id, flash_chip_ID_type chip_id, flash_die_ID_type die_id) {
+  ONFI_Channel_NVDDR2* target_channel = channels[channel_id];
+  NVM::FlashMemory::Flash_Chip* targetChip = target_channel->Chips[chip_id];
+  NVM::FlashMemory::Die* targetDie = target_channel->Chips[chip_id]->Dies[die_id];
+
+  ChipBookKeepingEntry *chipBKE =
+      &bookKeepingTable[channel_id][chip_id];
+  DieBookKeepingEntry *dieBKE =
+      &chipBKE->Die_book_keeping_records[0];
+
+  if (targetDie->CurrentCMD == NULL)
+    return true;
+  if (gnERSSuspendOffCount > 0) {
+    return true;
+  }
+  for (auto it : dieBKE->ActiveTransactions) {
+    if (((NVM_Transaction_Flash_ER*)it)->is_last_loop) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void NVM_PHY_ONFI_NVDDR2::Send_command_to_chip(
     std::list<NVM_Transaction_Flash *> &transaction_list) {
   ONFI_Channel_NVDDR2 *target_channel =
@@ -916,12 +940,12 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
     DEBUG("Chip " << chip->ChannelID << ", " << chip->ChipID
                   << ": finished erase command")
                   
-    // for (std::list<NVM_Transaction_Flash *>::iterator it =
-    //          dieBKE->ActiveTransactions.begin();
-    //      it != dieBKE->ActiveTransactions.end(); it++)
-    //   _my_instance->broadcastTransactionServicedSignal(*it);
-    // dieBKE->ActiveTransactions.clear();
-    // dieBKE->ClearCommand();
+    for (std::list<NVM_Transaction_Flash *>::iterator it =
+             dieBKE->ActiveTransactions.begin();
+         it != dieBKE->ActiveTransactions.end(); it++)
+      _my_instance->broadcastTransactionServicedSignal(*it);
+    dieBKE->ActiveTransactions.clear();
+    dieBKE->ClearCommand();
 
     chipBKE->No_of_active_dies--;
     if (chipBKE->No_of_active_dies == 0 && chipBKE->WaitingReadTXCount == 0)
@@ -932,14 +956,14 @@ inline void NVM_PHY_ONFI_NVDDR2::handle_ready_signal_from_chip(
       if (chipBKE->HasSuspend)
         _my_instance->send_resume_command_to_chip(chip, chipBKE);
 
-    std::list<NVM_Transaction_Flash *> temp_transactions(dieBKE->ActiveTransactions);
-    dieBKE->ActiveTransactions.clear();
-    dieBKE->ClearCommand();
+    // std::list<NVM_Transaction_Flash *> temp_transactions(dieBKE->ActiveTransactions);
+    // dieBKE->ActiveTransactions.clear();
+    // dieBKE->ClearCommand();
 
-    for (std::list<NVM_Transaction_Flash *>::iterator it =
-            temp_transactions.begin();
-         it != temp_transactions.end(); it++)
-      _my_instance->broadcastTransactionServicedSignal(*it);
+    // for (std::list<NVM_Transaction_Flash *>::iterator it =
+    //         temp_transactions.begin();
+    //      it != temp_transactions.end(); it++)
+    //   _my_instance->broadcastTransactionServicedSignal(*it);
     break;
   }
   default:

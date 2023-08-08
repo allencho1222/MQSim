@@ -143,13 +143,13 @@ public:
                     // execution! The GC unit may need to know the metadata of a
                     // page to decide if a page is valid or invalid.
   void reportStat(fmt::ostream& output);
+  Die **Dies;
 private:
   static bool isReportHeaderPrinted;
   static bool isStatHeaderPrinted;
   Flash_Technology_Type flash_technology;
   Internal_Status status;
   unsigned int idleDieNo;
-  Die **Dies;
   unsigned int die_no;
   unsigned int plane_no_in_die;   // indicate how many planes in a die
   unsigned int block_no_in_plane; // indicate how many blocks in a plane

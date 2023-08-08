@@ -336,11 +336,12 @@ void Flash_Chip::Suspend(flash_die_ID_type dieID) {
     case CMD_ERASE_BLOCK:
     case CMD_ERASE_BLOCK_MULTIPLANE: {
       // sim_time_type CmdExeTime = Get_command_execution_latency(targetDie->CurrentCMD->CommandCode, targetDie->CurrentCMD->Address[0].PageID);
-      sim_time_type CmdExeTime = targetDie->CurrentCMD->latency;
+      // sim_time_type CmdExeTime = targetDie->CurrentCMD->latency;
 
-      if (RemainingExecTime > CmdExeTime) {
-        RemainingExecTime = CmdExeTime;
-      }
+      // if (RemainingExecTime > CmdExeTime) {
+      //   RemainingExecTime = CmdExeTime;
+      // }
+      RemainingExecTime = targetDie->CurrentCMD->latency;
       break;
     }
     default:

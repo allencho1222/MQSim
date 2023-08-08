@@ -254,6 +254,8 @@ void GC_and_WL_Unit_Page_Level::Check_gc_required(
       block_manager->initEraseLatency(gc_candidate_address);
       auto eraseLatency = block_manager->getNextEraseLatency(gc_candidate_address);
       assert(eraseLatency.has_value());
+      if (block_manager->numRemainingEraseLoops(gc_candidate_address)==1)
+        gc_erase_tr->is_last_loop = true;
       gc_erase_tr->setLatency(eraseLatency.value());
       // If there are some valid pages in block, then prepare flash transactions
       // for page movement

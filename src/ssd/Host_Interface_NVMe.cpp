@@ -128,6 +128,13 @@ Input_Stream_Manager_NVMe::Handle_serviced_request(User_Request *request) {
     ((Host_Interface_NVMe *)host_interface)
         ->request_fetch_unit->Send_read_data(request);
   }
+  else {
+    if (request->bNeedERSSuspensionOff == true) {
+      assert(request->Type == UserRequestType::WRITE);
+      assert(gnERSSuspendOffCount > 0);
+      gnERSSuspendOffCount--;
+    }
+  }
 
   // there are waiting requests in the submission queue but have not been
   // fetched, due to Queue_fetch_size limit
@@ -383,6 +390,7 @@ void Request_Fetch_Unit_NVMe::Process_pcie_read_message(
           sqe->Command_specific[2] & (LHA_type)(0x0000ffff);
       new_request->Size_in_byte =
           new_request->SizeInSectors * SECTOR_SIZE_IN_BYTE;
+      new_request->bNeedERSSuspensionOff = false;
       break;
     case NVME_WRITE_OPCODE:
       new_request->Type = UserRequestType::WRITE;
@@ -394,6 +402,7 @@ void Request_Fetch_Unit_NVMe::Process_pcie_read_message(
           sqe->Command_specific[2] & (LHA_type)(0x0000ffff);
       new_request->Size_in_byte =
           new_request->SizeInSectors * SECTOR_SIZE_IN_BYTE;
+      new_request->bNeedERSSuspensionOff = false;
       break;
     default:
       throw std::invalid_argument("NVMe command is not supported!");

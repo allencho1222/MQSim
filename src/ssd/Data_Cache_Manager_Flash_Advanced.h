@@ -40,7 +40,8 @@ public:
       Caching_Mode *caching_mode_per_input_stream,
       Cache_Sharing_Mode sharing_mode, unsigned int stream_count,
       unsigned int sector_no_per_page,
-      unsigned int back_pressure_buffer_max_depth);
+      unsigned int back_pressure_buffer_max_depth,
+      sim_time_type erase_timeout_delay);
   ~Data_Cache_Manager_Flash_Advanced();
   void Execute_simulator_event(MQSimEngine::Sim_Event *ev);
   void Setup_triggers();
@@ -74,6 +75,7 @@ private:
   std::set<LPA_type> *bloom_filter;
   sim_time_type bloom_filter_reset_step = 1000000000;
   sim_time_type next_bloom_filter_reset_milestone = 0;
+  sim_time_type erase_timeout_delay = 0;
 
   static void handle_transaction_serviced_signal_from_PHY(
       NVM_Transaction_Flash *transaction);

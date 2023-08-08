@@ -556,19 +556,28 @@ bool TSU_Priority_OutOfOrder::service_aero_read(
     }
     suspensionRequired = true;
     break;
-  case ChipStatus::ERASING:
+  case ChipStatus::ERASING: {
     if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
       return false;
     }
-    if (fromGC) {
-      return false;
+    bool empty_queues = true;
+    for (int i = 0; i < IO_Flow_Priority_Class::NUMBER_OF_PRIORITY_LEVELS; i++) {
+      if (UserReadTRQueue[chip->ChannelID][chip->ChipID][i].size()) {
+        empty_queues = false;
+      }
     }
+    if (!empty_queues)
+      return false;
     if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
         eraseReasonableSuspensionTimeForRead) {
       return false;
     }
+    if (_NVMController->Check_ERS_suspend_threshold(chip->ChannelID, chip->ChipID, 0)) {
+      return false;
+    }
     suspensionRequired = true;
     break;
+  }
   default:
     return false;
   }
@@ -678,19 +687,28 @@ bool TSU_Priority_OutOfOrder::service_aero_write(
       }
       suspensionRequired = true;
       break;
-    case ChipStatus::ERASING:
+    case ChipStatus::ERASING: {
       if (!eraseSuspensionEnabled || _NVMController->HasSuspendedCommand(chip)) {
         return false;
       }
-      if (fromGC) {
-        return false;
+      bool empty_queues = true;
+      for (int i = 0; i < IO_Flow_Priority_Class::NUMBER_OF_PRIORITY_LEVELS; i++) {
+        if (UserReadTRQueue[chip->ChannelID][chip->ChipID][i].size()) {
+          empty_queues = false;
+        }
       }
+      if (!empty_queues)
+        return false;
       if (_NVMController->Expected_finish_time(chip) - Simulator->Time() <
           eraseReasonableSuspensionTimeForRead) {
         return false;
       }
+      if (_NVMController->Check_ERS_suspend_threshold(chip->ChannelID, chip->ChipID, 0)) {
+        return false;
+      }
       suspensionRequired = true;
       break;
+    }
     default:
       return false;
     }

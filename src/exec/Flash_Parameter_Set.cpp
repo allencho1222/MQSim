@@ -22,6 +22,7 @@ Flash_Technology_Type Flash_Parameter_Set::Flash_Technology =
 NVM::FlashMemory::Command_Suspension_Mode
     Flash_Parameter_Set::CMD_Suspension_Support =
         NVM::FlashMemory::Command_Suspension_Mode::ERASE;
+sim_time_type Flash_Parameter_Set::Erase_Timeout_Delay = 0;
 sim_time_type Flash_Parameter_Set::Page_Read_Latency_LSB = 75000;
 sim_time_type Flash_Parameter_Set::Page_Read_Latency_CSB = 75000;
 sim_time_type Flash_Parameter_Set::Page_Read_Latency_MSB = 75000;
@@ -59,6 +60,10 @@ void Flash_Parameter_Set::parseYAML(const YAML::Node &flashParams) const {
     PRINT_ERROR("Unknown command suspension type specified in the input file")
   } else {
     CMD_Suspension_Support = cmdSuspensionModeMap[cmdSuspensionMode];
+  }
+  Erase_Timeout_Delay = flashParams["erase_timeout_delay"].as<unsigned long long>();
+  if (CMD_Suspension_Support != NVM::FlashMemory::Command_Suspension_Mode::ERASE) {
+    Erase_Timeout_Delay = 0;
   }
   Page_Read_Latency_LSB =
       flashParams["page_read_latency_lsb"].as<unsigned long long>();

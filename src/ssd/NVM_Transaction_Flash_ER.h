@@ -14,6 +14,7 @@ public:
       const NVM::FlashMemory::Physical_Page_Address &address,
       bool isAdaptiveErase = false);
   std::list<NVM_Transaction_Flash_WR *> Page_movement_activities;
+  bool is_last_loop = false;
 };
 } // namespace SSD_Components
 

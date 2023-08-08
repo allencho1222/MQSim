@@ -44,6 +44,9 @@ public:
 
   void PrepareSuspend() {
     assert(ActiveCommand);
+    for (auto it : ActiveTransactions) {
+      assert(!(((NVM_Transaction_Flash_ER*)it)->is_last_loop));
+    }
     SuspendedCommand = ActiveCommand;
     RemainingExecTime = Expected_finish_time - Simulator->Time();
     SuspendedTransactions.insert(SuspendedTransactions.begin(),
@@ -142,6 +145,10 @@ public:
             Flash_Transaction_Queue** GCFullEraseTRQueue,
             Flash_Transaction_Queue** MappingReadTRQueue,
             Flash_Transaction_Queue** MappingWriteTRQueue );
+  
+  bool Check_ERS_suspend_threshold(flash_channel_ID_type channe_id, 
+            flash_chip_ID_type chip_id, 
+            flash_die_ID_type die_id);
 
   ~NVM_PHY_ONFI_NVDDR2();
 

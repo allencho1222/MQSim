@@ -3,6 +3,8 @@
 #include "../utils/Logical_Address_Partitioning_Unit.h"
 #include <stdexcept>
 
+size_t gnERSSuspendOffCount = 0;
+
 namespace MQSimEngine {
 Engine *Engine::_instance = NULL;
 

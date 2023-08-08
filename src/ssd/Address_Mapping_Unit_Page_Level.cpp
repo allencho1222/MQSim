@@ -567,6 +567,8 @@ void Address_Mapping_Unit_Page_Level::Translate_lpa_to_ppa_and_dispatch(
             const auto eraseTR = new NVM_Transaction_Flash_ER(
                 Transaction_Source_Type::GC_WL, (*it)->Stream_id, eraseAddr,
                 true);
+            if (bm->numRemainingEraseLoops(eraseAddr)==1)
+              eraseTR->is_last_loop = true;
             eraseTR->setLatency(eraseLatency.value());
             ftl->TSU->Submit_transaction(eraseTR);
           } else {
@@ -2490,6 +2492,8 @@ void Address_Mapping_Unit_Page_Level::
         const auto eraseTR =
             new NVM_Transaction_Flash_ER(Transaction_Source_Type::GC_WL,
                                          writeTR->Stream_id, eraseAddr, true);
+        if (bm->numRemainingEraseLoops(eraseAddr)==1)
+          eraseTR->is_last_loop = true;
         eraseTR->setLatency(eraseLatency.value());
         ftl->TSU->Submit_transaction(eraseTR);
       } else {
@@ -2621,6 +2625,8 @@ Address_Mapping_Unit_Page_Level::handle_transaction_serviced_signal_from_PHY(
                     const auto eraseTR = new NVM_Transaction_Flash_ER(
                         Transaction_Source_Type::GC_WL, transaction->Stream_id,
                         eraseAddr, true);
+                    if (bm->numRemainingEraseLoops(eraseAddr)==1)
+                      eraseTR->is_last_loop = true;
                     eraseTR->setLatency(eraseLatency.value());
                     _my_instance->ftl->TSU->Submit_transaction(eraseTR);
                   } else {
@@ -2656,6 +2662,8 @@ Address_Mapping_Unit_Page_Level::handle_transaction_serviced_signal_from_PHY(
                     const auto eraseTR = new NVM_Transaction_Flash_ER(
                         Transaction_Source_Type::GC_WL, transaction->Stream_id,
                         eraseAddr, true);
+                    if (bm->numRemainingEraseLoops(eraseAddr)==1)
+                      eraseTR->is_last_loop = true;
                     eraseTR->setLatency(eraseLatency.value());
                     _my_instance->ftl->TSU->Submit_transaction(eraseTR);
                   } else {

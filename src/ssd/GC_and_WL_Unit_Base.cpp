@@ -128,6 +128,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
         bm->initEraseLatency(gc_wl_candidate_address);
         auto eraseLatency = bm->getNextEraseLatency(gc_wl_candidate_address);
         assert(eraseLatency.has_value());
+        if (bm->numRemainingEraseLoops(gc_wl_candidate_address)==1)
+          gc_wl_erase_tr->is_last_loop = true;
         gc_wl_erase_tr->setLatency(eraseLatency.value());
 
         uint32_t numValids = 0;
@@ -240,6 +242,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             const auto eraseTR = new NVM_Transaction_Flash_ER(
                 Transaction_Source_Type::GC_WL, transaction->Stream_id,
                 eraseAddr, true);
+            if (bm->numRemainingEraseLoops(eraseAddr)==1)
+              eraseTR->is_last_loop = true;
             eraseTR->setLatency(eraseLatency.value());
             _my_instance->tsu->Submit_transaction(eraseTR);
           } else {
@@ -282,7 +286,10 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
             const auto eraseTR = new NVM_Transaction_Flash_ER(
                 Transaction_Source_Type::GC_WL, transaction->Stream_id,
                 eraseAddr, true);
+            if (bm->numRemainingEraseLoops(eraseAddr)==1)
+              eraseTR->is_last_loop = true;
             eraseTR->setLatency(eraseLatency.value());
+            
             _my_instance->tsu->Submit_transaction(eraseTR);
           } else {
             bm->eraseBlock(eraseAddr);
@@ -356,6 +363,8 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
       auto eraseTR = new NVM_Transaction_Flash_ER(
           Transaction_Source_Type::GC_WL, transaction->Stream_id,
           transaction->Address);
+      if (bm->numRemainingEraseLoops(transaction->Address)==1)
+        eraseTR->is_last_loop = true;
       eraseTR->setLatency(eraseLatency.value());
       _my_instance->tsu->Submit_transaction(eraseTR);
       _my_instance->tsu->Schedule(false);
@@ -406,11 +415,18 @@ void GC_and_WL_Unit_Base::handle_transaction_serviced_signal_from_PHY(
     //     _my_instance->is_urgent_GC(transaction->Address.ChannelID, transaction->Address.ChipID)
     // );
     if (auto eraseLatency = blockManager->getNextEraseLatency(eraseAddr)) {
+      // std::cout << "eraseAddr: " << eraseAddr << std::endl;
+      // if (eraseAddr.ChipID == 0 && eraseAddr.ChannelID == 0)
+      // std::cout << "blockManager->numRemainingEraseLoops(eraseAddr): " << blockManager->numRemainingEraseLoops(eraseAddr) << std::endl;
+      // if (blockManager->numRemainingEraseLoops(eraseAddr) == 0)
+        // assert(0);
       assert(!_my_instance->true_lazy_erase);
       _my_instance->tsu->Prepare_for_transaction_submit();
       auto eraseTR = new NVM_Transaction_Flash_ER(
           Transaction_Source_Type::GC_WL, transaction->Stream_id,
           eraseAddr, true);
+      if (blockManager->numRemainingEraseLoops(eraseAddr)==1)
+        eraseTR->is_last_loop = true;
       eraseTR->setLatency(eraseLatency.value());
       _my_instance->tsu->Submit_transaction(eraseTR);
       _my_instance->tsu->Schedule(false);
@@ -568,7 +584,10 @@ void GC_and_WL_Unit_Base::run_static_wearleveling(
         pbke->Blocks[wl_candidate_block_id].Stream_id, wl_candidate_address);
     block_manager->initEraseLatency(wl_candidate_address);
     auto eraseLatency = block_manager->getNextEraseLatency(wl_candidate_address);
+    
     assert(eraseLatency.has_value());
+    if (block_manager->numRemainingEraseLoops(wl_candidate_address)==1)
+      wl_erase_tr->is_last_loop = true;
     wl_erase_tr->setLatency(eraseLatency.value());
     uint32_t numValids = 0;
     if (block->Current_page_write_index - block->Invalid_page_count >
