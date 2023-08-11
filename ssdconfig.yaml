@@ -168,6 +168,7 @@ device_parameters:
     # the type of suspend command support by flash chips. 
     # Range = {NONE, PROGRAM, PROGRAM_ERASE, ERASE}.
     cmd_suspension_mode: NONE
+    erase_timeout_delay: 64
     # the latency of reading LSB bits of flash memory cells in nanoseconds. 
     # Range = {all positive integer values}.
     page_read_latency_lsb: 40000
