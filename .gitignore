@@ -7,5 +7,4 @@ latex/
 *.result
 Doxyfile
 *.xml
-*.txt
 *.json
