@@ -19,7 +19,7 @@ class MQSim(ConanFile):
             raise ConanInvalidConfiguration("Require cpp standard above 11 (e.g., gnu11")
 
     def requirements(self):
-        self.requires("fmt/9.1.0")
+        self.requires("fmt/10.0.0")
         self.requires("spdlog/1.11.0")
         self.requires("boost/1.80.0")
         self.requires("yaml-cpp/0.7.0")
