@@ -1,4 +1,4 @@
-block_index_file: /root/work_dir/projects/MQSim/block_index.txt
+block_index_file: /root/workspace/MQSim/block_index.txt
 category:
   0:
     latency: 3500000
