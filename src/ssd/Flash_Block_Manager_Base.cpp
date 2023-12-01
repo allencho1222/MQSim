@@ -18,7 +18,8 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
     unsigned int plane_no_per_die, unsigned int block_no_per_plane,
     unsigned int page_no_per_block, const std::string blockModelFile,
     unsigned int initialEraseCount,
-    unsigned int maxReadToken, unsigned int maxWriteToken)
+    unsigned int maxReadToken, unsigned int maxWriteToken,
+    int missPredictionRatio)
     : gc_and_wl_unit(gc_and_wl_unit),
       max_allowed_block_erase_count(max_allowed_block_erase_count),
       total_concurrent_streams_no(total_concurrent_streams_no),
@@ -26,7 +27,10 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       die_no_per_chip(die_no_per_chip), plane_no_per_die(plane_no_per_die),
       block_no_per_plane(block_no_per_plane),
       pages_no_per_block(page_no_per_block),
-      initialEraseCount(initialEraseCount) {
+      initialEraseCount(initialEraseCount),
+      generator(10000),
+      distribution(1, 100),
+      missPredictionRatio (missPredictionRatio) {
   uint32_t lastCategoryID = 0;
   uint32_t accBlockNum = 0;
   //std::unordered_map<unsigned int, unsigned int> blockCategory;
@@ -507,6 +511,10 @@ void Flash_Block_Manager_Base::initEraseLatency(
   assert(block.remainingEraseLatency == 0);
   assert(block.categoryID != -1);
   block.remainingEraseLatency = eraseLatency[block.categoryID];
+  if (distribution(generator) <= missPredictionRatio) {
+    block.remainingEraseLatency += 500000;
+  }
+  
   block.LatencyInitiated = true;
 }
 

@@ -21,7 +21,8 @@ public:
                       const std::string blockModelFile,
                       unsigned int initialEraseCount,
                       unsigned int maxReadToken,
-                      unsigned int maxWriteToken);
+                      unsigned int maxWriteToken,
+                      int missPredictionRatio);
   ~Flash_Block_Manager();
   void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type stream_id,

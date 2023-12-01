@@ -76,6 +76,7 @@ std::unordered_map<std::string, SSD_Components::ONFI_Protocol>
 unsigned int Device_Parameter_Set::Initial_Erase_Count = 0;
 unsigned int Device_Parameter_Set::Max_Read_Token = 0;
 unsigned int Device_Parameter_Set::Max_Write_Token = 0;
+int Device_Parameter_Set::Miss_Prediction_Ratio = 0;
 int Device_Parameter_Set::Seed = 123; // Seed for random number generation (used
                                       // in device's random number generators)
 bool Device_Parameter_Set::Enabled_Preconditioning = true;
@@ -167,6 +168,8 @@ void Device_Parameter_Set::parseYAML(const YAML::Node &deviceParams) {
   try {
     Initial_Erase_Count = 
       deviceParams["initial_erase_count"].as<unsigned int>();
+    Miss_Prediction_Ratio =
+      deviceParams["miss_prediction_ratio"].as<int>();
     Max_Read_Token =
       deviceParams["max_read_token"].as<unsigned int>();
     Max_Write_Token =

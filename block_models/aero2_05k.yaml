@@ -1,6 +1,7 @@
 max_erase_latency:
   - 1000000
   - 2500000
+  - 500000
 block_index_file: /root/workspace/MQSim/block_index.txt
 category:
   0:

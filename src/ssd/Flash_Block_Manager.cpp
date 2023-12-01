@@ -13,7 +13,8 @@ Flash_Block_Manager::Flash_Block_Manager(
     unsigned int page_no_per_block,
     const std::string blockModelFile,
     unsigned int initialEraseCount,
-    unsigned int maxReadToken, unsigned int maxWriteToken)
+    unsigned int maxReadToken, unsigned int maxWriteToken,
+    int missPredictionRatio)
     : Flash_Block_Manager_Base(gc_and_wl_unit, max_allowed_block_erase_count,
                                total_concurrent_streams_no, channel_count,
                                chip_no_per_channel, die_no_per_chip,
@@ -21,7 +22,8 @@ Flash_Block_Manager::Flash_Block_Manager(
                                page_no_per_block,
                                blockModelFile,
                                initialEraseCount,
-                               maxReadToken, maxWriteToken) {}
+                               maxReadToken, maxWriteToken,
+                               missPredictionRatio) {}
 
 Flash_Block_Manager::~Flash_Block_Manager() {}
 

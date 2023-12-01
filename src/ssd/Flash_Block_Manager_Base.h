@@ -10,6 +10,7 @@
 #include <map>
 #include <queue>
 #include <set>
+#include <random>
 
 namespace SSD_Components {
 #define All_VALID_PAGE 0x0000000000000000ULL
@@ -126,7 +127,8 @@ public:
                            const std::string blockModelFile,
                            unsigned int initialEraseCount,
                            unsigned int maxReadToken,
-                           unsigned int maxWriteToken);
+                           unsigned int maxWriteToken,
+                           int missPredictionRatio);
   virtual ~Flash_Block_Manager_Base();
   virtual void Allocate_block_and_page_in_plane_for_user_write(
       const stream_id_type streamID,
@@ -244,8 +246,10 @@ protected:
 private:
   std::vector<sim_time_type> eraseLatency;
   std::vector<sim_time_type> maxEraseLatency;
+  std::mt19937 generator;
+  std::uniform_int_distribution<int> distribution;
   unsigned int initialEraseCount;
-
+  int missPredictionRatio;
 };
 } // namespace SSD_Components
 

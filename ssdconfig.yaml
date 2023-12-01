@@ -20,6 +20,7 @@ host_parameters:
 device_parameters:
   max_read_token: 2
   max_write_token: 2
+  miss_prediction_ratio: 10
   true_lazy_erase: true
   initial_erase_count: 0
   # the seed value that is used for random number generation. 
