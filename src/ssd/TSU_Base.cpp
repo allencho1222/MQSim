@@ -138,7 +138,8 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
     planeVector = 0;
 
     for (auto it = sourceQueue1->begin(); it != sourceQueue1->end();) {
-      if (transaction_is_ready(*it) && (*it)->Address.DieID == dieID &&
+      bool ready = transaction_is_ready(*it);
+      if (ready && (*it)->Address.DieID == dieID &&
           !(planeVector & 1 << (*it)->Address.PlaneID)) {
         // Check for identical pages when running multiplane command
         if (planeVector == 0 || (*it)->Address.PageID == pageID) {
@@ -165,7 +166,8 @@ bool TSU_Base::issue_command_to_chip(Flash_Transaction_Queue *sourceQueue1,
     if (sourceQueue2 != NULL &&
         transaction_dispatch_slots.size() < plane_no_per_die) {
       for (auto it = sourceQueue2->begin(); it != sourceQueue2->end();) {
-        if (transaction_is_ready(*it) && (*it)->Address.DieID == dieID &&
+        bool ready = transaction_is_ready(*it);
+        if (ready && (*it)->Address.DieID == dieID &&
             !(planeVector & 1 << (*it)->Address.PlaneID)) {
           // Check for identical pages when running multiplane command
           if (planeVector == 0 || (*it)->Address.PageID == pageID) {
@@ -283,6 +285,15 @@ bool TSU_Base::transaction_is_ready(NVM_Transaction_Flash *transaction) const {
   default:
     return true;
   }
+}
+
+bool TSU_Base::has_ready_transaction(Flash_Transaction_Queue* q) {
+  for (auto it = q->begin(); it != q->end(); it++) {
+    if (transaction_is_ready(*it)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace SSD_Components

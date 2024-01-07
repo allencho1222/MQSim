@@ -118,6 +118,7 @@ protected:
   }
   std::unordered_map<LPA_type, std::pair<Flash_Transaction_Queue*, std::list<NVM_Transaction_Flash*>::iterator>>
     lockedQueue;
+  bool has_ready_transaction(Flash_Transaction_Queue* q);
 
 private:
   virtual void initQueue() = 0;

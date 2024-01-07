@@ -866,9 +866,8 @@ bool TSU_Priority_OutOfOrder::service_read_transaction(
 
 Flash_Transaction_Queue *TSU_Priority_OutOfOrder::get_next_write_service_queue(
     NVM::FlashMemory::Flash_Chip *chip) {
-  if (UserWriteTRQueue[chip->ChannelID][chip->ChipID]
-                      [IO_Flow_Priority_Class::URGENT]
-                          .size() > 0) {
+    if (has_ready_transaction(&UserWriteTRQueue[chip->ChannelID][chip->ChipID]
+                      [IO_Flow_Priority_Class::URGENT])) {
     return &UserWriteTRQueue[chip->ChannelID][chip->ChipID]
                             [IO_Flow_Priority_Class::URGENT];
   }
@@ -898,9 +897,8 @@ Flash_Transaction_Queue *TSU_Priority_OutOfOrder::get_next_write_service_queue(
     if (IO_Flow_Priority_Class::get_scheduling_weight(
             nextPriorityClassWrite[chip->ChannelID][chip->ChipID]) >=
             currentWeightWrite[chip->ChannelID][chip->ChipID] &&
-        UserWriteTRQueue[chip->ChannelID][chip->ChipID]
-                        [nextPriorityClassWrite[chip->ChannelID][chip->ChipID]]
-                            .size() > 0) {
+        has_ready_transaction(& UserWriteTRQueue[chip->ChannelID][chip->ChipID]
+                        [nextPriorityClassWrite[chip->ChannelID][chip->ChipID]])) {
       return &UserWriteTRQueue[chip->ChannelID][chip->ChipID]
                               [nextPriorityClassWrite[chip->ChannelID]
                                                      [chip->ChipID]];
