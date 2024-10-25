@@ -1,0 +1,47 @@
+block_index_file: /root/workspace/MQSim/block_index.txt
+category:
+  0:
+    latency: 4500000
+    ratio: 6
+  1:
+    latency: 5000000
+    ratio: 13
+  2:
+    latency: 5500000
+    ratio: 18
+  3:
+    latency: 6000000
+    ratio: 12
+  4:
+    latency: 6500000
+    ratio: 11
+  5:
+    latency: 7000000
+    ratio: 9
+  6:
+    latency: 7500000
+    ratio: 8
+  7:
+    latency: 8000000
+    ratio: 6
+  8:
+    latency: 8500000
+    ratio: 5
+  9:
+    latency: 9000000
+    ratio: 4
+  10:
+    latency: 9500000
+    ratio: 3
+  11:
+    latency: 10000000
+    ratio: 3
+  12:
+    latency: 10500000
+    ratio: 2
+max_erase_latency:
+- 1000000
+- 2500000
+- 3500000
+- 3500000
+

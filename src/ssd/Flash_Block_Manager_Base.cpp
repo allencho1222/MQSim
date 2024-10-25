@@ -29,7 +29,7 @@ Flash_Block_Manager_Base::Flash_Block_Manager_Base(
       pages_no_per_block(page_no_per_block),
       initialEraseCount(initialEraseCount),
       generator(10000),
-      distribution(1, 100),
+      distribution(1, 1000),
       missPredictionRatio (missPredictionRatio) {
   uint32_t lastCategoryID = 0;
   uint32_t accBlockNum = 0;

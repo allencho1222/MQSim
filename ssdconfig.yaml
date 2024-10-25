@@ -20,7 +20,7 @@ host_parameters:
 device_parameters:
   max_read_token: 2
   max_write_token: 2
-  miss_prediction_ratio: 10
+  miss_prediction_ratio: 0
   true_lazy_erase: true
   initial_erase_count: 0
   # the seed value that is used for random number generation. 
@@ -201,7 +201,7 @@ device_parameters:
     suspend_program_time: 100000
     # the time taken to suspend an ongoing erase operation in nanoseconds. 
     # Range = {all positive integer values}.
-    suspend_erase_time: 700000
+    suspend_erase_time: 100000
     # the number of dies in each flash chip. 
     # Range = {all positive integer values}.
     num_dies_per_chip: 1
